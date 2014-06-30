@@ -1,2 +1,5 @@
 config.h
 *.sdf
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
