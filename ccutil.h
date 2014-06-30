@@ -19,8 +19,7 @@
 #include <vector>
 #include <list>
 
-#include "cutil.h"
-#include "config.h"
+#include "utils/cutil.h"
 
 #define NPOS std::string::npos
 

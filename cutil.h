@@ -58,7 +58,7 @@
 #define UTILS_CUTIL_H
 
 /* 选项配置文件 */
-#include "config.h"
+#include "utils_config.h"
 
 #ifdef __cplusplus
 extern "C" {
