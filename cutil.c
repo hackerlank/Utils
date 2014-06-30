@@ -3165,7 +3165,7 @@ const char *get_temp_dir()
 
 	if (!init)
 	{
-		int len;
+		size_t len;
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 		wchar_t wpath[MAX_PATH];
@@ -4565,7 +4565,7 @@ char* mbcs_to_utf8(const char* mbcs, int strict)
 	return utf8;
 }
 
-int utf16_len(const UTF16* u16)
+ssize_t utf16_len(const UTF16* u16)
 {
 	const UTF16* p = u16;
 
@@ -4576,7 +4576,7 @@ int utf16_len(const UTF16* u16)
 	return p - u16;
 }
 
-int utf32_len(const UTF32* u32)
+ssize_t utf32_len(const UTF32* u32)
 {
 	const UTF32* p = u32;
 
@@ -4690,7 +4690,7 @@ int convert_to_charset(const char* from, const char* to,
 						char **outbuf, size_t *outlen,
 						int strict)
 {
-	int tlen, dlen;
+	size_t tlen, dlen;
 	char *tbuf = NULL;
 
 	if (!inbuf || !inlen|| !outbuf || !outlen)

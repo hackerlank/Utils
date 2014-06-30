@@ -148,6 +148,12 @@ MSVC_POP_WARNING()
 #endif
 #endif
 
+#if __WORDSIZE == 64
+typedef int64_t ssize_t;
+#else
+typedef int ssize_t;
+#endif
+
 #ifndef OS_WIN
 #define INFINITE 0xFFFFFFFFU
 #endif
@@ -651,8 +657,8 @@ UTF8* utf7_to_utf8(const UTF7* in);             									/*将UTF-7编码字符�
 char* utf8_to_mbcs(const char* utf8, int strict);									/* 将UTF-8编码的字符串转换为系统多字节编码 */
 char* mbcs_to_utf8(const char* mbcs, int strict);									/* 将系统多字节编码的字符串转换为UTF-8编码 */
 
-int utf16_len(const UTF16* u16);													/* 获取UTF-16LE编码字符串的字符数 (非字节数) */
-int utf32_len(const UTF32* u32);													/* 获取UTF-32LE编码字符串的字符数 (非字节数) */
+ssize_t utf16_len(const UTF16* u16);													/* 获取UTF-16LE编码字符串的字符数 (非字节数) */
+ssize_t utf32_len(const UTF32* u32);													/* 获取UTF-32LE编码字符串的字符数 (非字节数) */
 
 #ifndef OS_ANDROID
 const char* get_locale();															/* 获取系统默认字符集(如UTF-8，CP936) */
