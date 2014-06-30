@@ -1,0 +1,276 @@
+<?xml version="1.0" ?> 
+<?xml-stylesheet type="text/xsl" href="CUnit-Run.xsl" ?> 
+<!DOCTYPE CUNIT_TEST_RUN_REPORT SYSTEM "CUnit-Run.dtd"> 
+<CUNIT_TEST_RUN_REPORT> 
+  <CUNIT_HEADER/> 
+  <CUNIT_RESULT_LISTING> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> Data type </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Interger Limit </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Custom Unsigned </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> C99 Format Style </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Type Length </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> Math </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Basic </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Hex </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> String </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Char type </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Case conv </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Duplicate </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Split </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Format </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Compare </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Search </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Hash </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> File system </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Path Find </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Path Detect </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Path Relative </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Path Unique </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Path Illegal </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Directory </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> File </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> Charset </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Detect </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Detect File </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> UTF-8 Operation </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> UTF-8  UTF-16 | UTF-32 </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> MBCS | Wide </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> UTF-8 | Wide </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> MBCS | UTF-8 </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Locale Charset </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Charset Conversion </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> SQLite </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Insert </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Select </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> Zlib </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Deflate Inflate </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Deflate2 Inflate2 </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Compress Uncompress </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Gzip Ungzip </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Zip Unzip </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Zlib-cutil </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> Others </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Parse </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_SUCCESS> 
+            <TEST_NAME> Compare </TEST_NAME> 
+          </CUNIT_RUN_TEST_SUCCESS> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+  </CUNIT_RESULT_LISTING>
+  <CUNIT_RUN_SUMMARY> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Suites </TYPE> 
+      <TOTAL> 8 </TOTAL> 
+      <RUN> 8 </RUN> 
+      <SUCCEEDED> - NA - </SUCCEEDED> 
+      <FAILED> 0 </FAILED> 
+      <INACTIVE> 0 </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Test Cases </TYPE> 
+      <TOTAL> 40 </TOTAL> 
+      <RUN> 40 </RUN> 
+      <SUCCEEDED> 40 </SUCCEEDED> 
+      <FAILED> 0 </FAILED> 
+      <INACTIVE> 0 </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Assertions </TYPE> 
+      <TOTAL> 702 </TOTAL> 
+      <RUN> 702 </RUN> 
+      <SUCCEEDED> 702 </SUCCEEDED> 
+      <FAILED> 0 </FAILED> 
+      <INACTIVE> n/a </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+  </CUNIT_RUN_SUMMARY> 
+  <CUNIT_FOOTER> File Generated By CUnit v2.1-2 - Thu May 30 14:05:08 2013
+ </CUNIT_FOOTER> 
+</CUNIT_TEST_RUN_REPORT>

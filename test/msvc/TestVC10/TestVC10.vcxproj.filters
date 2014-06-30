@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{a14d0301-1289-407f-9959-118d24e1f2e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{16ff1611-5f6a-40b9-9a2d-6db5952fed46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils\deps">
+      <UniqueIdentifier>{1a33e2a2-6a49-4ef9-a970-12a7fd5243da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils\lib">
+      <UniqueIdentifier>{e8b15139-8664-4b8d-8933-71b188010034}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ccutil.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\cutil.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\test-c.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\test-cpp.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\config.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\charset.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cppstring.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\datatype.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filesystem.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\math.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\string.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\others.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sqlite.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\zlibtest.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\deps\compiler-specific.h">
+      <Filter>utils\deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\deps\ConvertUTF.h">
+      <Filter>utils\deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\deps\min-max.h">
+      <Filter>utils\deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\deps\platform-arch.h">
+      <Filter>utils\deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\deps\string16.h">
+      <Filter>utils\deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\deps\StringA.h">
+      <Filter>utils\deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\deps\StringW.h">
+      <Filter>utils\deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\sqlite3.h">
+      <Filter>utils\lib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TestVC10.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ccutil.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\cutil.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test-c.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test-cpp.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\charset.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cppstring.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\datatype.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\filesystem.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\math.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\string.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\others.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sqlite.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\zlibtest.c">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\deps\ConvertUTF.c">
+      <Filter>utils\deps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\deps\string16.cpp">
+      <Filter>utils\deps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\sqlite3.c">
+      <Filter>utils\lib</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

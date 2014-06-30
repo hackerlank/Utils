@@ -1,0 +1,3 @@
+gcc ../../cutil.h ../../cutil.c ../test-c.c ../test-c.h  test.c -lpthread -finput-charset=gbk -D_DEBUG -o testc
+
+g++ ../../cutil.h ../../cutil.c ../../ccutil.h ../../ccutil.cpp ../test-cpp.cpp ../test-cpp.h test.cpp -lpthread -finput-charset=gbk -D_DEBUG -o testcpp

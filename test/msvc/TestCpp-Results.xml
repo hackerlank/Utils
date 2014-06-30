@@ -1,0 +1,153 @@
+<?xml version="1.0" ?> 
+<?xml-stylesheet type="text/xsl" href="CUnit-Run.xsl" ?> 
+<!DOCTYPE CUNIT_TEST_RUN_REPORT SYSTEM "CUnit-Run.dtd"> 
+<CUNIT_TEST_RUN_REPORT> 
+  <CUNIT_HEADER/> 
+  <CUNIT_RESULT_LISTING> 
+    <CUNIT_RUN_SUITE> 
+      <CUNIT_RUN_SUITE_SUCCESS> 
+        <SUITE_NAME> String </SUITE_NAME> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> Wstring | string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 16 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(!ws.empty()) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> Wstring | UTF8 string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 34 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF8) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> Wstring | UTF8 string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 39 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF16) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> Wstring | UTF8 string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 46 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF8) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string | UTF8 string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 57 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF8) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string16 | UTF8 string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 66 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF16) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string16 | UTF8 string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 70 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF8) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string16 | Wstring </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 80 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF16) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string16 | Wstring </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 85 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF16) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string16 | string </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 100 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF16) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string conversions </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 112 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_GBK) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string conversions </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 116 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF16) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string conversions </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 120 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_UTF32) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+        <CUNIT_RUN_TEST_RECORD> 
+          <CUNIT_RUN_TEST_FAILURE> 
+            <TEST_NAME> string conversions </TEST_NAME> 
+            <FILE_NAME> f:\projects\safesitetask\utils\test\cppstring.cpp </FILE_NAME> 
+            <LINE_NUMBER> 124 </LINE_NUMBER> 
+            <CONDITION> CU_ASSERT_TRUE(hex == HEX_GBK) </CONDITION> 
+          </CUNIT_RUN_TEST_FAILURE> 
+        </CUNIT_RUN_TEST_RECORD> 
+      </CUNIT_RUN_SUITE_SUCCESS> 
+    </CUNIT_RUN_SUITE> 
+  </CUNIT_RESULT_LISTING>
+  <CUNIT_RUN_SUMMARY> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Suites </TYPE> 
+      <TOTAL> 1 </TOTAL> 
+      <RUN> 1 </RUN> 
+      <SUCCEEDED> - NA - </SUCCEEDED> 
+      <FAILED> 0 </FAILED> 
+      <INACTIVE> 0 </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Test Cases </TYPE> 
+      <TOTAL> 7 </TOTAL> 
+      <RUN> 7 </RUN> 
+      <SUCCEEDED> 0 </SUCCEEDED> 
+      <FAILED> 7 </FAILED> 
+      <INACTIVE> 0 </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+    <CUNIT_RUN_SUMMARY_RECORD> 
+      <TYPE> Assertions </TYPE> 
+      <TOTAL> 15 </TOTAL> 
+      <RUN> 15 </RUN> 
+      <SUCCEEDED> 1 </SUCCEEDED> 
+      <FAILED> 14 </FAILED> 
+      <INACTIVE> n/a </INACTIVE> 
+    </CUNIT_RUN_SUMMARY_RECORD> 
+  </CUNIT_RUN_SUMMARY> 
+  <CUNIT_FOOTER> File Generated By CUnit v2.1-2 - Thu May 30 14:05:08 2013
+ </CUNIT_FOOTER> 
+</CUNIT_TEST_RUN_REPORT>
