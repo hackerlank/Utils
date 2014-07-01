@@ -77,6 +77,13 @@ void set_crash_handler(crash_handler handler);
 /* 设置默认的崩溃处理函数 */
 void set_default_crash_handler();
 
+/* 设置软件名称，用于创建临时文件和目录等 */
+/* 如果是非英文名称，编码应与USE_UTF8_STR一致，最长255个字符 */
+void set_product_name(const char* product_name);
+
+/* 获取设置的软件名称 */
+const char* get_product_name();
+
 /************************************************************************/
 /*                    Common Headers 常用头文件                         */
 /************************************************************************/

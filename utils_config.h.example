@@ -12,21 +12,13 @@
 #ifndef CONFIG_UTIL_H
 #define CONFIG_UTIL_H
 
-#include "deps/platform.h"                /* 系统平台和处理器架构宏定义 */
-
-/************************************************************************/
-/*                        Product information 软件信息                        */
-/************************************************************************/
-
-//产品名称，替换成实际产品名
-#define PACKAGE_NAME_EN        "Utils"
-#define PACKAGE_NAME_CH        "工具库"
+#include "src/deps/platform.h"                /* 系统平台和处理器架构宏定义 */
 
 /************************************************************************/
 /*                    Settings & Options 设置选项                            */
 /************************************************************************/
 
-/*
+/* 
  * 运行时内存调试
  * 即时的内存分析，在程序结束后打印统计信息
  */
@@ -35,7 +27,7 @@
 #endif
 
 /*
- * 内存调试日志
+ * 内存调试日志 
  * 将分配/释放内存的操作记录在系统日志，以便分析优化
  * 注：若要使用此功能，下面的 USE_DEBUG_LOG 选项也必须开启
  */
@@ -63,7 +55,7 @@
 #define USE_CRASH_HANDLER    1
 
 /*
- * 是否启用读写锁
+ * 是否启用读写锁 
  */
 //#define USE_READ_WRITE_LOCK	 1
 
@@ -82,18 +74,19 @@ extern "C" {
 
 /* libiconv */
 #ifdef OS_WIN
+#define USING_STATIC_LIBICONV
 #include "third_party/iconv/iconv.h"
-#else
+#else /* OS_WIN */
 #include <iconv.h>
 #ifndef _LIBICONV_H
 #define _LIBICONV_H 1
 #endif
-#endif
+#endif /* OS_WIN */
 
 #ifdef __cplusplus
 }
 #endif
-<div></div>
+
 /************************************************************************/
 /*                                Macros 宏定义                            */
 /************************************************************************/

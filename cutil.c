@@ -72,6 +72,9 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act);
 #define STAT_STRUCT struct stat
 #endif
 
+/* 软件名称 */
+static char g_product_name[256];
+
 /* 本库已初始化标志 */
 static int g_cutil_inited;
 
@@ -117,6 +120,9 @@ void cutil_init()
 #ifdef USE_CRASH_HANDLER
 	set_default_crash_handler();
 #endif
+
+	/* 初始化软件名称 */
+	xstrlcpy(g_product_name, "Utils", sizeof(g_product_name));
 
 #if defined(OS_POSIX)
 	/* 多字节/宽字符串转换 */
@@ -173,6 +179,17 @@ int check_cutil_init()
 }
 
 #define CHECK_INIT() ASSERT(check_cutil_init())
+
+void set_product_name(const char* product_name)
+{
+	if (product_name)
+		xstrlcpy(g_product_name, product_name, sizeof(g_product_name));
+}
+
+const char* get_product_name()
+{
+	return g_product_name;
+}
 
 #ifdef OS_WIN
 BOOL WINAPI InterruptHandlerWin(DWORD dwCtrlType)
@@ -3144,7 +3161,7 @@ const char* get_app_data_dir()
 		goto failed;
 	xstrlcat(path, ".", MAX_PATH);
 #endif
-	if (xstrlcat(path, PACKAGE_NAME_EN, MAX_PATH) >= MAX_PATH ||
+	if (xstrlcat(path, g_product_name, MAX_PATH) >= MAX_PATH ||
 		xstrlcat(path, PATH_SEP_STR, MAX_PATH) >= MAX_PATH)
 		goto failed;
 
@@ -3184,9 +3201,9 @@ const char *get_temp_dir()
 		len = 5;
 #endif /* OS_WIN */
 
-		if (len + strlen(PACKAGE_NAME_EN) < MAX_PATH - 2)
+		if (len + strlen(g_product_name) < MAX_PATH - 2)
 		{
-			strcpy(path + len, PACKAGE_NAME_EN);
+			strcpy(path + len, g_product_name);
 			strcat(path, PATH_SEP_STR);
 		}
 		else
@@ -5719,7 +5736,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 	//生成内存转储文件
 
 	snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_execute_dir(), 
-		PACKAGE_NAME_EN, timestamp_str(time(NULL)));
+		g_product_name, timestamp_str(time(NULL)));
 
 #ifdef USE_UTF8_STR
 	{
@@ -5754,8 +5771,8 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 #ifdef _MSC_VER
         flag |= BackTraceOutput;
 #endif
-        CrashBackTrace(pException, PACKAGE_NAME_EN " crashed!", flag);
-	} 
+        CrashBackTrace(pException, g_product_name, flag);
+	}
 
 	log_close_all();
 

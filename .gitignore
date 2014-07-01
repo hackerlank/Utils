@@ -1,4 +1,4 @@
-config.h
+utils_config.h
 *.sdf
 *.vcxproj
 *.vcxproj.filters
