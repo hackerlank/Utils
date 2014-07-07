@@ -14,6 +14,7 @@
 #include <ShlObj.h> /* SHGetSpecialFolderPath */
 #include <dbghelp.h> /* minidump */
 #include <crtdbg.h> /* _CrtSetReportMode */
+#include <ShellAPI.h> /* ShellExecuteEx */
 #include <shlwapi.h> /* path, str.etc */
 #include <process.h> /* _beginthreadex.etc */
 
@@ -112,6 +113,9 @@ void cutil_init()
 	memrt_init();
 #endif
 
+	/* 初始化软件名称 */
+	xstrlcpy(g_product_name, "Utils", sizeof(g_product_name));
+
 	/* 中断处理函数 */
 	ret = set_default_interrupt_handler();
 	ASSERT(ret);
@@ -121,8 +125,9 @@ void cutil_init()
 	set_default_crash_handler();
 #endif
 
-	/* 初始化软件名称 */
-	xstrlcpy(g_product_name, "Utils", sizeof(g_product_name));
+#ifdef OS_WIN
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+#endif
 
 #if defined(OS_POSIX)
 	/* 多字节/宽字符串转换 */
@@ -160,6 +165,10 @@ void cutil_exit()
 
 	/* 关闭日志模块 */
 	log_close_all();
+
+#ifdef OS_WIN
+	CoUninitialize();
+#endif
 }
 
 static inline
@@ -4782,14 +4791,14 @@ retry_convert:
 /* 参数executable：将要执行的可执行文件路径 */
 /* 参数param：传递给可执行文件的参数指针数组，最后一个元素必须为NULL */
 /* 返回值：创建成功返回进程标识符(process_t)，失败返回INVALID_PROCESS */
-process_t process_create(const char* executable_and_param, int show ALLOW_UNUSED)
+process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 {
 #ifdef OS_WIN
 	PROCESS_INFORMATION proc_info;
 #ifdef USE_UTF8_STR
 	{
 		STARTUPINFOW startup_info;
-		size_t cmdlen = strlen(executable_and_param) + 1;
+		size_t cmdlen = strlen(cmd_with_param) + 1;
 		wchar_t *cmdlinew = (wchar_t *)xmalloc(cmdlen * sizeof(wchar_t));
 
 		GetStartupInfoW(&startup_info);
@@ -4797,7 +4806,7 @@ process_t process_create(const char* executable_and_param, int show ALLOW_UNUSED
 		startup_info.dwFlags = STARTF_USESHOWWINDOW;
 		startup_info.wShowWindow = show ? SW_SHOW : SW_HIDE;
 
-		if (!UTF82UNI(executable_and_param, cmdlinew, cmdlen)
+		if (!UTF82UNI(cmd_with_param, cmdlinew, cmdlen)
 			|| !CreateProcessW(NULL, cmdlinew, NULL, NULL, 1, 0, NULL, NULL, &startup_info, &proc_info))
 		{
 			xfree(cmdlinew);
@@ -4816,7 +4825,7 @@ process_t process_create(const char* executable_and_param, int show ALLOW_UNUSED
 		startup_info.wShowWindow = show ? SW_SHOW : SW_HIDE;
 
 		/* CreateProcess会修改exe_param参数，因此不能直接使用 */
-		cmdline = xstrdup(executable_and_param);
+		cmdline = xstrdup(cmd_with_param);
 		if (!CreateProcessA(NULL, cmdline, NULL, NULL, 1, 0, NULL, NULL, &startup_info, &proc_info))
 		{
 			xfree(cmdline);
@@ -4866,7 +4875,7 @@ process_t process_create(const char* executable_and_param, int show ALLOW_UNUSED
 		signal(SIGTERM, SIG_DFL);
 
 		/* 开始执行 */
-		execl("/bin/sh", "sh", "-c", executable_and_param, NULL);
+		execl("/bin/sh", "sh", "-c", cmd_with_param, NULL);
 
 		/* 如果执行成功，不会运行到这里 */
 		_exit(127);
@@ -4989,26 +4998,6 @@ int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 #endif
 }
 
-#ifdef OS_WIN
-/* 
- * 创建子进程以及与之连接的管道 
- * 可以通过管道读取子进程输出(r)或写入管道作为子进程标准输入(w)
- */
-FILE* popen(const char *cmd, const char *mode)
-{
-#ifdef USE_UTF8_STR
-	wchar_t wcmd[MAX_PATH], wmode[10];
-	if (!UTF82UNI(cmd, wcmd, MAX_PATH) ||
-		!UTF82UNI(mode, wmode, countof(wmode)))
-		return NULL;
-
-	return _wpopen(wcmd, wmode);
-#else
-	return _popen(cmd, mode);
-#endif
-}
-#endif
-
 char* popen_readall(const char* command)
 {
 	char *buf = NULL;
@@ -5038,6 +5027,102 @@ char* popen_readall(const char* command)
 
 	pclose(f);
 	return buf;
+}
+
+#ifdef OS_WIN
+/* 
+ * 创建子进程以及与之连接的管道 
+ * 可以通过管道读取子进程输出(r)或写入管道作为子进程标准输入(w)
+ */
+FILE* popen(const char *cmd, const char *mode)
+{
+#ifdef USE_UTF8_STR
+	wchar_t wcmd[MAX_PATH], wmode[10];
+	if (!UTF82UNI(cmd, wcmd, MAX_PATH) ||
+		!UTF82UNI(mode, wmode, countof(wmode)))
+		return NULL;
+
+	return _wpopen(wcmd, wmode);
+#else
+	return _popen(cmd, mode);
+#endif
+}
+#endif
+
+/*
+ * TODO: linux, mac 支持
+ */
+int shell_execute(const char* cmd, const char* param, int show, int wait_timeout)
+{
+#ifdef OS_WIN
+	wchar_t *wcmd = NULL, *wparam = NULL;
+	SHELLEXECUTEINFOW sei;
+
+	if (!cmd)
+		return 0;
+
+	ZeroMemory(&sei, sizeof(sei));
+	sei.cbSize = sizeof(sei);
+
+	if (show <= 0)
+		sei.nShow = SW_HIDE;
+	else if (show == 1)
+		sei.nShow = SW_NORMAL;
+	else
+		sei.nShow = SW_MAXIMIZE;
+
+	sei.fMask = SEE_MASK_NOASYNC;
+	if (wait_timeout > 0)
+		sei.fMask |= SEE_MASK_NOCLOSEPROCESS;
+
+#ifdef USE_UTF8_STR
+	wcmd = XNMALLOC(MAX_PATH, wchar_t);
+	if (!UTF82UNI(cmd, wcmd, MAX_PATH * sizeof(wchar_t)))
+		return 0;
+
+	if (param) {
+		wparam = XNMALLOC(MAX_PATH, wchar_t);
+		if (!UTF82UNI(param, wparam, MAX_PATH * sizeof(wchar_t)))
+			return 0;
+	}
+#else
+	wcmd = mbcs_to_wcs(cmd);
+	if (!wcmd)
+		return 0;
+
+	if (param) {
+		wparam = mbcs_to_wcs(wparam);
+		if (!wparam)
+			return 0;
+	}
+#endif
+
+	sei.lpFile = wcmd;
+	sei.lpParameters = wparam;
+
+	if (!ShellExecuteEx(&sei)) {
+		xfree(wcmd);
+		if (wparam) 
+			xfree(wparam);
+		return 0;
+	}
+
+	xfree(wcmd);
+	if (wparam) 
+		xfree(wparam);
+
+	if (wait_timeout > 0 && sei.hProcess) {
+		WaitForSingleObject(sei.hProcess, wait_timeout);
+	}
+
+	if (sei.hProcess)
+		CloseHandle(sei.hProcess);
+
+	return 1;
+#else
+	NOT_IMPLEMENTED();
+	return 0;
+#endif
 }
 
 /************************************************************************/

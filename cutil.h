@@ -692,16 +692,24 @@ typedef pid_t process_t;
 #define INVALID_PROCESS 0
 #endif
 
-process_t process_create(const char* executable_and_param, int show);				/* 创建新的进程 */
+process_t process_create(const char* cmd_with_param, int show);						/* 创建新的进程 */
 int	process_wait(process_t process, int milliseconds, int *exit_code) WUR;			/* 等待进程结束 */
 int process_kill(process_t process, int exit_code, int wait) WUR;					/* 杀死进程 */
+
+/*
+ * show: 0 不显示，1 显示，2 最大化显示
+ * wait_timeout: 0 不等待，INFINITE 无限等待，其他正数 等待的毫秒数
+ * 参数中若带有双引号要使用另一对双引号来转义，如 \"\"\"quoted text\"\"\"" 代表 "quoted text"
+ */
+int shell_execute(const char* cmd, const char* param, int show, int wait_timeout);	/* 执行一个外部命令，打开一个文件，用浏览器打开一个网址等 */
+
+char* popen_readall(const char* command);											/* 创建并等待读取子进程的所有输出，需手动释放 */
 
 #ifdef OS_WIN
 FILE* popen(const char *command, const char *mode);									/* 创建子进程和连接管道 */
 #define pclose _pclose
-#endif
 
-char* popen_readall(const char* command);											/* 创建并等待读取子进程的所有输出，需手动释放 */
+#endif
 
 /************************************************************************/
 /*                       Mutex & Sync 线程同步与互斥                    */
