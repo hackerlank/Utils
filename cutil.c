@@ -114,7 +114,7 @@ void cutil_init()
 #endif
 
 	/* 初始化软件名称 */
-	xstrlcpy(g_product_name, "Utils", sizeof(g_product_name));
+	xstrlcpy(g_product_name, "AppUtils", sizeof(g_product_name));
 
 	/* 中断处理函数 */
 	ret = set_default_interrupt_handler();
@@ -3214,6 +3214,8 @@ const char *get_temp_dir()
 		{
 			strcpy(path + len, g_product_name);
 			strcat(path, PATH_SEP_STR);
+			if (!create_directory(path))
+				path[0] = '\0';
 		}
 		else
 			path[0] = '\0';
@@ -5834,7 +5836,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 #endif /* USE_UTF8_STR */
 
 	if (hDumpFile == INVALID_HANDLE_VALUE) {
-		MessageBoxA(NULL, "Could not create dump file!", "Error", MB_OK);
+		MessageBoxA(NULL, dump_file, "Could not create dump file!", MB_OK);
 		return EXCEPTION_EXECUTE_HANDLER;
 	}
 
