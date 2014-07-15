@@ -5820,7 +5820,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 	//////////////////////////////////////////////////////////////////////////
 	//生成内存转储文件
 
-	snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_execute_dir(), 
+	snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_temp_dir(), 
 		g_product_name, timestamp_str(time(NULL)));
 
 #ifdef USE_UTF8_STR
@@ -5832,6 +5832,11 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 #else
 	hDumpFile = CreateFileA(dump_file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 #endif /* USE_UTF8_STR */
+
+	if (hDumpFile == INVALID_HANDLE_VALUE) {
+		MessageBoxA(NULL, "Could not create dump file!", "Error", MB_OK);
+		return EXCEPTION_EXECUTE_HANDLER;
+	}
 
 	// 生成dump文件
 	dumpInfo.ExceptionPointers = pException;
