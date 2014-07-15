@@ -3214,7 +3214,10 @@ const char *get_temp_dir()
 		{
 			strcpy(path + len, g_product_name);
 			strcat(path, PATH_SEP_STR);
-			if (!create_directory(path))
+			if (path_is_file(path))
+				delete_file(path);
+			if (!path_is_directory(path) && 
+				!create_directory(path))
 				path[0] = '\0';
 		}
 		else
