@@ -12,7 +12,7 @@
 #ifndef CONFIG_UTIL_H
 #define CONFIG_UTIL_H
 
-#include "src/deps/platform.h"                /* 系统平台和处理器架构宏定义 */
+#include "deps/platform.h"                /* 系统平台和处理器架构宏定义 */
 
 /************************************************************************/
 /*                    Settings & Options 设置选项                            */
