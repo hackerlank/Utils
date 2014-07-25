@@ -411,8 +411,8 @@ int			is_root_path(const char* path);											/* 判断path是否是根目录(
 int			is_absolute_path(const char* path);										/* 判断path所指的路径是否是绝对路径 */
 
 int			absolute_path(const char* relpath, char* buf, size_t len) WUR;			/* 获取文件/目录相对于当前工作目录的绝对路径 */
-int			relative_path(const char* src, const char* dst, char sep,
-							char* buf, size_t len) WUR;								/* src引用dst的相对路径，如"../dir/dst.txt，并假设路径分隔符为sep */
+int			relative_path(const char* base_path, const char* full_path, char sep,
+							char* buf, size_t len) WUR;								/* 获取full_path相对于base_path的相对路径 */
 
 const char* path_find_file_name(const char* path);									/* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
 const char* path_find_extension(const char* path);									/* 返回文件的扩展名，目录返回NULL */

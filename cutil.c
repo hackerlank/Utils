@@ -1299,8 +1299,11 @@ int absolute_path(const char* relpath, char* buf, size_t len)
 * 获取src指向dst的相对路径
 * eg. src="/root/a/b/1.txt", dst="/2.txt", ret="../../../2.txt"
 * eg. src="2.txt", dst="root/a/b/1.txt", ret="root/a/b/1.txt"
-* src和dst必须同时是相对或绝对链接
-* 如果同是绝对链接而且是在windows下，src和dst必须在同一盘符下
+* 注1：src和dst必须同时是相对或绝对链接
+* 注2：如果同是绝对链接而且是在windows下，src和dst必须在同一盘符下
+* 注3：src是否以路径分隔符结尾会产生不同的相对路径，如:
+* eg. src="C:\\a", dst="C:\\a\\b\\1.txt", ret="a\\b\\1.txt"
+* eg. src="C:\\a\\", dst="C:\\a\\b\\1.txt", ret="b\\1.txt"
  */
 int relative_path(const char* src, const char* dst, char sep, char* outbuf, size_t slen)
 {
