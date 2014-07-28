@@ -491,7 +491,7 @@ int lowercase_str (char *str)
 {
 	int changed = 0;
 	for (; *str; str++)
-		if (isupper (*str))
+		if (xisupper (*str))
 		{
 			changed = 1;
 			*str = tolower (*str);
@@ -505,7 +505,7 @@ int uppercase_str (char *str)
 {
 	int changed = 0;
 	for (; *str; str++)
-		if (islower (*str))
+		if (xislower (*str))
 		{
 			changed = 1;
 			*str = toupper (*str);
@@ -1012,7 +1012,7 @@ int	is_absolute_path(const char* path)
 		return 0;
 
 #ifdef OS_WIN
-	if ((isalpha(path[0]) && path[1] == ':' && path[2] == '\\') ||	/* 本地磁盘 */
+	if ((xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') ||	/* 本地磁盘 */
 		(path[0] == '\\' && path[1] == '\\'))						/* 网络共享 */
 		return 1;
 #else

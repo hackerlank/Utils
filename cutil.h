@@ -296,6 +296,14 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #include <Shlwapi.h> /* StrDuaA */
 #endif
 
+#define xisdigit(c) ISDIGIT(c)
+#define xisxdigit(c) ISXDIGIT(c)
+#define xisascii(c) ((unsigned)c < 0x80)
+#define xisalpha(c) ((unsigned)c < 0xFF && isalpha(c))
+#define xisalnum(c) ((unsigned)c < 0xFF && isalnum(c))
+#define xisupper(c) ((unsigned)c < 0xFF && isupper(c))
+#define xislower(c) ((unsigned)c < 0xFF && islower(c))
+
 #ifdef COMPILER_MSVC
 #define alloca _alloca
 #define strdupa StrDupA
