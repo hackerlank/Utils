@@ -993,7 +993,7 @@ size_t path_valid(const char* path, int absolute)
 			return 0;
 
 #ifdef OS_WIN
-		if (!(path[1] == ':' && path[2] == '\\') &&		/* 本地磁盘 */
+		if (xisalpha(path[0]) && !(path[1] == ':' && path[2] == '\\') &&		/* 本地磁盘 */
 			!(path[0] == '\\' && path[1] == '\\'))		/* 网络共享 */
 			return 0;
 #else
@@ -1378,7 +1378,7 @@ int unique_file(const char* path, char *buf, size_t len)
 
 	for (i = 1; ;i++)
 	{
-		if (len < plen + num_bits(i) + 4)	/* " ()"和'\0' */
+		if (len < plen + num_bits(i) + 4 + elen)	/* " ()"和'\0' */
 			return 0;
 
 		/* 使用strncpy 以忽略扩展名 */
