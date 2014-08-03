@@ -979,13 +979,14 @@ size_t hash_pjw (const char *x, size_t tablesize)
 /************************************************************************/
 
 /* 判断路径名是否有效 */
-/* 若路径有效返回路径的长度；否则返回0 */
+/* 若路径有效，返回路径名字符串的长度；否则返回0 */
 static inline 
 size_t path_valid(const char* path, int absolute)
 {
 	size_t len;
 
-	if (!path || !(len = strlen(path)) || len > MAX_PATH)
+	/* 因路径缓冲区大都定义为MAX_PATH大小，因此路径名长度不能大于MAX_PATH -1 */
+	if (!path || !(len = strlen(path)) || len + 1 > MAX_PATH)
 		return 0;
 
 	if (absolute) {
@@ -1547,7 +1548,8 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 
 /* 遍历目录 */
 struct walk_dir_context {
-	char	basedir[MAX_PATH+1];
+	/* 遍历的路径名，必须以路径分隔符结尾 */
+	char	basedir[MAX_PATH];
 
 #ifdef OS_WIN
 	HANDLE				hFind;
@@ -1571,20 +1573,23 @@ struct walk_dir_context* walk_dir_begin(const char *dir)
 	size_t len;
 
 #ifdef OS_WIN
-	char buf[MAX_PATH];
+	char buf[MAX_PATH + 3];   /* strlen("*.*") */
 #endif
 
-	len = strlen(dir);
-	if (len >= MAX_PATH)
+	len = path_valid(dir, 0);
+	if (!len)
 		return NULL;
 
-	ctx = XMALLOC(struct walk_dir_context);
-	memset(ctx, 0, sizeof(*ctx));
+	ctx = XCALLOC(struct walk_dir_context);
 	strcpy(ctx->basedir, dir);
 
 	p = dir + len - 1;
-	if (*p != PATH_SEP_CHAR)
-		ctx->basedir[p-dir+1] = PATH_SEP_CHAR;
+	if (*p != PATH_SEP_CHAR) {
+		if (len + 1 == MAX_PATH)
+			return NULL;
+
+		ctx->basedir[len] = PATH_SEP_CHAR;
+	}
 
 #ifdef OS_WIN
 	snprintf(buf, MAX_PATH, "%s*.*", ctx->basedir);
@@ -1623,6 +1628,9 @@ struct walk_dir_context* walk_dir_begin(const char *dir)
 /* 遍历目录中的下一项 */
 int walk_dir_next(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return 0;
+
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	if (!FindNextFileW(ctx->hFind, &ctx->wfd))
@@ -1641,6 +1649,9 @@ int walk_dir_next(struct walk_dir_context *ctx)
 /* 该项是否是.(当前目录) */
 int walk_entry_is_dot(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return 0;
+
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	return !wcscmp(ctx->wfd.cFileName, L".");
@@ -1655,6 +1666,9 @@ int walk_entry_is_dot(struct walk_dir_context *ctx)
 /* 该项是否是..(上级目录) */
 int walk_entry_is_dotdot(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return 0;
+
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	return !wcscmp(ctx->wfd.cFileName, L"..");
@@ -1669,6 +1683,9 @@ int walk_entry_is_dotdot(struct walk_dir_context *ctx)
 /* 该项是否是目录 */
 int walk_entry_is_dir(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return 0;
+
 #ifdef OS_WIN
 	return ctx->wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 #else
@@ -1679,6 +1696,9 @@ int walk_entry_is_dir(struct walk_dir_context *ctx)
 /* 该项是否是文件 */
 int walk_entry_is_file(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return 0;
+
     return !walk_entry_is_dir(ctx);
 }
 
@@ -1686,6 +1706,9 @@ int walk_entry_is_file(struct walk_dir_context *ctx)
  * 在Linux系统上不是块设备、字符设备、FIFO等 */
 int walk_entry_is_regular(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return 0;
+
 #ifdef OS_WIN
 	if (ctx->wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
 		|| ctx->wfd.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM
@@ -1700,6 +1723,9 @@ int walk_entry_is_regular(struct walk_dir_context *ctx)
 /* 获取此项路径名 */
 const char* walk_entry_name(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return 0;
+
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	if (!UNI2UTF8(ctx->wfd.cFileName, ctx->filename, MAX_PATH))
@@ -1717,23 +1743,23 @@ const char* walk_entry_name(struct walk_dir_context *ctx)
 /* 获取此项路径名 */
 int walk_entry_path(struct walk_dir_context *ctx, char *buf, size_t len)
 {
-	const char* filename;
-	size_t tlen;
-
-	filename = walk_entry_name(ctx);
+	const char* filename = walk_entry_name(ctx);
 	if (!filename)
 		return 0;
 
-	tlen = strlen(ctx->basedir) + strlen(filename);
-	if (tlen + 1 > len)
+	if (xstrlcpy(buf, ctx->basedir, len) >= len ||
+		xstrlcat(buf, filename, len) >= len)
 		return 0;
 
-	return snprintf(buf, len, "%s%s", ctx->basedir, filename) > 0;
+	return 1;
 }
 
 /* 结束遍历 */
 void walk_dir_end(struct walk_dir_context *ctx)
 {
+	if (!ctx)
+		return;
+
 #ifdef OS_WIN
 	FindClose(ctx->hFind);
 #else

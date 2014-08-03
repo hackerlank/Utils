@@ -251,6 +251,78 @@ void*			StrToPtr(const std::string &str);								//将代表指针的十六进�
 //////////////////////////////////////////////////////////////////////////
 //封装类
 
+//计时器封装类
+class TimeMeter
+{
+public:
+	TimeMeter() {Reset();}
+
+	void Reset() {Start(); Stop();}
+
+	void Start() {time_meter_start(&t_);}
+	void Stop() {time_meter_stop(&t_);}
+
+	double ElapsedUS() const {return time_meter_elapsed_us(&t_);}
+	double ElapsedMS() const {return time_meter_elapsed_ms(&t_);}
+	double ElapsedS() const {return time_meter_elapsed_s(&t_);}
+
+	double ElapseUSTillNow() const {return time_meter_elapsed_us_till_now(&t_);}
+	double ElapseMSTillNow() const {return time_meter_elapsed_ms_till_now(&t_);}
+	double ElapseSTillNow()  const {return time_meter_elapsed_s_till_now(&t_);}
+
+private:
+	mutable time_meter_t t_;
+};
+
+//自动关闭打开的文件
+class ScopedFILE {
+public:
+	ScopedFILE(const std::string& path, const std::string& mode) {
+		fp_ = xfopen(path.c_str(), mode.c_str());
+	}
+	virtual ~ScopedFILE() {if (fp_) xfclose(fp_);}
+
+	FILE* get() {return fp_;}
+
+	bool valid() {return fp_ != NULL;}
+
+	size_t Read(void* buffer, size_t size, size_t count) {
+		if (!fp_) return 0; 
+		return fread(buffer, size, count, fp_);
+	}
+
+	size_t Write(const void* buffer, size_t size, size_t count) {
+		if (!fp_) return 0;
+		return fwrite(buffer, size, count, fp_);
+	}
+
+private:
+	FILE* fp_;
+};
+
+//遍历目录
+class ScopedWalkDir
+{
+public:
+	ScopedWalkDir(const std::string& dir);
+
+	~ScopedWalkDir();
+
+	bool Next();
+
+	bool IsDotOrDotDot() {return walk_entry_is_dot(ctx_) || walk_entry_is_dotdot(ctx_);}
+	bool IsFile() {return walk_entry_is_file(ctx_) == 1;}
+	bool IsDirectory() {return walk_entry_is_dir(ctx_) == 1;};
+	bool IsRegularFile() {return walk_entry_is_regular(ctx_) == 1;}
+
+	std::string Name();
+	std::string Path();
+
+private:
+	std::string dir_;
+	walk_dir_context* ctx_;
+};
+
 //线程类
 //派生线程类只需重写 RunImpl() 函数
 //如果需要线程一次初始化，在RunImpl()中首先调用Once()即可
@@ -460,55 +532,6 @@ public:
 
 private:
 	atomic_t val_;
-};
-
-//计时器类
-class TimeMeter
-{
-public:
-	TimeMeter() {Reset();}
-
-	void Reset() {Start(); Stop();}
-
-	void Start() {time_meter_start(&t_);}
-	void Stop() {time_meter_stop(&t_);}
-
-	double ElapsedUS() const {return time_meter_elapsed_us(&t_);}
-	double ElapsedMS() const {return time_meter_elapsed_ms(&t_);}
-	double ElapsedS() const {return time_meter_elapsed_s(&t_);}
-
-	double ElapseUSTillNow() const {return time_meter_elapsed_us_till_now(&t_);}
-	double ElapseMSTillNow() const {return time_meter_elapsed_ms_till_now(&t_);}
-	double ElapseSTillNow()  const {return time_meter_elapsed_s_till_now(&t_);}
-
-private:
-	mutable time_meter_t t_;
-};
-
-//自动关闭打开的文件
-class ScopedFILE {
-public:
-	ScopedFILE(const std::string& path, const std::string& mode) {
-		fp_ = xfopen(path.c_str(), mode.c_str());
-	}
-	virtual ~ScopedFILE() {if (fp_) xfclose(fp_);}
-
-	FILE* get() {return fp_;}
-
-	bool valid() {return fp_ != NULL;}
-
-	size_t Read(void* buffer, size_t size, size_t count) {
-		if (!fp_) return 0; 
-		return fread(buffer, size, count, fp_);
-	}
-
-	size_t Write(const void* buffer, size_t size, size_t count) {
-		if (!fp_) return 0;
-		return fwrite(buffer, size, count, fp_);
-	}
-
-private:
-	FILE* fp_;
 };
 
 //线程本地存储模板类

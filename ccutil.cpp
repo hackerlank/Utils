@@ -1054,6 +1054,46 @@ void* StrToPtr(std::string str)
 }
 
 //////////////////////////////////////////////////////////////////////////
+
+ScopedWalkDir::ScopedWalkDir(const std::string& dir)
+	: dir_(dir),
+	ctx_(NULL) {
+}
+
+ScopedWalkDir::~ScopedWalkDir() {
+	if (ctx_)
+		walk_dir_end(ctx_);
+}
+
+bool ScopedWalkDir::Next() {
+	if (!ctx_) {
+		ctx_ = walk_dir_begin(dir_.c_str());
+		if (!ctx_)
+			return false;
+
+		return true;
+	}
+
+	return walk_dir_next(ctx_) == 1;
+}
+
+std::string ScopedWalkDir::Name() {
+	const char* name = walk_entry_name(ctx_);
+	if (!name)
+		return "";
+
+	return name;
+}
+
+std::string ScopedWalkDir::Path() {
+	char buf[MAX_PATH];
+	if (!walk_entry_path(ctx_, buf, MAX_PATH))
+		return "";
+
+	return buf;
+}
+
+//////////////////////////////////////////////////////////////////////////
 //线程类
 
 Thread::Thread(int id)
