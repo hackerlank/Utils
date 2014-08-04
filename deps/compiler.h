@@ -1,6 +1,6 @@
 /************************************************************************
  * file: compiler-specific.h
- * desc: ç¼–è¯‘å™¨ç›¸å…³å®å®šä¹‰
+ * desc: ±àÒëÆ÷Ïà¹Øºê¶¨Òå
  * detail: GCC vs MSVC
  * author: liwei (www.leewei.org)
  * mailto: ari.feng@qq.com
@@ -12,14 +12,14 @@
 #ifndef UTILS_COMPILER_SPECIFIC_H
 #define UTILS_COMPILER_SPECIFIC_H
 
-/* ç¼–è¯‘å™¨ç±»å‹ */
+/* ±àÒëÆ÷ÀàĞÍ */
 #if defined(__GNUC__)
 #define COMPILER_GCC 1
 #elif defined(_MSC_VER)
 #define COMPILER_MSVC 1
 #endif
 
-/* VCç¼–è¯‘å™¨ */
+/* VC±àÒëÆ÷ */
 #if defined(COMPILER_MSVC)
 
 #define MSVC5    1100        /* VC 5.0 */
@@ -131,7 +131,7 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
 
 #define WUR    WARN_UNUSED_RESULT
 
-/* ç¦ç”¨å‡½æ•°å†…è”ä¼˜åŒ– */
+/* ½ûÓÃº¯ÊıÄÚÁªÓÅ»¯ */
 /* NOINLINE void DoStuff() { ... } */
 #if defined(COMPILER_GCC)
 #define NOINLINE __attribute__((noinline))
@@ -142,7 +142,7 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
 #endif
 
 /*
- * æŒ‡å®šç±»ã€ç»“æ„ä½“ç­‰å†…å­˜å¯¹é½
+ * Ö¸¶¨Àà¡¢½á¹¹ÌåµÈÄÚ´æ¶ÔÆë
  * class ALIGNAS(16) MyClass { ... }
  * ALIGNAS(16) int array[4];
  */
@@ -179,7 +179,7 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
 #define OVERRIDE
 #endif
 
-/* åˆ†æ”¯é¢„æµ‹ä¼˜åŒ– */
+/* ·ÖÖ§Ô¤²âÓÅ»¯ */
 #if defined(COMPILER_GCC)
 #define likely(x)            __builtin_expect(!!(x), 1)    
 #define unlikely(x)            __builtin_expect(!!(x), 0)
@@ -188,7 +188,7 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
 #define unlikely(x) (x)    
 #endif
 
-/* å¯å˜å‚æ•°æ¶æ„ä½“å¤åˆ¶ */
+/* ¿É±ä²ÎÊı¼Ü¹¹Ìå¸´ÖÆ */
 #if defined(COMPILER_GCC)
 #define VA_COPY(a, b) (va_copy(a, b))
 #elif defined(COMPILER_MSVC)

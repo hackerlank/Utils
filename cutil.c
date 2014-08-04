@@ -4041,7 +4041,7 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 /*
  * @fname: 读取文件的BOM头
  * @param: fp: 刚打开的文件流
- * @outbuf: 返回读取到得BOM头
+ * @outbuf: 返回BOM头所代表的字符集
  * @return: 成功返回1，outbuf存放所代表的字符集
  *			否则返回0，并将文件流定位到原来的位置
  */
