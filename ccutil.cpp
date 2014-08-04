@@ -1,4 +1,4 @@
-ï»¿#include "ccutil.h"
+#include "ccutil.h"
 
 #include <algorithm>
 #include <cctype>
@@ -8,7 +8,7 @@
 namespace utils{
 
 //////////////////////////////////////////////////////////////////////////
-//å­—ç¬¦ä¸²ç›¸å…³
+//×Ö·û´®Ïà¹Ø
 
 template<typename STR, typename CH>
 STR &TrimLeftCharT(STR &s, CH ch)
@@ -148,13 +148,10 @@ std::wstring &TrimWS(std::wstring &ws)
 	return Trim(ws, L" \r\n\t\v");
 }
 
-template<typename charT>
-struct char_ignore_case_equal {
-	char_ignore_case_equal() {}
-	bool operator() (charT ch1, charT ch2) {
-		return std::toupper(ch1) == std::toupper(ch2);
-	}
-};
+static bool char_ignore_case_equal(char a, char b) 
+{
+	return toupper(a) == toupper(b);
+}
 
 template<typename T>
 size_t FindIgnoreCaseT(const T& str1, const T& str2, size_t start_pos)
@@ -162,7 +159,7 @@ size_t FindIgnoreCaseT(const T& str1, const T& str2, size_t start_pos)
 	typename T::const_iterator it = std::search(
 		str1.begin() + start_pos, str1.end(), 
 		str2.begin(), str2.end(), 
-		char_ignore_case_equal<typename T::value_type>());
+		char_ignore_case_equal);
 	
 	if (it != str1.end())
 		return static_cast<size_t>(it - str1.begin());
@@ -253,8 +250,13 @@ std::wstring &EndWith(std::wstring &ws, const std::wstring &wm)
 template<typename STR, typename CH>
 STR &StartWithCharT(STR &s, CH ch)
 {
-	if (!s.empty() && s.at(0) != ch)
+	if (!s.empty() && s.at(0) != ch) {
+#if (!defined COMPILER_MSVC || _MSC_VER > MSVC6)
 		s.insert(0, 1, ch);
+#else
+		s.insert(0, ch);
+#endif
+	}
 
 	return s;
 }
@@ -290,7 +292,7 @@ std::wstring &StartWith(std::wstring &ws, const std::wstring &wm)
 	return StartWithStrT(ws, wm);
 }
 
-//è½¬æ¢å­—ç¬¦ä¸²ä¸ºå…¨å¤§/å°å†™å½¢å¼
+//×ª»»×Ö·û´®ÎªÈ«´ó/Ğ¡Ğ´ĞÎÊ½
 std::string	&UpperCase(std::string &s)
 {
 	std::transform(s.begin(), s.end(), s.begin(), toupper);
@@ -315,7 +317,7 @@ std::wstring &LowerCase(std::wstring &ws)
 	return ws;
 }
 
-//è§cutilçš„xasprintfå‡½æ•°
+//¼ûcutilµÄxasprintfº¯Êı
 std::string	FormatString(const char* format, ...)
 {
 	char stack_buf[512];
@@ -394,7 +396,7 @@ bool Split(const std::string &s, const std::string &sep, string_vec* vstr, bool 
 	return true;  
 }
 
-//è½¬ä¹‰HTMLç‰¹æ®Šå­—ç¬¦
+//×ªÒåHTMLÌØÊâ×Ö·û
 std::string EscapeHTML(const std::string &str)
 {
 	std::string s = str;
@@ -409,33 +411,33 @@ std::string EscapeHTML(const std::string &str)
 }
 
 //////////////////////////////////////////////////////////////////////////
-//å­—ç¬¦ç¼–ç 
+//×Ö·û±àÂë
 
-//å­—ç¬¦ä¸²æ˜¯çº¯ASCIIç¼–ç 
+//×Ö·û´®ÊÇ´¿ASCII±àÂë
 bool IsASCII(const std::string &input)
 {
 	return is_ascii(input.c_str(), input.length()) == 1;
 }
 
-//å­—ç¬¦ä¸²æ˜¯å¦æ˜¯UTF-8ç¼–ç 
+//×Ö·û´®ÊÇ·ñÊÇUTF-8±àÂë
 bool IsUTF8(const std::string &input)
 {
 	return is_utf8(input.c_str(), input.length()) == 1;
 }
 
-//å­—ç¬¦ä¸²æ˜¯å¦æ˜¯GB2312ç¼–ç 
+//×Ö·û´®ÊÇ·ñÊÇGB2312±àÂë
 bool IsGB2312(const std::string &input)
 {
 	return is_gb2312(input.c_str(), input.length()) == 1;
 }
 
-//å­—ç¬¦ä¸²æ˜¯å¦æ˜¯GBKç¼–ç çš„
+//×Ö·û´®ÊÇ·ñÊÇGBK±àÂëµÄ
 bool IsGBK(const std::string &input)
 {
 	return is_gbk(input.c_str(), input.length()) == 1;
 }
 
-//æ¢æµ‹å­—ç¬¦ä¸²çš„å­—ç¬¦é›†(ASCII,UTF-8,GB2312,GBK,GB18030)
+//Ì½²â×Ö·û´®µÄ×Ö·û¼¯(ASCII,UTF-8,GB2312,GBK,GB18030)
 std::string GetCharset(const std::string &str, bool ascii)
 {
 	std::string s;
@@ -448,9 +450,9 @@ std::string GetCharset(const std::string &str, bool ascii)
 	return s;
 }
 
-//æ¢æµ‹æ–‡ä»¶å­—ç¬¦é›†
-//æˆåŠŸè¿”å›æ–‡ä»¶çš„å­—ç¬¦é›†ï¼ˆå¦‚"UTF-8", "GBK")
-//å¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸²
+//Ì½²âÎÄ¼ş×Ö·û¼¯
+//³É¹¦·µ»ØÎÄ¼şµÄ×Ö·û¼¯£¨Èç"UTF-8", "GBK")
+//Ê§°Ü·µ»Ø¿Õ×Ö·û´®
 std::string GetFileCharset(const std::string &path, double &probability, int maxline)
 {
 	char buf[MAX_CHARSET];
@@ -461,13 +463,13 @@ std::string GetFileCharset(const std::string &path, double &probability, int max
 	return "";
 }
 
-//è·å–UTF-8å­—ç¬¦ä¸²çš„å­—ç¬¦æ•°
+//»ñÈ¡UTF-8×Ö·û´®µÄ×Ö·ûÊı
 int UTF8Length(const std::string &utf8)
 {
 	return utf8_len(utf8.c_str());
 }
 
-//æŒ‰ç…§æœ€å¤§å­—èŠ‚æ•°æˆªå–UTF-8å­—ç¬¦ä¸²
+//°´ÕÕ×î´ó×Ö½ÚÊı½ØÈ¡UTF-8×Ö·û´®
 std::string UTF8Trim(const std::string &utf8, size_t max_bytes)
 {
 	int len = utf8_trim(utf8.c_str(), NULL, max_bytes);
@@ -475,15 +477,15 @@ std::string UTF8Trim(const std::string &utf8, size_t max_bytes)
 	return len < 0 ? std::string() : utf8.substr(0, len);
 }
 
-//ç¼©ç•¥UTF8å­—ç¬¦ä¸²
-//å¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸²
+//ËõÂÔUTF8×Ö·û´®
+//Ê§°Ü·µ»Ø¿Õ×Ö·û´®
 std::string& UTF8Abbr(std::string &utf8, size_t max_bytes, 
 	size_t last_reserved_words)
 {
 	char *p = (char*)xmalloc(max_bytes + 1);
 
 	if (utf8_abbr(utf8.c_str(), p, max_bytes, last_reserved_words) < 0) {
-		utf8.clear();
+		utf8 = "";
 		return utf8;
 	}
 
@@ -493,7 +495,7 @@ std::string& UTF8Abbr(std::string &utf8, size_t max_bytes,
 	return utf8;
 }
 
-//å°†å®½å­—ç¬¦ä¸²è½¬æ¢ä¸ºå¤šå­—èŠ‚å­—ç¬¦ä¸²
+//½«¿í×Ö·û´®×ª»»Îª¶à×Ö½Ú×Ö·û´®
 std::string WstringTostring(const std::wstring& ws)
 {
 	std::string s;
@@ -508,7 +510,7 @@ std::string WstringTostring(const std::wstring& ws)
 	return s;
 }
 
-//å°†å¤šå­—èŠ‚å­—ç¬¦ä¸²è½¬æ¢ä¸ºå®½å­—ç¬¦ä¸²
+//½«¶à×Ö½Ú×Ö·û´®×ª»»Îª¿í×Ö·û´®
 std::wstring stringToWstring(const std::string& s)
 {
 	std::wstring ws;
@@ -523,7 +525,7 @@ std::wstring stringToWstring(const std::string& s)
 	return ws;
 }
 
-//å®½å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-8å­—ç¬¦ä¸²
+//¿í×Ö·û´®×ª»»ÎªUTF-8×Ö·û´®
 std::string WstringToUTF8string(const std::wstring &ws, bool bStrict)
 {
 	std::string utf8;
@@ -538,7 +540,7 @@ std::string WstringToUTF8string(const std::wstring &ws, bool bStrict)
 	return utf8;
 }
 
-//UTF-8å­—ç¬¦ä¸²è½¬æ¢ä¸ºå®½å­—ç¬¦ä¸²
+//UTF-8×Ö·û´®×ª»»Îª¿í×Ö·û´®
 std::wstring UTF8stringToWstring(const std::string &s, bool bStrict)
 {
 	std::wstring ws;
@@ -553,13 +555,13 @@ std::wstring UTF8stringToWstring(const std::string &s, bool bStrict)
 	return ws;
 }
 
-//å¤šå­—èŠ‚å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-8å­—ç¬¦ä¸²
+//¶à×Ö½Ú×Ö·û´®×ª»»ÎªUTF-8×Ö·û´®
 std::string stringToUTF8string(const std::string& s)
 {
 	return WstringToUTF8string(stringToWstring(s));
 }
 
-//UTF-8å­—ç¬¦ä¸²è½¬æ¢ä¸ºæœ¬åœ°å¤šå­—èŠ‚å­—ç¬¦ä¸²
+//UTF-8×Ö·û´®×ª»»Îª±¾µØ¶à×Ö½Ú×Ö·û´®
 std::string UTF8stringTostring(const std::string& s)
 {
 	return WstringTostring(UTF8stringToWstring(s));
@@ -593,7 +595,7 @@ std::string	UTF8stringToUTF7string(const std::string &s8)
 
 #ifdef _LIBICONV_H
 
-//è¿”å›ä¸€ä¸ªè½¬æ¢è¿‡ç¼–ç ä¹‹åçš„å­—ç¬¦ä¸²
+//·µ»ØÒ»¸ö×ª»»¹ı±àÂëÖ®ºóµÄ×Ö·û´®
 std::string ConvertToCharset(const std::string &from, const std::string &to, const std::string &input, bool strict)
 {
 	char buf[1024], *output;
@@ -618,27 +620,27 @@ std::string ConvertToCharset(const std::string &from, const std::string &to, con
 #endif /* _LIBICONV_H */
 
 //////////////////////////////////////////////////////////////////////////
-//æ–‡ä»¶ç³»ç»Ÿ
+//ÎÄ¼şÏµÍ³
 
-//æ˜¯å¦æ˜¯ç»å¯¹è·¯å¾„
+//ÊÇ·ñÊÇ¾ø¶ÔÂ·¾¶
 bool IsAbsolutePath(const std::string &path)
 {
 	return is_absolute_path(path.c_str()) == 1;
 }
 
-//æ˜¯å¦æ˜¯æ ¹è·¯å¾„ï¼ˆ/æˆ–C:\ï¼‰
+//ÊÇ·ñÊÇ¸ùÂ·¾¶£¨/»òC:\£©
 bool IsRootPath(const std::string &path)
 {
 	return is_root_path(path.c_str()) == 1;
 }
 
-//è¿”å›è·¯å¾„çš„æ–‡ä»¶åæˆ–æœ€åº•å±‚ç›®å½•å
+//·µ»ØÂ·¾¶µÄÎÄ¼şÃû»ò×îµ×²ãÄ¿Â¼Ãû
 std::string PathFindFileName(const std::string &path)	
 {
 	return path_find_file_name(path.c_str());
 }
 
-//è¿”å›æ–‡ä»¶çš„æ‰©å±•åï¼Œç›®å½•è¿”å›NULL
+//·µ»ØÎÄ¼şµÄÀ©Õ¹Ãû£¬Ä¿Â¼·µ»ØNULL
 std::string PathFindExtension(const std::string &path)
 {
 	return path_find_extension(path.c_str());
@@ -671,7 +673,7 @@ bool PathIsDirectory(const std::string &path)
 	return path_is_directory(path.c_str()) > 0;
 }
 
-//è·å–å¯ç”¨çš„æ–‡ä»¶è·¯å¾„
+//»ñÈ¡¿ÉÓÃµÄÎÄ¼şÂ·¾¶
 std::string& UniqueFile(std::string &path)
 {
 	char buf[MAX_PATH+1];
@@ -684,7 +686,7 @@ std::string& UniqueFile(std::string &path)
 	return path;
 }
 
-//è·å–å¯ç”¨çš„ç›®å½•è·¯å¾„
+//»ñÈ¡¿ÉÓÃµÄÄ¿Â¼Â·¾¶
 std::string& UniqueDir(std::string &path)
 {
 	char buf[MAX_PATH+1];
@@ -697,7 +699,7 @@ std::string& UniqueDir(std::string &path)
 	return path;
 }
 
-//å°†è·¯å¾„ä¸­çš„éæ³•å­—ç¬¦æ›¿æ¢ä¸º%HHçš„å½¢å¼
+//½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª%HHµÄĞÎÊ½
 std::string PathEscape(const std::string &path, int platform, bool reserve_separator)
 {
 	std::string s;
@@ -711,8 +713,8 @@ std::string PathEscape(const std::string &path, int platform, bool reserve_separ
 	return s;
 }
 
-//å°†è·¯å¾„ç»„æˆå…ƒç´ ï¼ˆç›®å½•åæˆ–æ–‡ä»¶åï¼‰åˆæ³•åŒ–
-//æ³¨æ„å¿…é¡»æ˜¯UTF-8ç¼–ç ï¼
+//½«Â·¾¶×é³ÉÔªËØ£¨Ä¿Â¼Ãû»òÎÄ¼şÃû£©ºÏ·¨»¯
+//×¢Òâ±ØĞëÊÇUTF-8±àÂë£¡
 std::string& PathComponentLegalize(std::string &component, int platform, size_t max_length)
 {
 	if (component.empty())
@@ -726,7 +728,7 @@ std::string& PathComponentLegalize(std::string &component, int platform, size_t 
 	utils::TrimWS(component);
 
 	if (platform == PATH_WINDOWS) {
-		//Windowsä¼šå¿½ç•¥æœ«å°¾çš„'.'å’Œ' '
+		//Windows»áºöÂÔÄ©Î²µÄ'.'ºÍ' '
 		utils::TrimRight(component, " .");
 	}
 
@@ -736,8 +738,8 @@ std::string& PathComponentLegalize(std::string &component, int platform, size_t 
 	return component;
 }
 
-//åˆæ³•åŒ–è·¯å¾„å
-//ä½¿ç”¨å½“å‰ç¼–è¯‘æ—¶å¹³å°çš„è·¯å¾„åˆ†éš”ç¬¦
+//ºÏ·¨»¯Â·¾¶Ãû
+//Ê¹ÓÃµ±Ç°±àÒëÊ±Æ½Ì¨µÄÂ·¾¶·Ö¸ô·û
 std::string& PathLegalize(std::string& path, int platform, size_t max_length)
 {
 	if (path.empty())
@@ -758,7 +760,7 @@ std::string& PathLegalize(std::string& path, int platform, size_t max_length)
 	Split(path, PATH_SEP_STR, &components, false);
 	size_t ncomp = components.size();
 	
-	path.clear();
+	path = "";
 	if (prefix_slash)
 		path += PATH_SEP_STR;
 
@@ -790,7 +792,7 @@ std::string	AbsolutePath(const std::string& relative)
 	return buf;
 }
 
-//æ„é€ ç›¸å¯¹è·¯å¾„
+//¹¹ÔìÏà¶ÔÂ·¾¶
 std::string RelativePath(const std::string& src, const std::string& dst, char sep)
 {
 	char link[MAX_PATH+1];
@@ -872,7 +874,7 @@ bool WriteFile(const std::string& path, const std::string& content)
 	return write_mem_file(path.c_str(), content.data(), content.length()) == 1;
 }
 
-//è·å–å¯è¯»æ€§å¼ºçš„æ–‡ä»¶é•¿åº¦å€¼ï¼Œå¦‚3bytes, 10KB, 1.5MB, 3GB
+//»ñÈ¡¿É¶ÁĞÔÇ¿µÄÎÄ¼ş³¤¶ÈÖµ£¬Èç3bytes, 10KB, 1.5MB, 3GB
 std::string FileSizeReadable(int64_t size)
 {
 	std::string s;
@@ -885,9 +887,9 @@ std::string FileSizeReadable(int64_t size)
 }
 
 //////////////////////////////////////////////////////////////////////////
-//æ›´å¤š
+//¸ü¶à
 
-//è·å–æ—¥æœŸæ—¶é—´å­—ç¬¦ä¸²ï¼Œå¦‚"2012-06-06 16:07:32"
+//»ñÈ¡ÈÕÆÚÊ±¼ä×Ö·û´®£¬Èç"2012-06-06 16:07:32"
 std::string DateTimeStr(time_t t)
 {
 	std::string s;
@@ -896,13 +898,13 @@ std::string DateTimeStr(time_t t)
 	return s;
 }
 
-//è·å–å½“å‰æ—¶é—´å­—ç¬¦ä¸²
+//»ñÈ¡µ±Ç°Ê±¼ä×Ö·û´®
 std::string CurrentTime()
 {
 	return DateTimeStr(time(NULL));
 }
 
-//è·å–æ—¥æœŸå­—ç¬¦ä¸²ï¼Œå¦‚"2012-06-06"
+//»ñÈ¡ÈÕÆÚ×Ö·û´®£¬Èç"2012-06-06"
 std::string DateStr(time_t t)
 {
 	std::string s;
@@ -912,7 +914,7 @@ std::string DateStr(time_t t)
 
 }
 
-//è·å–æ—¶é—´å­—ç¬¦ä¸²ï¼Œå¦‚"16:07:32"
+//»ñÈ¡Ê±¼ä×Ö·û´®£¬Èç"16:07:32"
 std::string TimeStr(time_t t)
 {
 	std::string s;
@@ -921,7 +923,7 @@ std::string TimeStr(time_t t)
 	return s;
 }
 
-//è·å–å¯è¯»æ€§å¼ºçš„æ—¶é—´å·®å­—ç¬¦ä¸²
+//»ñÈ¡¿É¶ÁĞÔÇ¿µÄÊ±¼ä²î×Ö·û´®
 std::string TimeSpanReadable(int64_t seconds, int cutoff)
 {
 	char buf[TIME_SPAN_BUFSIZE];
@@ -941,25 +943,25 @@ std::string GetExecuteName()
 	return get_execute_name();
 }
 
-//è·å–è¿›ç¨‹èµ·å§‹ç›®å½•ï¼ˆexeæ‰€åœ¨ç›®å½•ï¼‰
+//»ñÈ¡½ø³ÌÆğÊ¼Ä¿Â¼£¨exeËùÔÚÄ¿Â¼£©
 std::string	GetExecuteDir()
 {
 	return get_execute_dir();
 }
 
-//è·å–è¿›ç¨‹å½“å‰å·¥ä½œç›®å½•
+//»ñÈ¡½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼
 std::string	GetCurrentDir()
 {
 	return get_current_dir();
 }
 
-//è®¾ç½®è¿›ç¨‹å½“å‰å·¥ä½œç›®å½•
+//ÉèÖÃ½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼
 bool SetCurrentDir(const std::string &dir)
 {
 	return set_current_dir(dir.c_str()) == 1;
 }
 
-//è·å–å½“å‰ç”¨æˆ·çš„ä¸»ç›®å½•
+//»ñÈ¡µ±Ç°ÓÃ»§µÄÖ÷Ä¿Â¼
 std::string	GetHomeDir()
 {
 	return get_home_dir();
@@ -980,7 +982,7 @@ std::string GetTempFile(const std::string& prefix)
 	return get_temp_file(prefix.c_str());
 }
 
-//åˆ›å»ºè¿›ç¨‹
+//´´½¨½ø³Ì
 bool CreateProcess(const std::string& commandline, bool show, bool wait)
 {
 	process_t proc = process_create(commandline.c_str(), show ? 1 : 0);
@@ -1008,7 +1010,7 @@ bool CreateProcess(const std::string& commandline, bool show, bool wait)
 		return i;\
 	}
 
-//å­—ç¬¦<=>ä¸²æ•°å­—
+//×Ö·û<=>´®Êı×Ö
 NUM_TO_STR(int, Int, "%d");
 NUM_TO_STR(uint, UInt, "%u");
 NUM_TO_STR(size_t, Size, "%" PRIuS);
@@ -1018,7 +1020,7 @@ NUM_TO_STR(double, Double, "%lf");
 
 #undef NUM_TO_STR
 
-//ä»¥åå…­è¿›åˆ¶çš„å½¢å¼æŸ¥çœ‹ç¼“å†²åŒºçš„å†…å®¹
+//ÒÔÊ®Áù½øÖÆµÄĞÎÊ½²é¿´»º³åÇøµÄÄÚÈİ
 std::string HexDump(const void *buf, int len)
 {
 	std::string s;
@@ -1034,7 +1036,7 @@ std::string HexDump(const void *buf, int len)
 	return s;
 }
 
-// å°†æŒ‡é’ˆè½¬æ¢æˆåå…­è¿›åˆ¶çš„å­—ç¬¦ä¸²
+// ½«Ö¸Õë×ª»»³ÉÊ®Áù½øÖÆµÄ×Ö·û´®
 std::string PtrToStr(void *ptr)
 {
 	char buf[10];
@@ -1047,7 +1049,7 @@ std::string PtrToStr(void *ptr)
 	return s;
 }
 
-// å°†ä»£è¡¨æŒ‡é’ˆçš„åå…­è¿›åˆ¶çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºæŒ‡é’ˆå€¼
+// ½«´ú±íÖ¸ÕëµÄÊ®Áù½øÖÆµÄ×Ö·û´®×ª»»ÎªÖ¸ÕëÖµ
 void* StrToPtr(std::string str)
 {
 	return str_to_ptr(str.c_str());
@@ -1094,7 +1096,7 @@ std::string ScopedWalkDir::Path() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-//çº¿ç¨‹ç±»
+//Ïß³ÌÀà
 
 Thread::Thread(int id)
 	:id_(id),
@@ -1153,7 +1155,7 @@ bool Thread::Once()
 }; //namespace utils
 
 //////////////////////////////////////////////////////////////////////////
-//å†…å­˜è°ƒè¯•
+//ÄÚ´æµ÷ÊÔ
 
 #if (defined DBG_MEM) && (!defined COMPILER_MSVC || _MSC_VER > MSVC6)
 
@@ -1222,7 +1224,7 @@ void* operator new[](size_t size, const char *file, const char *func, int line)
 	return(ptr);
 }
 
-//ä½†æ˜¯ä»¥ä¸‹deleteå‡½æ•°ä»…å½“å¯¹è±¡æ„é€ å‡½æ•°æŠ›å‡ºå¼‚å¸¸æ—¶æ‰ä¼šè°ƒç”¨
+//µ«ÊÇÒÔÏÂdeleteº¯Êı½öµ±¶ÔÏó¹¹Ôìº¯ÊıÅ×³öÒì³£Ê±²Å»áµ÷ÓÃ
 void operator delete(void* ptr, const char* file, const char* func, int line)
 {
 	log_dprintf(LOG_ERROR, "{%s %s %d} Thrown on initializing object at %p.\n", path_find_file_name(file), func, line, ptr);

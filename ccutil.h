@@ -1,8 +1,8 @@
-ï»¿/**
+/**
  *
  * @file: ccutil.h
- * @desc: C++å·¥å…·å‡½æ•°åº“
- *		  è®¸å¤šå‡½æ•°ä»…ä»…æ˜¯ç›¸åº”cå‡½æ•°çš„å°è£…
+ * @desc: C++¹¤¾ßº¯Êı¿â
+ *		  Ğí¶àº¯Êı½ö½öÊÇÏàÓ¦cº¯ÊıµÄ·â×°
  * @auth: liwei (www.leewei.org)
  * @mail: ari.feng@qq.com
  * @date: 2012/4/06
@@ -26,8 +26,8 @@
 #define STL_CONTAINS(container, key) \
 	(container.find(key) != container.end())
 
-//æ³¨ï¼šg++ä¸‹ä½¿ç”¨æ­¤å®éœ€æ‰‹åŠ¨å¼€å¯C++11æ”¯æŒ
-//å³æ·»åŠ -std=c++11æˆ–-std=gnu++11å‘½ä»¤è¡Œé€‰é¡¹(å‰è€…ç¦ç”¨äº†GNUæ‰©å±•)
+//×¢£ºg++ÏÂÊ¹ÓÃ´ËºêĞèÊÖ¶¯¿ªÆôC++11Ö§³Ö
+//¼´Ìí¼Ó-std=c++11»ò-std=gnu++11ÃüÁîĞĞÑ¡Ïî(Ç°Õß½ûÓÃÁËGNUÀ©Õ¹)
 #define STL_FOR_EACH(iter, container) \
 	for (auto iter = (container).begin(); iter != (container).end(); ++iter)
 
@@ -36,197 +36,197 @@
 
 namespace utils {
 
-//ç±»å‹å®šä¹‰
+//ÀàĞÍ¶¨Òå
 typedef std::list<std::string> string_list;
 typedef std::vector<std::string> string_vec;
 
 //////////////////////////////////////////////////////////////////////////
-//å­—ç¬¦ä¸²
+//×Ö·û´®
 
-//å»é™¤å·¦è¾¹çš„å­—ç¬¦æˆ–å­—ç¬¦ä¸²ä¸­åŒ…å«çš„æ‰€æœ‰å­—ç¬¦
+//È¥³ı×ó±ßµÄ×Ö·û»ò×Ö·û´®ÖĞ°üº¬µÄËùÓĞ×Ö·û
 std::string		&TrimLeft(std::string &s, char c);
 std::wstring	&TrimLeft(std::wstring &ws, wchar_t wc);
 std::string		&TrimLeft(std::string &s, const std::string &m);
 std::wstring	&TrimLeft(std::wstring &ws, const std::wstring &wm);
 
-//å»é™¤å³è¾¹çš„å­—ç¬¦æˆ–å­—ç¬¦ä¸²ä¸­åŒ…å«çš„æ‰€æœ‰å­—ç¬¦
+//È¥³ıÓÒ±ßµÄ×Ö·û»ò×Ö·û´®ÖĞ°üº¬µÄËùÓĞ×Ö·û
 std::string		&TrimRight(std::string &s, char c);
 std::wstring	&TrimRight(std::wstring &ws, wchar_t wc);
 std::string		&TrimRight(std::string &s, const std::string &m);
 std::wstring	&TrimRight(std::wstring &ws, const std::wstring &wm);
 
-//å»é™¤ä¸¤è¾¹çš„å­—ç¬¦æˆ–å­—ç¬¦ä¸²ä¸­åŒ…å«çš„æ‰€æœ‰å­—ç¬¦
+//È¥³ıÁ½±ßµÄ×Ö·û»ò×Ö·û´®ÖĞ°üº¬µÄËùÓĞ×Ö·û
 std::string		&Trim(std::string &s, char c);
 std::wstring	&Trim(std::wstring &ws, wchar_t wc);
 std::string		&Trim(std::string &s, const std::string &m);
 std::wstring	&Trim(std::wstring &ws, const std::wstring &wm);
 
-//å»é™¤ä¸¤è¾¹çš„ä¸å¯æ‰“å°å­—ç¬¦(e.g " \r\n\t\v")
+//È¥³ıÁ½±ßµÄ²»¿É´òÓ¡×Ö·û(e.g " \r\n\t\v")
 std::string		&TrimWS(std::string &s);
 std::wstring	&TrimWS(std::wstring &ws);
 
-//å¿½ç•¥å¤§å°å†™æŸ¥æ‰¾å­å­—ç¬¦ä¸²
-//æ‰¾åˆ°è¿”å›å­å­—ç¬¦ä¸²æ‰€åœ¨ä½ç½®ï¼Œæœªæ‰¾åˆ°è¿”å›std::string::npos
+//ºöÂÔ´óĞ¡Ğ´²éÕÒ×Ó×Ö·û´®
+//ÕÒµ½·µ»Ø×Ó×Ö·û´®ËùÔÚÎ»ÖÃ£¬Î´ÕÒµ½·µ»Østd::string::npos
 size_t			StrCaseStr(const std::string& haystack, const std::string& needle, size_t start_pos = 0);
 size_t			StrCaseStr(const std::wstring& whaystack, const std::wstring& wneedle, size_t start_pos = 0);
 
-//æ›¿æ¢å­—ç¬¦ä¸²ä¸ºæ–°å­—ç¬¦ä¸²
+//Ìæ»»×Ö·û´®ÎªĞÂ×Ö·û´®
 std::string		&Replace(std::string &s, const std::string &olds, const std::string &news, bool ignore_case = false);
 std::wstring	&Replace(std::wstring &s, const std::wstring &olds, const std::wstring &news, bool ignore_case = false);
 
-//ä½¿å­—ç¬¦ä¸²ä»¥æŒ‡å®šå­—ç¬¦[ä¸²]å¼€å¤´
+//Ê¹×Ö·û´®ÒÔÖ¸¶¨×Ö·û[´®]¿ªÍ·
 std::string		&StartWith(std::string &s, char c);
 std::wstring	&StartWith(std::wstring &ws, wchar_t wc);
 std::string		&StartWith(std::string &s, const std::string &m);
 std::wstring	&StartWith(std::wstring &ws, const std::wstring &wm);
 
-//ä½¿å­—ç¬¦ä¸²ä»¥æŒ‡å®šå­—ç¬¦[ä¸²]ç»“å°¾
+//Ê¹×Ö·û´®ÒÔÖ¸¶¨×Ö·û[´®]½áÎ²
 std::string		&EndWith(std::string &s, char c);
 std::wstring	&EndWith(std::wstring &ws, wchar_t wc);
 std::string		&EndWith(std::string &s, const std::string &m);
 std::wstring	&EndWith(std::wstring &ws, const std::wstring &wm);
 
-//å°†å­—ç¬¦ä¸²è½¬æ¢ä¸ºå¤§/å°å†™
-//ï¼ˆæ³¨ï¼šä»…é’ˆå¯¹çº¯ASCIIæˆ–UTF-8å­—ç¬¦ä¸²ï¼‰
+//½«×Ö·û´®×ª»»Îª´ó/Ğ¡Ğ´
+//£¨×¢£º½öÕë¶Ô´¿ASCII»òUTF-8×Ö·û´®£©
 std::string		&UpperCase(std::string &s);
 std::wstring	&UpperCase(std::wstring &ws);
 std::string		&LowerCase(std::string &s);
 std::wstring	&LowerCase(std::wstring &ws);
 
-//æ ¼å¼åŒ–å­—ç¬¦ä¸²
+//¸ñÊ½»¯×Ö·û´®
 std::string		FormatString(const char* format, ...);
 
-//åˆ†å‰²å­—ç¬¦ä¸²
+//·Ö¸î×Ö·û´®
 bool			Split(const std::string &str, const std::string &sep, 
 					  string_vec* vector, bool allow_null);
 
-//è½¬ä¹‰HTMLçš„ç‰¹æ®Šå­—ç¬¦
+//×ªÒåHTMLµÄÌØÊâ×Ö·û
 std::string		EscapeHTML(const std::string &str);
 
 //////////////////////////////////////////////////////////////////////////
-//å­—ç¬¦ç¼–ç 
+//×Ö·û±àÂë
 
-bool			IsASCII(const std::string &input);								//å­—ç¬¦ä¸²æ˜¯çº¯ASCIIç¼–ç 
-bool			IsUTF8(const std::string &input);								//å­—ç¬¦ä¸²æ˜¯å¦æ˜¯UTF-8ç¼–ç 
-bool			IsGB2312(const std::string &input);								//å­—ç¬¦ä¸²æ˜¯å¦æ˜¯GB2312ç¼–ç 
-bool			IsGBK(const std::string &input);								//å­—ç¬¦ä¸²æ˜¯å¦æ˜¯GBKç¼–ç çš„
+bool			IsASCII(const std::string &input);								//×Ö·û´®ÊÇ´¿ASCII±àÂë
+bool			IsUTF8(const std::string &input);								//×Ö·û´®ÊÇ·ñÊÇUTF-8±àÂë
+bool			IsGB2312(const std::string &input);								//×Ö·û´®ÊÇ·ñÊÇGB2312±àÂë
+bool			IsGBK(const std::string &input);								//×Ö·û´®ÊÇ·ñÊÇGBK±àÂëµÄ
 
-std::string		GetCharset(const std::string &str, bool ascii = true);			//æ¢æµ‹å­—ç¬¦ä¸²çš„å­—ç¬¦é›†(ASCII,UTF-8,GB2312,GBK,GB18030)
-std::string		GetFileCharset(const std::string &path, double &probability, 	//åˆ¤æ–­æ–‡ä»¶å­—ç¬¦é›†ï¼Œæœ€å¤šæ¢æµ‹maxlineè¡Œ
+std::string		GetCharset(const std::string &str, bool ascii = true);			//Ì½²â×Ö·û´®µÄ×Ö·û¼¯(ASCII,UTF-8,GB2312,GBK,GB18030)
+std::string		GetFileCharset(const std::string &path, double &probability, 	//ÅĞ¶ÏÎÄ¼ş×Ö·û¼¯£¬×î¶àÌ½²âmaxlineĞĞ
 								int maxline = 0);
 
-int				UTF8Length(const std::string &utf8);							//è·å–UTF-8å­—ç¬¦ä¸²çš„å­—ç¬¦æ•°
-std::string		UTF8Trim(const std::string &utf8, size_t max_bytes);			//æŒ‰ç…§æœ€å¤§å­—èŠ‚æ•°æˆªå–UTF-8å­—ç¬¦ä¸²
-std::string&	UTF8Abbr(std::string &utf8, size_t max_bytes,					//ç®€å†™UTF-8å­—ç¬¦ä¸²åˆ°æŒ‡å®šæœ€å¤§é•¿åº¦ï¼Œä¿ç•™æœ€å‰å’Œæœ€åçš„å­—ç¬¦ï¼Œä¸­é—´ç”¨...è¡¨ç¤ºçœç•¥
-						size_t last_reserved_words = 3);						//last_reserved_wordsæŒ‡æœ€ååº”ä¿ç•™å¤šå°‘ä¸ªå­—ç¬¦ï¼ˆæ³¨æ„ä¸æ˜¯å­—èŠ‚ï¼‰
+int				UTF8Length(const std::string &utf8);							//»ñÈ¡UTF-8×Ö·û´®µÄ×Ö·ûÊı
+std::string		UTF8Trim(const std::string &utf8, size_t max_bytes);			//°´ÕÕ×î´ó×Ö½ÚÊı½ØÈ¡UTF-8×Ö·û´®
+std::string&	UTF8Abbr(std::string &utf8, size_t max_bytes,					//¼òĞ´UTF-8×Ö·û´®µ½Ö¸¶¨×î´ó³¤¶È£¬±£Áô×îÇ°ºÍ×îºóµÄ×Ö·û£¬ÖĞ¼äÓÃ...±íÊ¾Ê¡ÂÔ
+						size_t last_reserved_words = 3);						//last_reserved_wordsÖ¸×îºóÓ¦±£Áô¶àÉÙ¸ö×Ö·û£¨×¢Òâ²»ÊÇ×Ö½Ú£©
 
-//å®½å­—ç¬¦ä¸² <=> å¤šå­—èŠ‚å­—ç¬¦ä¸²
+//¿í×Ö·û´® <=> ¶à×Ö½Ú×Ö·û´®
 std::string		WstringTostring(const std::wstring& ws);						
 std::wstring	stringToWstring(const std::string& s);						
 
-//å®½å­—ç¬¦ä¸² <=> UTF-8 å­—ç¬¦ä¸²
+//¿í×Ö·û´® <=> UTF-8 ×Ö·û´®
 std::string		WstringToUTF8string(const std::wstring &ws, bool bStrict = false); 
 std::wstring	UTF8stringToWstring(const std::string &s, bool bStrict = false); 
 
-//å¤šå­—èŠ‚å­—ç¬¦ä¸² <=> UTF-8 å­—ç¬¦ä¸²
+//¶à×Ö½Ú×Ö·û´® <=> UTF-8 ×Ö·û´®
 std::string		stringToUTF8string(const std::string& s);
 std::string		UTF8stringTostring(const std::string& s);
 
-//UTF-8 å­—ç¬¦ä¸² <=> UTF-7 å­—ç¬¦ä¸²
+//UTF-8 ×Ö·û´® <=> UTF-7 ×Ö·û´®
 std::string		UTF7stringToUTF8string(const std::string &utf7);
 std::string		UTF8stringToUTF7string(const std::string &utf8);
 
 #ifdef _LIBICONV_H
 
-std::string		ConvertToCharset(const std::string &from,						//è¿”å›ä¸€ä¸ªè½¬æ¢è¿‡ç¼–ç ä¹‹åçš„å­—ç¬¦ä¸²
+std::string		ConvertToCharset(const std::string &from,						//·µ»ØÒ»¸ö×ª»»¹ı±àÂëÖ®ºóµÄ×Ö·û´®
 					const std::string &to,const std::string &input, bool strict = false);
 #endif
 
 //////////////////////////////////////////////////////////////////////////
-//æ–‡ä»¶ç³»ç»Ÿ
+//ÎÄ¼şÏµÍ³
 
-bool			IsAbsolutePath(const std::string &path);						//æ˜¯å¦æ˜¯ç»å¯¹è·¯å¾„
-bool			IsRootPath(const std::string &path);							//æ˜¯å¦æ˜¯æ ¹è·¯å¾„ï¼ˆ/æˆ–C:\ï¼‰
+bool			IsAbsolutePath(const std::string &path);						//ÊÇ·ñÊÇ¾ø¶ÔÂ·¾¶
+bool			IsRootPath(const std::string &path);							//ÊÇ·ñÊÇ¸ùÂ·¾¶£¨/»òC:\£©
 
-std::string		PathFindFileName(const std::string &path);						//è¿”å›è·¯å¾„çš„æ–‡ä»¶åæˆ–æœ€åº•å±‚ç›®å½•å
-std::string		PathFindExtension(const std::string &path);						//è¿”å›æ–‡ä»¶çš„æ‰©å±•åï¼Œç›®å½•è¿”å›NULL
-std::string		PathFindDirectory(const std::string &path);						//è¿”å›è·¯å¾„æ‰€æŒ‡ç›®å½•/æ–‡ä»¶çš„ä¸Šçº§ç›®å½•è·¯å¾„(è·¯å¾„åéœ€ä¸ºUTF-8ç¼–ç )
+std::string		PathFindFileName(const std::string &path);						//·µ»ØÂ·¾¶µÄÎÄ¼şÃû»ò×îµ×²ãÄ¿Â¼Ãû
+std::string		PathFindExtension(const std::string &path);						//·µ»ØÎÄ¼şµÄÀ©Õ¹Ãû£¬Ä¿Â¼·µ»ØNULL
+std::string		PathFindDirectory(const std::string &path);						//·µ»ØÂ·¾¶ËùÖ¸Ä¿Â¼/ÎÄ¼şµÄÉÏ¼¶Ä¿Â¼Â·¾¶(Â·¾¶ÃûĞèÎªUTF-8±àÂë)
 
-bool			PathFileExists(const std::string &path);						//è·¯å¾„æ‰€æŒ‡æ–‡ä»¶/ç›®å½•æ˜¯å¦å­˜åœ¨
-bool			PathIsFile(const std::string &path);							//è·¯å¾„æ˜¯å¦æ˜¯æ–‡ä»¶
-bool			PathIsDirectory(const std::string &path);						//è·¯å¾„æ˜¯å¦æ˜¯æœ‰æ•ˆç›®å½•
+bool			PathFileExists(const std::string &path);						//Â·¾¶ËùÖ¸ÎÄ¼ş/Ä¿Â¼ÊÇ·ñ´æÔÚ
+bool			PathIsFile(const std::string &path);							//Â·¾¶ÊÇ·ñÊÇÎÄ¼ş
+bool			PathIsDirectory(const std::string &path);						//Â·¾¶ÊÇ·ñÊÇÓĞĞ§Ä¿Â¼
 
-std::string&	UniqueFile(std::string &path);									//è·å–å¯ç”¨çš„æ–‡ä»¶è·¯å¾„				
+std::string&	UniqueFile(std::string &path);									//»ñÈ¡¿ÉÓÃµÄÎÄ¼şÂ·¾¶				
 
-std::string&	UniqueDir(std::string &path);									//è·å–å¯ç”¨çš„ç›®å½•è·¯å¾„				
+std::string&	UniqueDir(std::string &path);									//»ñÈ¡¿ÉÓÃµÄÄ¿Â¼Â·¾¶				
 
-std::string		PathEscape(const std::string &path, 							//å°†è·¯å¾„ä¸­çš„éæ³•å­—ç¬¦æ›¿æ¢ä¸º%HHçš„å½¢å¼
+std::string		PathEscape(const std::string &path, 							//½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª%HHµÄĞÎÊ½
 							int platform = PATH_PLATFORM,
 							bool reserve_separator = false);	
 
-std::string&	PathComponentLegalize(std::string &component,					//è·¯å¾„å…ƒç´ åˆæ³•åŒ–
+std::string&	PathComponentLegalize(std::string &component,					//Â·¾¶ÔªËØºÏ·¨»¯
 							int platform = PATH_PLATFORM,
 							size_t max_length = MAX_PATH / 5);
 
-std::string&	PathLegalize(std::string& path,									//è·¯å¾„åˆæ³•åŒ–
+std::string&	PathLegalize(std::string& path,									//Â·¾¶ºÏ·¨»¯
 							int platform = PATH_PLATFORM,
 							size_t max_length = MAX_PATH);
 
-std::string		AbsolutePath(const std::string& relative);						//è·å–ç›¸å¯¹äºå½“å‰å·¥ä½œç›®å½•çš„ç»å¯¹è·¯å¾„
-std::string		RelativePath(const std::string& src, const std::string& dst,	//è·å–srcæŒ‡å®šdstçš„ç›¸å¯¹é“¾æ¥
+std::string		AbsolutePath(const std::string& relative);						//»ñÈ¡Ïà¶ÔÓÚµ±Ç°¹¤×÷Ä¿Â¼µÄ¾ø¶ÔÂ·¾¶
+std::string		RelativePath(const std::string& src, const std::string& dst,	//»ñÈ¡srcÖ¸¶¨dstµÄÏà¶ÔÁ´½Ó
 							char sep = PATH_SEP_CHAR);
 
-//æ–‡ä»¶
-bool			CopyFile(const std::string &src, const std::string &dst,		//å¤åˆ¶æ–‡ä»¶
+//ÎÄ¼ş
+bool			CopyFile(const std::string &src, const std::string &dst,		//¸´ÖÆÎÄ¼ş
 							bool bOverWrite = false) WUR;
-bool			MoveFile(const std::string &src, const std::string &dst,		//ç§»åŠ¨æ–‡ä»¶
+bool			MoveFile(const std::string &src, const std::string &dst,		//ÒÆ¶¯ÎÄ¼ş
 							bool bOverWrite = false) WUR;
-bool			DeleteFile(const std::string &file) WUR;						//åˆ é™¤æ–‡ä»¶
+bool			DeleteFile(const std::string &file) WUR;						//É¾³ıÎÄ¼ş
 
-//ç›®å½•
-bool			CreateDirectory(const std::string &dir) WUR;					//åˆ›å»ºå•å±‚ç›®å½•
-bool			CreateDirectories(const std::string &dir) WUR;					//é€’å½’åˆ›å»ºçˆ¶å±‚ç›®å½•
+//Ä¿Â¼
+bool			CreateDirectory(const std::string &dir) WUR;					//´´½¨µ¥²ãÄ¿Â¼
+bool			CreateDirectories(const std::string &dir) WUR;					//µİ¹é´´½¨¸¸²ãÄ¿Â¼
 
-bool			DeleteDirectory(const std::string &dir) WUR;					//åˆ é™¤ç©ºç›®å½•
+bool			DeleteDirectory(const std::string &dir) WUR;					//É¾³ı¿ÕÄ¿Â¼
 bool			DeleteDirectories(const std::string &dir,
-							delete_dir_cb func = NULL, void *arg = NULL) WUR;	//åˆ é™¤ä¸€ä¸ªç›®å½•åŠåŒ…å«çš„æ‰€æœ‰å†…å®¹
-bool			DeleteEmptyDirectories(const std::string &dir) WUR;				//åˆ é™¤ä¸€ä¸ªç›®å½•ä¸‹çš„æ‰€æœ‰ä¸åŒ…å«æ–‡ä»¶çš„ç›®å½•
+							delete_dir_cb func = NULL, void *arg = NULL) WUR;	//É¾³ıÒ»¸öÄ¿Â¼¼°°üº¬µÄËùÓĞÄÚÈİ
+bool			DeleteEmptyDirectories(const std::string &dir) WUR;				//É¾³ıÒ»¸öÄ¿Â¼ÏÂµÄËùÓĞ²»°üº¬ÎÄ¼şµÄÄ¿Â¼
 
 bool			CopyDirectories(const std::string &srcdir, const std::string &dstdir,
-							copy_dir_cb func = NULL, void *arg = NULL) WUR;		// å°†srcç›®å½•æ‹·è´åˆ°dstç›®å½•ä¸‹ï¼ˆç”¨æ³•åŠæ³¨æ„è§copy_directoriesï¼‰
+							copy_dir_cb func = NULL, void *arg = NULL) WUR;		// ½«srcÄ¿Â¼¿½±´µ½dstÄ¿Â¼ÏÂ£¨ÓÃ·¨¼°×¢Òâ¼ûcopy_directories£©
 
-//æ–‡ä»¶å±æ€§
-int64_t			FileSize(const std::string &path);								//è·å–æ–‡ä»¶å¤§å°
-std::string		FileSizeReadable(int64_t size);									//è·å–å¯è¯»æ€§å¼ºçš„æ–‡ä»¶é•¿åº¦å€¼ï¼Œå¦‚3bytes, 10KB, 1.5MB, 3GB
+//ÎÄ¼şÊôĞÔ
+int64_t			FileSize(const std::string &path);								//»ñÈ¡ÎÄ¼ş´óĞ¡
+std::string		FileSizeReadable(int64_t size);									//»ñÈ¡¿É¶ÁĞÔÇ¿µÄÎÄ¼ş³¤¶ÈÖµ£¬Èç3bytes, 10KB, 1.5MB, 3GB
 
-bool			ReadFile(const std::string& path, std::string* content,			//å°†æ–‡ä»¶è¯»å…¥å†…å­˜
+bool			ReadFile(const std::string& path, std::string* content,			//½«ÎÄ¼ş¶ÁÈëÄÚ´æ
 						size_t max_size = 0);
-bool			WriteFile(const std::string& path, const std::string& content);	//å°†å†…å­˜å†™å…¥æ–‡ä»¶
+bool			WriteFile(const std::string& path, const std::string& content);	//½«ÄÚ´æĞ´ÈëÎÄ¼ş
 
-std::string		GetExecutePath();												//è·å–è¿›ç¨‹è·¯å¾„å(å³argv[0])
-std::string		GetExecuteName();												//è·å–è¿›ç¨‹æ–‡ä»¶å
-std::string		GetExecuteDir();												//è·å–è¿›ç¨‹èµ·å§‹ç›®å½•ï¼ˆexeæ‰€åœ¨ç›®å½•ï¼‰
+std::string		GetExecutePath();												//»ñÈ¡½ø³ÌÂ·¾¶Ãû(¼´argv[0])
+std::string		GetExecuteName();												//»ñÈ¡½ø³ÌÎÄ¼şÃû
+std::string		GetExecuteDir();												//»ñÈ¡½ø³ÌÆğÊ¼Ä¿Â¼£¨exeËùÔÚÄ¿Â¼£©
 
-std::string		GetCurrentDir();												//è·å–è¿›ç¨‹å½“å‰å·¥ä½œç›®å½•
-bool			SetCurrentDir(const std::string &dir) WUR;						//è®¾ç½®è¿›ç¨‹å½“å‰å·¥ä½œç›®å½•
+std::string		GetCurrentDir();												//»ñÈ¡½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼
+bool			SetCurrentDir(const std::string &dir) WUR;						//ÉèÖÃ½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼
 
-std::string		GetHomeDir();													//è·å–å½“å‰ç”¨æˆ·çš„ä¸»ç›®å½•
-std::string	    GetAppDataDir();												//è·å–ç”µè„‘AppDataç›®å½•
-std::string		GetTempDir();													//è·å–ä¸´æ—¶ç›®å½•
-std::string		GetTempFile(const std::string& prefix);							//è·å–ä¸´æ—¶æ–‡ä»¶çš„è·¯å¾„ï¼ˆéçº¿ç¨‹å®‰å…¨ï¼‰
+std::string		GetHomeDir();													//»ñÈ¡µ±Ç°ÓÃ»§µÄÖ÷Ä¿Â¼
+std::string	    GetAppDataDir();												//»ñÈ¡µçÄÔAppDataÄ¿Â¼
+std::string		GetTempDir();													//»ñÈ¡ÁÙÊ±Ä¿Â¼
+std::string		GetTempFile(const std::string& prefix);							//»ñÈ¡ÁÙÊ±ÎÄ¼şµÄÂ·¾¶£¨·ÇÏß³Ì°²È«£©
 
-//è¿›ç¨‹
+//½ø³Ì
 bool			CreateProcess(const std::string& commandline,
-							bool show = false, bool wait = false);				//åˆ›å»ºæ–°çš„è¿›ç¨‹
+							bool show = false, bool wait = false);				//´´½¨ĞÂµÄ½ø³Ì
 
-//æ—¥æœŸæ—¶é—´
-std::string		DateStr(time_t t);												//è·å–æ—¥æœŸå­—ç¬¦ä¸²ï¼Œå¦‚"2012-06-06"
-std::string		TimeStr(time_t t);												//è·å–æ—¶é—´å­—ç¬¦ä¸²ï¼Œå¦‚"16:07:32"
-std::string		DateTimeStr(time_t t);											//è·å–æ—¥æœŸæ—¶é—´å­—ç¬¦ä¸²ï¼Œå¦‚"2012-06-06 16:07:32"
-std::string		CurrentTime();													//è·å–å½“å‰æ—¶é—´å­—ç¬¦ä¸²
-std::string		TimeSpanReadable(int64_t seconds, int cutoff = 3);				//è¿”å›ä¸€ä¸ªå¯è¯»æ€§å¼ºçš„æ—¶é—´å·®ï¼Œå¦‚"1å¤©20å°æ—¶13åˆ†24ç§’"
+//ÈÕÆÚÊ±¼ä
+std::string		DateStr(time_t t);												//»ñÈ¡ÈÕÆÚ×Ö·û´®£¬Èç"2012-06-06"
+std::string		TimeStr(time_t t);												//»ñÈ¡Ê±¼ä×Ö·û´®£¬Èç"16:07:32"
+std::string		DateTimeStr(time_t t);											//»ñÈ¡ÈÕÆÚÊ±¼ä×Ö·û´®£¬Èç"2012-06-06 16:07:32"
+std::string		CurrentTime();													//»ñÈ¡µ±Ç°Ê±¼ä×Ö·û´®
+std::string		TimeSpanReadable(int64_t seconds, int cutoff = 3);				//·µ»ØÒ»¸ö¿É¶ÁĞÔÇ¿µÄÊ±¼ä²î£¬Èç"1Ìì20Ğ¡Ê±13·Ö24Ãë"
 
-//æ•°å­—=>å­—ç¬¦ä¸²
+//Êı×Ö=>×Ö·û´®
 std::string		IntToStr(int i);
 std::string		UIntToStr(uint i);
 std::string		SizeToStr(size_t i);
@@ -234,7 +234,7 @@ std::string		Int64ToStr(int64_t i);
 std::string		UInt64ToStr(uint64_t i);
 std::string		DoubleToStr(double i);
 
-//å­—ç¬¦ä¸²=>æ•°å­—
+//×Ö·û´®=>Êı×Ö
 int				StrToInt(const std::string &s);	
 uint			StrToUInt(const std::string &s);
 size_t			StrToSize(const std::string &s);
@@ -242,16 +242,16 @@ int64_t			StrToInt64(const std::string &s);
 uint64_t		StrToUInt64(const std::string &s);
 double			StrToDouble(const std::string &s);
 
-//è°ƒè¯•ç›¸å…³
-std::string		HexDump(const void *buf, int len);								//è¿”å›ä¸€å—ç¼“å†²åŒºçš„16è¿›è¡Œæè¿°å­—ç¬¦ä¸²
+//µ÷ÊÔÏà¹Ø
+std::string		HexDump(const void *buf, int len);								//·µ»ØÒ»¿é»º³åÇøµÄ16½øĞĞÃèÊö×Ö·û´®
 
-std::string		PtrToStr(void *ptr);											//å°†æŒ‡é’ˆè½¬æ¢æˆåå…­è¿›åˆ¶çš„å­—ç¬¦ä¸²
-void*			StrToPtr(const std::string &str);								//å°†ä»£è¡¨æŒ‡é’ˆçš„åå…­è¿›åˆ¶çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºæŒ‡é’ˆå€¼
+std::string		PtrToStr(void *ptr);											//½«Ö¸Õë×ª»»³ÉÊ®Áù½øÖÆµÄ×Ö·û´®
+void*			StrToPtr(const std::string &str);								//½«´ú±íÖ¸ÕëµÄÊ®Áù½øÖÆµÄ×Ö·û´®×ª»»ÎªÖ¸ÕëÖµ
 
 //////////////////////////////////////////////////////////////////////////
-//å°è£…ç±»
+//·â×°Àà
 
-//è®¡æ—¶å™¨å°è£…ç±»
+//¼ÆÊ±Æ÷·â×°Àà
 class TimeMeter
 {
 public:
@@ -274,7 +274,7 @@ private:
 	mutable time_meter_t t_;
 };
 
-//è‡ªåŠ¨å…³é—­æ‰“å¼€çš„æ–‡ä»¶
+//×Ô¶¯¹Ø±Õ´ò¿ªµÄÎÄ¼ş
 class ScopedFILE {
 public:
 	ScopedFILE(const std::string& path, const std::string& mode) {
@@ -300,7 +300,7 @@ private:
 	FILE* fp_;
 };
 
-//éå†ç›®å½•
+//±éÀúÄ¿Â¼
 class ScopedWalkDir
 {
 public:
@@ -323,9 +323,9 @@ private:
 	walk_dir_context* ctx_;
 };
 
-//çº¿ç¨‹ç±»
-//æ´¾ç”Ÿçº¿ç¨‹ç±»åªéœ€é‡å†™ RunImpl() å‡½æ•°
-//å¦‚æœéœ€è¦çº¿ç¨‹ä¸€æ¬¡åˆå§‹åŒ–ï¼Œåœ¨RunImpl()ä¸­é¦–å…ˆè°ƒç”¨Once()å³å¯
+//Ïß³ÌÀà
+//ÅÉÉúÏß³ÌÀàÖ»ĞèÖØĞ´ RunImpl() º¯Êı
+//Èç¹ûĞèÒªÏß³ÌÒ»´Î³õÊ¼»¯£¬ÔÚRunImpl()ÖĞÊ×ÏÈµ÷ÓÃOnce()¼´¿É
 class Thread
 {
 public:
@@ -355,7 +355,7 @@ private:
 	thread_once_func once_func_;
 };
 
-//äº’æ–¥é”ç±»
+//»¥³âËøÀà
 class MutexLock
 {
 public:
@@ -380,7 +380,7 @@ private:
 	DISABLE_COPY_AND_ASSIGN(MutexLock);
 };
 
-//è‡ªåŠ¨äº’æ–¥é”
+//×Ô¶¯»¥³âËø
 class AutoMutexLock
 {
 public:
@@ -395,7 +395,7 @@ private:
 	DISABLE_COPY_AND_ASSIGN(AutoMutexLock);
 };
 
-//è‡ªæ—‹é”
+//×ÔĞıËø
 class SpinLock
 {
 public:
@@ -420,7 +420,7 @@ private:
 	DISABLE_COPY_AND_ASSIGN(SpinLock);
 };
 
-//è‡ªåŠ¨è‡ªæ—‹é”
+//×Ô¶¯×ÔĞıËø
 class AutoSpinLock
 {
 public:
@@ -438,7 +438,7 @@ private:
 
 #ifdef USE_READ_WRITE_LOCK
 
-//è¯»å†™é”
+//¶ÁĞ´Ëø
 class ReadWriteLock
 {
 public:
@@ -466,7 +466,7 @@ private:
 	DISABLE_COPY_AND_ASSIGN(ReadWriteLock);
 };
 
-//è‡ªåŠ¨è¯»é”
+//×Ô¶¯¶ÁËø
 class AutoReadLock
 {
 public:
@@ -482,7 +482,7 @@ private:
 	DISABLE_COPY_AND_ASSIGN(AutoReadLock);
 };
 
-//è‡ªåŠ¨å†™é”
+//×Ô¶¯Ğ´Ëø
 class AutoWriteLock
 {
 public:
@@ -500,8 +500,8 @@ private:
 
 #endif
 
-//åŸå­å˜é‡ç±»
-//TODO: æ·»åŠ å¸¸ç”¨æ“ä½œç¬¦é‡è½½
+//Ô­×Ó±äÁ¿Àà
+//TODO: Ìí¼Ó³£ÓÃ²Ù×÷·ûÖØÔØ
 class Atomic
 {
 public:
@@ -534,7 +534,7 @@ private:
 	atomic_t val_;
 };
 
-//çº¿ç¨‹æœ¬åœ°å­˜å‚¨æ¨¡æ¿ç±»
+//Ïß³Ì±¾µØ´æ´¢Ä£°åÀà
 template <typename Type>
 class ThreadLocalStorage {
 public:
@@ -572,7 +572,7 @@ private:
 
 #define TLS ThreadLocalStorage
 
-//å•ä¾‹æ¨¡å¼æ¨¡æ¿ç±»
+//µ¥ÀıÄ£Ê½Ä£°åÀà
 template <typename Type>
 class LazyInstance {
 public:
@@ -597,11 +597,11 @@ private:
 }; //namespace utils
 
 //////////////////////////////////////////////////////////////////////////
-//å†…å­˜è°ƒè¯•
+//ÄÚ´æµ÷ÊÔ
 
 #if defined DBG_MEM && (!defined COMPILER_MSVC || _MSC_VER > MSVC6)
 
-//è¿è¡Œæ—¶å†…å­˜è°ƒè¯•
+//ÔËĞĞÊ±ÄÚ´æµ÷ÊÔ
 #ifdef DBG_MEM_RT
 enum MEMRT_MTD_CPP{
 	MEMRT_NEW = MEMRT_C_END + 1,			/* new */
@@ -612,8 +612,8 @@ enum MEMRT_MTD_CPP{
 };
 
 enum MEMRT_ERR_CPP{
-	MEMRTE_NODELETE = MEMRTE_C_END+1,		/* å¯¹è±¡æœªdelete */
-	MEMRTE_UNALLOCDEL,						/* æ²¡æœ‰newå´è¢«delete */
+	MEMRTE_NODELETE = MEMRTE_C_END+1,		/* ¶ÔÏóÎ´delete */
+	MEMRTE_UNALLOCDEL,						/* Ã»ÓĞnewÈ´±»delete */
 	MEMRTE_CPP_END
 };
 

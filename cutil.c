@@ -1,4 +1,4 @@
-ï»¿#include "cutil.h"
+#include "cutil.h"
 
 #include <locale.h>
 #include <wchar.h>
@@ -12,14 +12,12 @@
 #include <sys/utime.h> /* utime */
 #include <sys/stat.h> /* _stati64, _wstati64 */
 #include <ShlObj.h> /* SHGetSpecialFolderPath */
-#include <dbghelp.h> /* minidump */
 #include <crtdbg.h> /* _CrtSetReportMode */
 #include <ShellAPI.h> /* ShellExecuteEx */
 #include <shlwapi.h> /* path, str.etc */
 #include <process.h> /* _beginthreadex.etc */
 
 #ifdef _MSC_VER
-#pragma comment(lib, "dbghelp.lib") /* minidump */
 #pragma comment(lib, "shlwapi.lib") /* path, str.etc */
 #pragma comment(lib, "User32.lib") /* MessageBox.etc */
 #pragma comment(lib, "kernel32.lib") /* SRW Lock.etc */
@@ -65,7 +63,7 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act);
 
 #endif /* OS_WIN */
 
-/* statå¤§æ–‡ä»¶(>2GB) */
+/* stat´óÎÄ¼ş(>2GB) */
 #if defined(COMPILER_MSVC)
 #define STAT_STRUCT struct _stati64
 #define stat _stati64
@@ -73,27 +71,27 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act);
 #define STAT_STRUCT struct stat
 #endif
 
-/* è½¯ä»¶åç§° */
+/* Èí¼şÃû³Æ */
 static char g_product_name[256];
 
-/* æœ¬åº“å·²åˆå§‹åŒ–æ ‡å¿— */
+/* ±¾¿âÒÑ³õÊ¼»¯±êÖ¾ */
 static int g_cutil_inited;
 
-/* å·²æ‰“å¼€çš„æ–‡ä»¶æ•° */
+/* ÒÑ´ò¿ªµÄÎÄ¼şÊı */
 static int g_opened_files;
 
-/* å¤–éƒ¨å´©æºƒå¤„ç†å‡½æ•° */
+/* Íâ²¿±ÀÀ£´¦Àíº¯Êı */
 static crash_handler g_crash_handler;
 
-/* ä¸­æ–­ä¿¡å·å¤„ç†å‡½æ•° */
+/* ÖĞ¶ÏĞÅºÅ´¦Àíº¯Êı */
 typedef void (*interrupt_handler_func)(int);
 static interrupt_handler_func g_interrupt_handler;
 
-/* è®¾ç½®é»˜è®¤çš„ä¸­æ–­å¤„ç†å‡½æ•° */
+/* ÉèÖÃÄ¬ÈÏµÄÖĞ¶Ï´¦Àíº¯Êı */
 int set_default_interrupt_handler();
 
 /************************************************************************/
-/*                         åˆå§‹åŒ–/ç»“æŸä½¿ç”¨æœ¬åº“                          */
+/*                         ³õÊ¼»¯/½áÊøÊ¹ÓÃ±¾¿â                          */
 /************************************************************************/
 
 void cutil_init()
@@ -101,42 +99,38 @@ void cutil_init()
     int ret ALLOW_UNUSED;
 	g_cutil_inited = 1;
 
-	/* å°†å½“å‰å·¥ä½œç›®å½•ä¸ºå¯æ‰§è¡Œæ–‡ä»¶æ‰€åœ¨ç›®å½• */
+	/* ½«µ±Ç°¹¤×÷Ä¿Â¼Îª¿ÉÖ´ĞĞÎÄ¼şËùÔÚÄ¿Â¼ */
     ret = set_current_dir(get_execute_dir());
 	ASSERT(ret);
 
-	/* åˆå§‹åŒ–æ—¥å¿—æ¨¡å— */
+	/* ³õÊ¼»¯ÈÕÖ¾Ä£¿é */
 	log_init();
 
-	/* è¿è¡Œæ—¶å†…å­˜è°ƒè¯• */
+	/* ÔËĞĞÊ±ÄÚ´æµ÷ÊÔ */
 #ifdef DBG_MEM_RT
 	memrt_init();
 #endif
 
-	/* åˆå§‹åŒ–è½¯ä»¶åç§° */
+	/* ³õÊ¼»¯Èí¼şÃû³Æ */
 	xstrlcpy(g_product_name, "AppUtils", sizeof(g_product_name));
 
-	/* ä¸­æ–­å¤„ç†å‡½æ•° */
+	/* ÖĞ¶Ï´¦Àíº¯Êı */
 	ret = set_default_interrupt_handler();
 	ASSERT(ret);
 
-	/* ç¨‹åºå´©æºƒå¤„ç† */
+	/* ³ÌĞò±ÀÀ£´¦Àí */
 #ifdef USE_CRASH_HANDLER
 	set_default_crash_handler();
 #endif
 
-#ifdef OS_WIN
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-#endif
-
 #if defined(OS_POSIX)
-	/* å¤šå­—èŠ‚/å®½å­—ç¬¦ä¸²è½¬æ¢ */
-	/* å°†è¿›ç¨‹çš„localeè®¾ç½®ä¸ºç³»ç»Ÿçš„localeï¼Œè¿›ç¨‹å¯åŠ¨æ—¶é»˜è®¤ä¸º"C" */
-	/* GLIBCå®ç°ä¸ºä¾æ¬¡æŸ¥è¯¢LC_ALL,LC_CTYPE,LANGç¯å¢ƒå˜é‡ */
+	/* ¶à×Ö½Ú/¿í×Ö·û´®×ª»» */
+	/* ½«½ø³ÌµÄlocaleÉèÖÃÎªÏµÍ³µÄlocale£¬½ø³ÌÆô¶¯Ê±Ä¬ÈÏÎª"C" */
+	/* GLIBCÊµÏÖÎªÒÀ´Î²éÑ¯LC_ALL,LC_CTYPE,LANG»·¾³±äÁ¿ */
 	setlocale(LC_CTYPE, "");
 
 #ifndef OS_ANDROID
-	/* æ£€æŸ¥ç³»ç»Ÿé»˜è®¤ç¼–ç  */
+	/* ¼ì²éÏµÍ³Ä¬ÈÏ±àÂë */
 	const char *locale = get_locale();
 	if (strcasecmp(locale, "UTF-8"))
 		log_dprintf(LOG_WARNING, "The current system locale is %s, \
@@ -148,27 +142,23 @@ void cutil_init()
 
 void cutil_exit()
 {
-	/* åˆ é™¤ä¸´æ—¶ç›®å½• */
+	/* É¾³ıÁÙÊ±Ä¿Â¼ */
 	if (path_is_directory(get_temp_dir()))
 		IGNORE_RESULT(delete_directories(get_temp_dir(), 0, 0));
 
-	/* æ£€æŸ¥æ–‡ä»¶ä½¿ç”¨æƒ…å†µ */
+	/* ¼ì²éÎÄ¼şÊ¹ÓÃÇé¿ö */
 	if (g_opened_files)
 		log_dprintf(LOG_NOTICE, "%d files still open!", g_opened_files);
 
-	/* æ£€æŸ¥å†…å­˜ä½¿ç”¨æƒ…å†µ */
+	/* ¼ì²éÄÚ´æÊ¹ÓÃÇé¿ö */
 #ifdef DBG_MEM_RT
 	if (g_xalloc_count)
 		log_dprintf(LOG_NOTICE, "Detected %d memory leaks!", g_xalloc_count);
 	memrt_check();
 #endif
 
-	/* å…³é—­æ—¥å¿—æ¨¡å— */
+	/* ¹Ø±ÕÈÕÖ¾Ä£¿é */
 	log_close_all();
-
-#ifdef OS_WIN
-	CoUninitialize();
-#endif
 }
 
 static inline
@@ -217,11 +207,11 @@ void interrupt_signal_handler(int n ALLOW_UNUSED, siginfo_t *siginfo, void *act 
 #endif
 
 /* 
- * è®¾ç½®ç¨‹åºæ”¶åˆ°ä¸­æ–­ä¿¡å·ï¼ˆå¦‚Ctrl^Cï¼‰æ—¶çš„å¤„ç†å‡½æ•°
- * è‹¥æœªè®¾ç½®æ­¤å¤„ç†å‡½æ•°ï¼Œè¿›ç¨‹åœ¨æ”¶åˆ°æ­¤ç±»ä¿¡å·çš„é»˜è®¤è¡Œä¸ºæ˜¯ç»ˆæ­¢è¿›ç¨‹
- * æ³¨å†Œåå†æ”¶åˆ°ä¸­æ–­æ¶ˆæ¯å°†ä¸ä¼šç»ˆæ­¢å½“å‰è¿›ç¨‹ï¼Œé™¤éåœ¨å¤„ç†å‡½æ•°ä¸­æ˜¾å¼é€€å‡ºï¼ˆå¦‚è°ƒç”¨exit)
- * å¤„ç†å‡½æ•°çš„intå‚æ•°ä»£è¡¨æ¶ˆæ¯ç±»å‹ï¼ˆå¦‚CTRL_C_EVENTæˆ–SIGINTï¼Œè§å®ç°ï¼‰ï¼Œä¸€èˆ¬å¯ä»¥å¿½ç•¥
- * è¿”å›å€¼ï¼šæ³¨å†ŒæˆåŠŸè¿”å›1ï¼Œå¤±è´¥è¿”å›0
+ * ÉèÖÃ³ÌĞòÊÕµ½ÖĞ¶ÏĞÅºÅ£¨ÈçCtrl^C£©Ê±µÄ´¦Àíº¯Êı
+ * ÈôÎ´ÉèÖÃ´Ë´¦Àíº¯Êı£¬½ø³ÌÔÚÊÕµ½´ËÀàĞÅºÅµÄÄ¬ÈÏĞĞÎªÊÇÖÕÖ¹½ø³Ì
+ * ×¢²áºóÔÙÊÕµ½ÖĞ¶ÏÏûÏ¢½«²»»áÖÕÖ¹µ±Ç°½ø³Ì£¬³ı·ÇÔÚ´¦Àíº¯ÊıÖĞÏÔÊ½ÍË³ö£¨Èçµ÷ÓÃexit)
+ * ´¦Àíº¯ÊıµÄint²ÎÊı´ú±íÏûÏ¢ÀàĞÍ£¨ÈçCTRL_C_EVENT»òSIGINT£¬¼ûÊµÏÖ£©£¬Ò»°ã¿ÉÒÔºöÂÔ
+ * ·µ»ØÖµ£º×¢²á³É¹¦·µ»Ø1£¬Ê§°Ü·µ»Ø0
  */
 int set_interrupt_handler(interrupt_handler_func handler)
 {
@@ -246,8 +236,8 @@ int set_interrupt_handler(interrupt_handler_func handler)
 #endif
 }
 
-/* é»˜è®¤çš„ä¸­æ–­ä¿¡å·å¤„ç†å‡½æ•° */
-/* å³åœ¨ç»ˆç«¯å“é“ƒåå®‰å…¨é€€å‡º */
+/* Ä¬ÈÏµÄÖĞ¶ÏĞÅºÅ´¦Àíº¯Êı */
+/* ¼´ÔÚÖÕ¶ËÏìÁåºó°²È«ÍË³ö */
 static void default_interrupt_handler(int type)
 {
 	char msg[128];
@@ -302,21 +292,23 @@ static void default_interrupt_handler(int type)
 	exit(1);
 }
 
-/* è®¾ç½®é»˜è®¤çš„ä¸­æ–­å¤„ç†å‡½æ•° */
-/* å³è°ƒç”¨cutil_exit()åç»“æŸå½“å‰è¿›ç¨‹ */
+/* ÉèÖÃÄ¬ÈÏµÄÖĞ¶Ï´¦Àíº¯Êı */
+/* ¼´µ÷ÓÃcutil_exit()ºó½áÊøµ±Ç°½ø³Ì */
 int set_default_interrupt_handler()
 {
 	return set_interrupt_handler(default_interrupt_handler);
 }
 
-/* è®¾ç½®é»˜è®¤çš„å´©æºƒå¤„ç†å‡½æ•° */
-/* Windowsä¸‹ç”Ÿæˆminidumpæ–‡ä»¶ï¼Œä¸”å¦‚æœå­˜åœ¨pdbå°†å †æ ˆæ˜¾ç¤ºåœ¨å¼¹å‡ºå¯¹è¯æ¡†ä¸­ */
-/* Linuxä¸‹ç”Ÿæˆcoredumpæ–‡ä»¶ï¼Œä¸”å¦‚æœæ˜¯debugç‰ˆæ‰“å°å †æ ˆåˆ°æ ‡å‡†é”™è¯¯è¾“å‡º(éœ€ä½¿ç”¨-rdynamicé“¾æ¥é€‰é¡¹) */
+#ifdef USE_CRASH_HANDLER
+
+/* ÉèÖÃÄ¬ÈÏµÄ±ÀÀ£´¦Àíº¯Êı */
+/* WindowsÏÂÉú³ÉminidumpÎÄ¼ş£¬ÇÒÈç¹û´æÔÚpdb½«¶ÑÕ»ÏÔÊ¾ÔÚµ¯³ö¶Ô»°¿òÖĞ */
+/* LinuxÏÂÉú³ÉcoredumpÎÄ¼ş£¬ÇÒÈç¹ûÊÇdebug°æ´òÓ¡¶ÑÕ»µ½±ê×¼´íÎóÊä³ö(ĞèÊ¹ÓÃ-rdynamicÁ´½ÓÑ¡Ïî) */
 void set_default_crash_handler()
 {
 #ifdef OS_WIN
-	/* åŠ è½½è°ƒè¯•ç¬¦å· */
-	/* Releaseç‰ˆæœ¬å¦‚æœæœ‰pdbæ–‡ä»¶ä¹Ÿå¯ä»¥æ‰“å°å †æ ˆ */
+	/* ¼ÓÔØµ÷ÊÔ·ûºÅ */
+	/* Release°æ±¾Èç¹ûÓĞpdbÎÄ¼şÒ²¿ÉÒÔ´òÓ¡¶ÑÕ» */
 	SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME | SYMOPT_LOAD_LINES);
 	if (!SymInitialize(GetCurrentProcess(), NULL, TRUE))
 		log_dprintf(LOG_WARNING, "Initialize debug symbol failed! %s", get_last_error_win32());
@@ -347,8 +339,10 @@ void set_default_crash_handler()
 #endif /* OS_WIN */
 }
 
+#endif
+
 /************************************************************************/
-/*                         Memory å†…å­˜ç®¡ç†                               */
+/*                         Memory ÄÚ´æ¹ÜÀí                               */
 /************************************************************************/
 
 #ifdef DBG_MEM
@@ -359,12 +353,12 @@ int g_xalloc_count = 0;
 static void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp);
 #endif
 
-/* é‡Šæ”¾å†…å­˜ */
+/* ÊÍ·ÅÄÚ´æ */
 void free_d(void *ptr, const char* file, const char* func, int line)
 {
 	if (!ptr)
 	{
-		/* FATALæ—¥å¿—æ¶ˆæ¯ä¼šè®°å½•è°ƒç”¨å †æ ˆå¹¶exit */
+		/* FATALÈÕÖ¾ÏûÏ¢»á¼ÇÂ¼µ÷ÓÃ¶ÑÕ»²¢exit */
 		log_dprintf(LOG_FATAL, "{%s %s %d} Free NULL at %p.\n", file, func, line, ptr);
 	}
 
@@ -380,7 +374,7 @@ void free_d(void *ptr, const char* file, const char* func, int line)
 	free(ptr);
 }
 
-/* åˆ†é…å†…å­˜ */
+/* ·ÖÅäÄÚ´æ */
 void *malloc_d(size_t size, const char* file, const char* func, int line)
 {
 	register void *memptr = NULL;
@@ -407,11 +401,11 @@ void *realloc_d(void *ptr, size_t size, const char* file, const char* func, int 
 
 	ASSERT(ptr || size);
 
-	/* å¦‚æœæŒ‡é’ˆä¸ºç©ºï¼Œç­‰æ•ˆäºmalloc */
+	/* Èç¹ûÖ¸ÕëÎª¿Õ£¬µÈĞ§ÓÚmalloc */
 	if (!ptr)
 		return malloc_d(size, file, func, line);
 
-	/* å¦‚æœå¤§å°ä¸º0ï¼Œç­‰æ•ˆäºfree */
+	/* Èç¹û´óĞ¡Îª0£¬µÈĞ§ÓÚfree */
 	if (!size)
 	{
 		free_d(ptr, file, func, line);
@@ -454,7 +448,7 @@ void *calloc_d(size_t count, size_t size, const char* file, const char* func, in
 	return (memptr);
 }
 
-/* åˆ†é…å­—ç¬¦ä¸² */
+/* ·ÖÅä×Ö·û´® */
 char *strdup_d(const char* s, size_t n,  const char* file, const char* func, int line)
 {
 	char *p;
@@ -483,10 +477,10 @@ char *strdup_d(const char* s, size_t n,  const char* file, const char* func, int
 #endif /* DBG_MEM */
 
 /************************************************************************/
-/*                         String å­—ç¬¦ä¸²æ“ä½œ                             */
+/*                         String ×Ö·û´®²Ù×÷                             */
 /************************************************************************/
 
-/* å°†å­—ç¬¦ä¸²æ”¹ä¸ºå°å†™ï¼Œè‹¥æœ‰å­—ç¬¦å‘ç”Ÿæ”¹å˜è¿”å›1ï¼Œå¦åˆ™è¿”å›0 */
+/* ½«×Ö·û´®¸ÄÎªĞ¡Ğ´£¬ÈôÓĞ×Ö·û·¢Éú¸Ä±ä·µ»Ø1£¬·ñÔò·µ»Ø0 */
 int lowercase_str (char *str)
 {
 	int changed = 0;
@@ -500,7 +494,7 @@ int lowercase_str (char *str)
 	return changed;
 }
 
-/* å°†å­—ç¬¦ä¸²æ”¹ä¸ºå¤§å†™ï¼Œè‹¥æœ‰å­—ç¬¦å‘ç”Ÿæ”¹å˜è¿”å›1ï¼Œå¦åˆ™è¿”å›0 */
+/* ½«×Ö·û´®¸ÄÎª´óĞ´£¬ÈôÓĞ×Ö·û·¢Éú¸Ä±ä·µ»Ø1£¬·ñÔò·µ»Ø0 */
 int uppercase_str (char *str)
 {
 	int changed = 0;
@@ -514,7 +508,7 @@ int uppercase_str (char *str)
 	return changed;
 }
 
-/* è·å–ä¸€ä¸ªå­—ç¬¦ä¸²çš„å°å†™ç‰ˆæ‹·è´ */
+/* »ñÈ¡Ò»¸ö×Ö·û´®µÄĞ¡Ğ´°æ¿½±´ */
 char *strdup_lower (const char *s)
 {
 	char *copy, *p;
@@ -526,7 +520,7 @@ char *strdup_lower (const char *s)
 	return copy;
 }
 
-/* è·å–ä¸€ä¸ªå­—ç¬¦ä¸²çš„å¤§å†™ç‰ˆæ‹·è´ */
+/* »ñÈ¡Ò»¸ö×Ö·û´®µÄ´óĞ´°æ¿½±´ */
 char *strdup_upper (const char *s)
 {
 	char *copy, *p;
@@ -538,7 +532,7 @@ char *strdup_upper (const char *s)
 	return copy;
 }
 
-/* æ‹·è´ä¸€ä¸ªå­—ç¬¦ä¸²çš„å­—ä¸² */
+/* ¿½±´Ò»¸ö×Ö·û´®µÄ×Ö´® */
 char *
 substrdup(const char *beg, const char *end)
 {
@@ -555,21 +549,21 @@ substrdup(const char *beg, const char *end)
   return res;
 }
 
-/* å®‰å…¨çš„vsnprintf */
-/* å…·ä½“ç”¨æ³•è§asnprintf */
+/* °²È«µÄvsnprintf */
+/* ¾ßÌåÓÃ·¨¼ûasnprintf */
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args)
 {
 #ifdef OS_WIN
 #if _MSC_VER <= MSVC6
-	/* è¯¥å‡½æ•°åœ¨ç¼“å†²åŒºä¸å¤Ÿå¤§çš„æƒ…å†µä¸‹ä¹Ÿä¼šè¿”å›-1 
-	 * åœ¨VC6ä¸­ï¼Œä¸ä¼šè®¾ç½®errnoçš„å€¼ï¼Œ
-	 * åœ¨é«˜ç‰ˆæœ¬VCä¸­ï¼Œä¼šå°†errnoç½®ä¸ºERANGEï¼Œè°ƒç”¨å¤±è´¥åˆ™ç½®ä¸ºEINVAL */
+	/* ¸Ãº¯ÊıÔÚ»º³åÇø²»¹»´óµÄÇé¿öÏÂÒ²»á·µ»Ø-1 
+	 * ÔÚVC6ÖĞ£¬²»»áÉèÖÃerrnoµÄÖµ£¬
+	 * ÔÚ¸ß°æ±¾VCÖĞ£¬»á½«errnoÖÃÎªERANGE£¬µ÷ÓÃÊ§°ÜÔòÖÃÎªEINVAL */
 	int i = _vsnprintf(buffer, size, format, args);
 	if (size > 0)
 		buffer[size-1] = '\0';
 	return i;
 #else
-	/* é«˜ç‰ˆæœ¬VCæ”¯æŒæ¨¡æ‹ŸC99æ ‡å‡†è¡Œä¸º */
+	/* ¸ß°æ±¾VCÖ§³ÖÄ£ÄâC99±ê×¼ĞĞÎª */
 	int length = _vsprintf_p(buffer, size, format, args);
 	if (length < 0) {
 		if (size > 0)
@@ -579,12 +573,12 @@ int xvsnprintf(char* buffer, size_t size, const char* format, va_list args)
 	return length;
 #endif
 #else
-	/* æ³¨ï¼šæœ‰çš„POSIXå®ç°åœ¨ç¼“å†²åŒºä¸å¤Ÿå¤§æ—¶ä¹Ÿä¼šè¿”å›-1ï¼Œä½†ä¼šå°†errnoç½®ä¸ºEOVERFLOW */
+	/* ×¢£ºÓĞµÄPOSIXÊµÏÖÔÚ»º³åÇø²»¹»´óÊ±Ò²»á·µ»Ø-1£¬µ«»á½«errnoÖÃÎªEOVERFLOW */
 	return vsnprintf(buffer, size, format, args);
 #endif
 }
 
-/* å¯ç§»æ¤çš„snprintf */
+/* ¿ÉÒÆÖ²µÄsnprintf */
 int xsnprintf(char* buffer, size_t size, const char* format, ...)
 {
 	int result;
@@ -599,7 +593,7 @@ int xsnprintf(char* buffer, size_t size, const char* format, ...)
 
 #ifndef _GNU_SOURCE
 
-/* å¯ç§»æ¤çš„asprintf */
+/* ¿ÉÒÆÖ²µÄasprintf */
 int xasprintf(char** out, const char *fmt, ...)
 {
 	int size = 128;
@@ -633,11 +627,11 @@ int xasprintf(char** out, const char *fmt, ...)
 
 		if (n < 0)
 		{
-			if (errno != 0				/* VC6ä¸ä¼šè®¾ç½®errno */
+			if (errno != 0				/* VC6²»»áÉèÖÃerrno */
 #ifdef OS_WIN
-				&& errno != ERANGE		/* VCé«˜ç‰ˆæœ¬ç½®ä¸ºERANGE */
+				&& errno != ERANGE		/* VC¸ß°æ±¾ÖÃÎªERANGE */
 #else
-				&& errno != EOVERFLOW	/* æŸäº›POSIXå®ç°ç½®ä¸ºEOVERFLOW */
+				&& errno != EOVERFLOW	/* Ä³Ğ©POSIXÊµÏÖÖÃÎªEOVERFLOW */
 #endif
 				)
 			{
@@ -722,7 +716,7 @@ size_t xstrlcat(char* dst, const char *src, size_t siz)
 
 #ifndef __GLIBC__
 
-/* æ‹·è´ä¸€ä¸ªå­—ç¬¦ä¸²çš„å‰nä¸ªå­—èŠ‚ */
+/* ¿½±´Ò»¸ö×Ö·û´®µÄÇ°n¸ö×Ö½Ú */
 char *strndup(const char* s, size_t n)
 {
 	size_t slen, len;
@@ -732,7 +726,7 @@ char *strndup(const char* s, size_t n)
 
 	slen = strlen(s);
     len = xmin(slen, n);
-	p = (char*)malloc(len+1);	/* ä¸ä½¿ç”¨xmallocä»¥å…é‡å¤è®¡ç®—å†…å­˜ç”³è¯·æ¬¡æ•° */
+	p = (char*)malloc(len+1);	/* ²»Ê¹ÓÃxmallocÒÔÃâÖØ¸´¼ÆËãÄÚ´æÉêÇë´ÎÊı */
 	if (!p)
 		log_dprintf(LOG_FATAL, "strndup malloc failed");
 
@@ -743,9 +737,9 @@ char *strndup(const char* s, size_t n)
 }
 
 /* 
- * åˆ†å‰²å­—ç¬¦ä¸²
- * è¯¥å‡½æ•°ä¼šæ”¹å˜æºå­—ç¬¦ä¸²ï¼Œä½†å¯ä»¥å¤„ç†ç©ºæ ¼çš„æƒ…å†µ
- * å–è‡ª GLIBC 2.16.0
+ * ·Ö¸î×Ö·û´®
+ * ¸Ãº¯Êı»á¸Ä±äÔ´×Ö·û´®£¬µ«¿ÉÒÔ´¦Àí¿Õ¸ñµÄÇé¿ö
+ * È¡×Ô GLIBC 2.16.0
  */
 char *strsep (char **stringp, const char *delim)
 {
@@ -789,7 +783,7 @@ char *strsep (char **stringp, const char *delim)
 
 #if !defined(__MINGW32__) && !defined(COMPILER_MSVC)
 
-/* æ— å¯æ›¿ä»£å‡½æ•°ï¼Œéœ€è¦è‡ªå·±å®ç°strcasecmp, strncasecmp */
+/* ÎŞ¿ÉÌæ´úº¯Êı£¬ĞèÒª×Ô¼ºÊµÏÖstrcasecmp, strncasecmp */
 static unsigned char charmap[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -825,7 +819,7 @@ static unsigned char charmap[] = {
     0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
 };
 
-/* ä¸åŒºåˆ†å¤§å°å†™æ¯”è¾ƒä¸¤ä¸ªå­—ç¬¦ä¸² */
+/* ²»Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´® */
 int strcasecmp(const char *s1, const char* s2)
 {
     unsigned char u1, u2;
@@ -869,7 +863,7 @@ int strncasecmp(const char *s1, const char*s2, size_t length)
 
 #endif /* !COMPILER_MSVC */
 
-/* åœ¨å­—ç¬¦ä¸²sçš„å‰slenä¸ªå­—èŠ‚ä¸­æŸ¥æ‰¾find */
+/* ÔÚ×Ö·û´®sµÄÇ°slen¸ö×Ö½ÚÖĞ²éÕÒfind */
 char *strnstr(const char *s, const char *find, size_t slen)
 {
 	char c, sc;
@@ -891,7 +885,7 @@ char *strnstr(const char *s, const char *find, size_t slen)
 }
 
 /*
- * ä¸åŒºåˆ†å¤§å°å†™æŸ¥æ‰¾å­—ç¬¦ä¸²æ˜¯å¦åŒ…å«æŒ‡å®šå­—ä¸²
+ * ²»Çø·Ö´óĞ¡Ğ´²éÕÒ×Ö·û´®ÊÇ·ñ°üº¬Ö¸¶¨×Ö´®
  */
 char *strcasestr(const char *s, const char *find)
 {
@@ -915,7 +909,7 @@ char *strcasestr(const char *s, const char *find)
 	return ((char *)s);
 }
 
-/* é€šè¿‡ç®€å•åœ°å°†æ¯ä¸ªå­—èŠ‚ä¸00101010å¼‚æˆ–æ¥å®ç° */
+/* Í¨¹ı¼òµ¥µØ½«Ã¿¸ö×Ö½ÚÓë00101010Òì»òÀ´ÊµÏÖ */
 void* memfrob(void *mem, size_t length)
 {
 	char *p = (char*)mem;
@@ -929,7 +923,7 @@ void* memfrob(void *mem, size_t length)
 #endif /* !__GLIBC__ */
 
 /*
- * ä¸åŒºåˆ†å¤§å°å†™æŸ¥æ‰¾å­—ç¬¦ä¸²çš„å‰å¤šå°‘ä¸ªå­—èŠ‚æ˜¯å¦åŒ…å«æŒ‡å®šå­—ä¸²
+ * ²»Çø·Ö´óĞ¡Ğ´²éÕÒ×Ö·û´®µÄÇ°¶àÉÙ¸ö×Ö½ÚÊÇ·ñ°üº¬Ö¸¶¨×Ö´®
  */
 char *strncasestr(const char* s, const char* find, size_t slen)
 {
@@ -975,17 +969,17 @@ size_t hash_pjw (const char *x, size_t tablesize)
 #undef SIZE_BITS
 
 /************************************************************************/
-/*                         Filesystem æ–‡ä»¶ç³»ç»Ÿç›¸å…³	                    */
+/*                         Filesystem ÎÄ¼şÏµÍ³Ïà¹Ø	                    */
 /************************************************************************/
 
-/* åˆ¤æ–­è·¯å¾„åæ˜¯å¦æœ‰æ•ˆ */
-/* è‹¥è·¯å¾„æœ‰æ•ˆï¼Œè¿”å›è·¯å¾„åå­—ç¬¦ä¸²çš„é•¿åº¦ï¼›å¦åˆ™è¿”å›0 */
+/* ÅĞ¶ÏÂ·¾¶ÃûÊÇ·ñÓĞĞ§ */
+/* ÈôÂ·¾¶ÓĞĞ§£¬·µ»ØÂ·¾¶Ãû×Ö·û´®µÄ³¤¶È£»·ñÔò·µ»Ø0 */
 static inline 
 size_t path_valid(const char* path, int absolute)
 {
 	size_t len;
 
-	/* å› è·¯å¾„ç¼“å†²åŒºå¤§éƒ½å®šä¹‰ä¸ºMAX_PATHå¤§å°ï¼Œå› æ­¤è·¯å¾„åé•¿åº¦ä¸èƒ½å¤§äºMAX_PATH -1 */
+	/* ÒòÂ·¾¶»º³åÇø´ó¶¼¶¨ÒåÎªMAX_PATH´óĞ¡£¬Òò´ËÂ·¾¶Ãû³¤¶È²»ÄÜ´óÓÚMAX_PATH -1 */
 	if (!path || !(len = strlen(path)) || len + 1 > MAX_PATH)
 		return 0;
 
@@ -994,8 +988,8 @@ size_t path_valid(const char* path, int absolute)
 			return 0;
 
 #ifdef OS_WIN
-		if (xisalpha(path[0]) && !(path[1] == ':' && path[2] == '\\') &&		/* æœ¬åœ°ç£ç›˜ */
-			!(path[0] == '\\' && path[1] == '\\'))		/* ç½‘ç»œå…±äº« */
+		if (xisalpha(path[0]) && !(path[1] == ':' && path[2] == '\\') &&		/* ±¾µØ´ÅÅÌ */
+			!(path[0] == '\\' && path[1] == '\\'))		/* ÍøÂç¹²Ïí */
 			return 0;
 #else
 		if (path[0] != '/')
@@ -1006,15 +1000,21 @@ size_t path_valid(const char* path, int absolute)
 	return len;
 }
 
-/* åˆ¤æ–­pathæ‰€æŒ‡çš„è·¯å¾„æ˜¯å¦æ˜¯ç»å¯¹è·¯å¾„ */
+size_t strnlen(register const char *s, register size_t maxlen)
+{
+	const char *end= (const char *)memchr(s, '\0', maxlen);
+	return end ? (size_t) (end - s) : maxlen;
+}
+
+/* ÅĞ¶ÏpathËùÖ¸µÄÂ·¾¶ÊÇ·ñÊÇ¾ø¶ÔÂ·¾¶ */
 int	is_absolute_path(const char* path)
 {
 	if (!path || strnlen(path, MIN_PATH) != MIN_PATH)
 		return 0;
 
 #ifdef OS_WIN
-	if ((xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') ||	/* æœ¬åœ°ç£ç›˜ */
-		(path[0] == '\\' && path[1] == '\\'))						/* ç½‘ç»œå…±äº« */
+	if ((xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') ||	/* ±¾µØ´ÅÅÌ */
+		(path[0] == '\\' && path[1] == '\\'))						/* ÍøÂç¹²Ïí */
 		return 1;
 #else
 	if (path[0] == '/')
@@ -1024,19 +1024,19 @@ int	is_absolute_path(const char* path)
 	return 0;
 }
 
-/* åˆ¤æ–­è·¯å¾„æ˜¯å¦æ˜¯æ ¹è·¯å¾„ */
+/* ÅĞ¶ÏÂ·¾¶ÊÇ·ñÊÇ¸ùÂ·¾¶ */
 int is_root_path(const char* path)
 {
 	return is_absolute_path(path) && (path[MIN_PATH] == '\0');
 }
 
-/* è¿”å›è·¯å¾„çš„æ–‡ä»¶åæˆ–æœ€åº•å±‚ç›®å½•å 
- * ä¾‹1: C:\myfolder\a.txt -> a.txt ; /var/a.out -> a.out 
- * ä¾‹2: C:\myfolder\dir -> dir ; /var/temp -> temp 
- * ä¾‹3: C:\myfolder\dir\ -> dir\ ; /var/temp/ -> temp/
- * ä¾‹4: C:\ -> C:\ ; / -> /
+/* ·µ»ØÂ·¾¶µÄÎÄ¼şÃû»ò×îµ×²ãÄ¿Â¼Ãû 
+ * Àı1: C:\myfolder\a.txt -> a.txt ; /var/a.out -> a.out 
+ * Àı2: C:\myfolder\dir -> dir ; /var/temp -> temp 
+ * Àı3: C:\myfolder\dir\ -> dir\ ; /var/temp/ -> temp/
+ * Àı4: C:\ -> C:\ ; / -> /
  */
-/* æ³¨ï¼šå¦‚æœæ˜¯linuxç³»ç»Ÿç¯å¢ƒä¸”localeä¸æ˜¯UTF8ï¼Œç»“æœå¯èƒ½ä¸æ­£ç¡® */
+/* ×¢£ºÈç¹ûÊÇlinuxÏµÍ³»·¾³ÇÒlocale²»ÊÇUTF8£¬½á¹û¿ÉÄÜ²»ÕıÈ· */
 const char* path_find_file_name(const char* path)
 {
 #if (defined OS_WIN) && (!defined USE_UTF8_STR)
@@ -1050,32 +1050,32 @@ const char* path_find_file_name(const char* path)
 
 	len = strlen(path);
 	if (!len)
-		return path;			/* ç©ºå­—ç¬¦ä¸² */
+		return path;			/* ¿Õ×Ö·û´® */
 
 	p = path + len - 1;
 
 	while (*p == PATH_SEP_CHAR && p != path)
 		--p;
 	if (p == path)
-		return p;				/*  å…¨åˆ†éš”ç¬¦ */
+		return p;				/*  È«·Ö¸ô·û */
 
 	while (*p != PATH_SEP_CHAR && p != path)
 		--p;
 
-	if (p == path)				/* ç›¸å¯¹è·¯å¾„ */
+	if (p == path)				/* Ïà¶ÔÂ·¾¶ */
 		return p;
 	else
 		return p+1;
 #endif
 }
 
-/* è¿”å›è·¯å¾„çš„æ‰©å±•å */
-/* ä¾‹1ï¼šC:\\1.txt -> .txt */
-/* ä¾‹2ï¼šC:\\abc -> "" */
-/* ä¾‹4ï¼šC:\\abc. -> . */
-/* ä¾‹5: NULL -> NULL */
-/* ä¾‹6ï¼š"" -> "" */
-/* æ³¨ï¼šå¦‚æœæ˜¯linuxç³»ç»Ÿç¯å¢ƒä¸”localeä¸æ˜¯UTF8ï¼Œç»“æœå¯èƒ½ä¸æ­£ç¡® */
+/* ·µ»ØÂ·¾¶µÄÀ©Õ¹Ãû */
+/* Àı1£ºC:\\1.txt -> .txt */
+/* Àı2£ºC:\\abc -> "" */
+/* Àı4£ºC:\\abc. -> . */
+/* Àı5: NULL -> NULL */
+/* Àı6£º"" -> "" */
+/* ×¢£ºÈç¹ûÊÇlinuxÏµÍ³»·¾³ÇÒlocale²»ÊÇUTF8£¬½á¹û¿ÉÄÜ²»ÕıÈ· */
 const char* path_find_extension(const char* path)
 {
 #if (defined OS_WIN) && (!defined USE_UTF8_STR) 
@@ -1107,11 +1107,11 @@ const char* path_find_extension(const char* path)
 #endif
 }
 
-/* è¿”å›è·¯å¾„æ‰€æŒ‡ç›®å½•/æ–‡ä»¶çš„ä¸Šçº§ç›®å½•è·¯å¾„(åŒ…å«æœ€åçš„è·¯å¾„åˆ†éš”ç¬¦) */
-/* ä¾‹1: C:\a.txt -> C:\ */
-/* ä¾‹2: /usr/include/ -> /usr/ */
-/* è¿”å›å€¼: æˆåŠŸè¿”å›1ï¼Œé”™è¯¯è¿”å›0å¹¶ä¸”outbufä¸º"" */
-/* æ³¨ï¼šå¦‚æœæ˜¯linuxç³»ç»Ÿç¯å¢ƒä¸”localeä¸æ˜¯UTF8ï¼Œç»“æœå¯èƒ½ä¸æ­£ç¡® */
+/* ·µ»ØÂ·¾¶ËùÖ¸Ä¿Â¼/ÎÄ¼şµÄÉÏ¼¶Ä¿Â¼Â·¾¶(°üº¬×îºóµÄÂ·¾¶·Ö¸ô·û) */
+/* Àı1: C:\a.txt -> C:\ */
+/* Àı2: /usr/include/ -> /usr/ */
+/* ·µ»ØÖµ: ³É¹¦·µ»Ø1£¬´íÎó·µ»Ø0²¢ÇÒoutbufÎª"" */
+/* ×¢£ºÈç¹ûÊÇlinuxÏµÍ³»·¾³ÇÒlocale²»ÊÇUTF8£¬½á¹û¿ÉÄÜ²»ÕıÈ· */
 int path_find_directory(const char *path, char* outbuf, size_t outlen)
 {
 	size_t plen, nlen;
@@ -1172,7 +1172,7 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 #endif
 }
 
-/* è·¯å¾„æ‰€æŒ‡æ–‡ä»¶/ç›®å½•æ˜¯å¦å­˜åœ¨ */
+/* Â·¾¶ËùÖ¸ÎÄ¼ş/Ä¿Â¼ÊÇ·ñ´æÔÚ */
 int path_file_exists(const char* path)
 {
 	if (!path_valid(path, 0))
@@ -1199,7 +1199,7 @@ int path_file_exists(const char* path)
 #endif
 }
 
-/* è·¯å¾„æ˜¯å¦æ˜¯æœ‰æ•ˆç›®å½• */
+/* Â·¾¶ÊÇ·ñÊÇÓĞĞ§Ä¿Â¼ */
 int path_is_directory(const char* path)
 {
 	if (!path_valid(path, 0))
@@ -1227,7 +1227,7 @@ int path_is_directory(const char* path)
 #endif
 }
 
-/* è·¯å¾„æ˜¯å¦æ˜¯æ–‡ä»¶ï¼ˆå­˜åœ¨ä¸”ä¸æ˜¯ç›®å½•ï¼‰ */
+/* Â·¾¶ÊÇ·ñÊÇÎÄ¼ş£¨´æÔÚÇÒ²»ÊÇÄ¿Â¼£© */
 int path_is_file(const char* path)
 {
 	if (!path_valid(path, 0))
@@ -1256,7 +1256,7 @@ int path_is_file(const char* path)
 }
 
 /*
- * è·å–æ–‡ä»¶/ç›®å½•ç›¸å¯¹äºå½“å‰å·¥ä½œç›®å½•çš„ç»å¯¹è·¯å¾„
+ * »ñÈ¡ÎÄ¼ş/Ä¿Â¼Ïà¶ÔÓÚµ±Ç°¹¤×÷Ä¿Â¼µÄ¾ø¶ÔÂ·¾¶
  */
 int absolute_path(const char* relpath, char* buf, size_t len)
 {
@@ -1297,12 +1297,12 @@ int absolute_path(const char* relpath, char* buf, size_t len)
 }
 
 /*
-* è·å–srcæŒ‡å‘dstçš„ç›¸å¯¹è·¯å¾„
+* »ñÈ¡srcÖ¸ÏòdstµÄÏà¶ÔÂ·¾¶
 * eg. src="/root/a/b/1.txt", dst="/2.txt", ret="../../../2.txt"
 * eg. src="2.txt", dst="root/a/b/1.txt", ret="root/a/b/1.txt"
-* æ³¨1ï¼šsrcå’Œdstå¿…é¡»åŒæ—¶æ˜¯ç›¸å¯¹æˆ–ç»å¯¹é“¾æ¥
-* æ³¨2ï¼šå¦‚æœåŒæ˜¯ç»å¯¹é“¾æ¥è€Œä¸”æ˜¯åœ¨windowsä¸‹ï¼Œsrcå’Œdstå¿…é¡»åœ¨åŒä¸€ç›˜ç¬¦ä¸‹
-* æ³¨3ï¼šsrcæ˜¯å¦ä»¥è·¯å¾„åˆ†éš”ç¬¦ç»“å°¾ä¼šäº§ç”Ÿä¸åŒçš„ç›¸å¯¹è·¯å¾„ï¼Œå¦‚:
+* ×¢1£ºsrcºÍdst±ØĞëÍ¬Ê±ÊÇÏà¶Ô»ò¾ø¶ÔÁ´½Ó
+* ×¢2£ºÈç¹ûÍ¬ÊÇ¾ø¶ÔÁ´½Ó¶øÇÒÊÇÔÚwindowsÏÂ£¬srcºÍdst±ØĞëÔÚÍ¬Ò»ÅÌ·ûÏÂ
+* ×¢3£ºsrcÊÇ·ñÒÔÂ·¾¶·Ö¸ô·û½áÎ²»á²úÉú²»Í¬µÄÏà¶ÔÂ·¾¶£¬Èç:
 * eg. src="C:\\a", dst="C:\\a\\b\\1.txt", ret="a\\b\\1.txt"
 * eg. src="C:\\a\\", dst="C:\\a\\b\\1.txt", ret="b\\1.txt"
  */
@@ -1353,7 +1353,7 @@ int relative_path(const char* src, const char* dst, char sep, char* outbuf, size
   return 1;
 }
 
-/* è·å–å¯ç”¨çš„æ–‡ä»¶è·¯å¾„ */
+/* »ñÈ¡¿ÉÓÃµÄÎÄ¼şÂ·¾¶ */
 int unique_file(const char* path, char *buf, size_t len)
 {
 	const char* ext;
@@ -1364,7 +1364,7 @@ int unique_file(const char* path, char *buf, size_t len)
 	if (!plen)
 		return 0;
 
-	//å¦‚æœåˆå§‹è·¯å¾„ä¸å­˜åœ¨ï¼Œç›´æ¥è¿”å›
+	//Èç¹û³õÊ¼Â·¾¶²»´æÔÚ£¬Ö±½Ó·µ»Ø
 	if (!path_file_exists(path))
 	{
 		if (xstrlcpy(buf, path, len) >= len)
@@ -1373,16 +1373,16 @@ int unique_file(const char* path, char *buf, size_t len)
 		return 1;
 	}
 
-	/* è·å–æ–‡ä»¶æ‰©å±•å */
+	/* »ñÈ¡ÎÄ¼şÀ©Õ¹Ãû */
 	ext = path_find_extension(path);
 	elen = strlen(ext);
 
 	for (i = 1; ;i++)
 	{
-		if (len < plen + num_bits(i) + 4 + elen)	/* " ()"å’Œ'\0' */
+		if (len < plen + num_bits(i) + 4 + elen)	/* " ()"ºÍ'\0' */
 			return 0;
 
-		/* ä½¿ç”¨strncpy ä»¥å¿½ç•¥æ‰©å±•å */
+		/* Ê¹ÓÃstrncpy ÒÔºöÂÔÀ©Õ¹Ãû */
 		strncpy(buf, path, plen - elen);
 		sprintf(buf + plen - elen, " (%d)%s", i, ext);
 
@@ -1394,8 +1394,8 @@ int unique_file(const char* path, char *buf, size_t len)
 	return 0;
 }
 
-/* è·å–å¯ç”¨çš„ç›®å½•è·¯å¾„ */
-/* è¿”å›çš„è·¯å¾„åä¸ä»¥è·¯å¾„åˆ†éš”ç¬¦ç»“å°¾ */
+/* »ñÈ¡¿ÉÓÃµÄÄ¿Â¼Â·¾¶ */
+/* ·µ»ØµÄÂ·¾¶Ãû²»ÒÔÂ·¾¶·Ö¸ô·û½áÎ² */
 int unique_dir(const char* path, char *buf, size_t len)
 {
 	int has_slash, i;
@@ -1404,7 +1404,7 @@ int unique_dir(const char* path, char *buf, size_t len)
 	if (!plen)
 		return 0;
 
-	/* å¦‚æœåˆå§‹ç›®å½•ä¸å­˜åœ¨ï¼Œç›´æ¥è¿”å› */
+	/* Èç¹û³õÊ¼Ä¿Â¼²»´æÔÚ£¬Ö±½Ó·µ»Ø */
 	if (!path_file_exists(path))
 	{
 		if (xstrlcpy(buf, path, len) >= len)
@@ -1413,14 +1413,14 @@ int unique_dir(const char* path, char *buf, size_t len)
 		return 1;
 	}
 
-	/* ç›´æ¥è·¯å¾„ååŠ " (N)"é‡è¯• */
+	/* Ö±½ÓÂ·¾¶ºó¼Ó" (N)"ÖØÊÔ */
 	has_slash = (path[plen-1] == PATH_SEP_CHAR ? 1 : 0);
 	if (has_slash)
 		plen --;
 
 	for (i = 1; ;i++)
 	{
-		/* æ–°è·¯å¾„åçš„é•¿åº¦ï¼Œé™„åŠ äº† " (x)"å’Œ'\0' */
+		/* ĞÂÂ·¾¶ÃûµÄ³¤¶È£¬¸½¼ÓÁË " (x)"ºÍ'\0' */
 		size_t explen = plen + num_bits(i) + 4 + (has_slash ? 1 : 0);
 		if (len < explen)				
 			return 0;
@@ -1440,9 +1440,9 @@ int unique_dir(const char* path, char *buf, size_t len)
 	return 0;
 }
 
-#define U PATH_UNIX			/* Unixä¸å¯ç”¨ï¼š / and \0 */
-#define W PATH_WINDOWS		/* Windowsä¸å¯ç”¨ï¼š \|/<>?:*" */
-#define C 4					/* æ§åˆ¶å­—ç¬¦ï¼šå¦‚ 0-31 */
+#define U PATH_UNIX			/* Unix²»¿ÉÓÃ£º / and \0 */
+#define W PATH_WINDOWS		/* Windows²»¿ÉÓÃ£º \|/<>?:*" */
+#define C 4					/* ¿ØÖÆ×Ö·û£ºÈç 0-31 */
 
 #define UW U|W
 #define UWC U|W|C
@@ -1479,9 +1479,9 @@ UWC,  C,  C,  C,   C,  C,  C,  C,   /* NUL SOH STX ETX  EOT ENQ ACK BEL */
 
 #define PATH_CHAR_ILLEGAL(c, mask) (pathchr_table[(unsigned char)(c)] & (mask|C))
 
-/* å°†è·¯å¾„ä¸­çš„éæ³•å­—ç¬¦æ›¿æ¢ä¸ºç©ºæ ¼ç¬¦ */
-/* å¦‚æœè¢«æ›¿æ¢ä¸ºå¤šä¸ªè¿ç»­çš„ç©ºæ ¼å°†è¢«åˆå¹¶ä¸ºä¸€ä¸ª */
-/* reservedæ‰€æŒ‡å®šçš„å­—ç¬¦å°†è¢«ä¿ç•™(é€šå¸¸ä¸ºè·¯å¾„åˆ†éš”ç¬¦) */
+/* ½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª¿Õ¸ñ·û */
+/* Èç¹û±»Ìæ»»Îª¶à¸öÁ¬ĞøµÄ¿Õ¸ñ½«±»ºÏ²¢ÎªÒ»¸ö */
+/* reservedËùÖ¸¶¨µÄ×Ö·û½«±»±£Áô(Í¨³£ÎªÂ·¾¶·Ö¸ô·û) */
 void path_illegal_blankspace(char *path, int platform, int reserve_separator)
 {
 	char *p, *q;
@@ -1500,8 +1500,8 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
 }
 
 /* 
- * å°†è·¯å¾„ä¸­çš„éæ³•å­—ç¬¦æ›¿æ¢ä¸º%HHçš„å½¢å¼ï¼Œéœ€å¤–éƒ¨é‡Šæ”¾
- * æ³¨ï¼špathå¿…é¡»ä¸ºUTF-8ç¼–ç 
+ * ½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª%HHµÄĞÎÊ½£¬ĞèÍâ²¿ÊÍ·Å
+ * ×¢£ºpath±ØĞëÎªUTF-8±àÂë
  */
 char* path_escape(const char* path, int platform, int reserve_separator)
 {
@@ -1546,9 +1546,9 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 #undef UW
 #undef UWC
 
-/* éå†ç›®å½• */
+/* ±éÀúÄ¿Â¼ */
 struct walk_dir_context {
-	/* éå†çš„è·¯å¾„åï¼Œå¿…é¡»ä»¥è·¯å¾„åˆ†éš”ç¬¦ç»“å°¾ */
+	/* ±éÀúµÄÂ·¾¶Ãû£¬±ØĞëÒÔÂ·¾¶·Ö¸ô·û½áÎ² */
 	char	basedir[MAX_PATH];
 
 #ifdef OS_WIN
@@ -1565,7 +1565,7 @@ struct walk_dir_context {
 #endif
 };
 
-/* æ‰“å¼€ç›®å½•å¹¶è·å–ç¬¬ä¸€é¡¹ */
+/* ´ò¿ªÄ¿Â¼²¢»ñÈ¡µÚÒ»Ïî */
 struct walk_dir_context* walk_dir_begin(const char *dir)
 {
 	struct walk_dir_context* ctx = NULL;
@@ -1625,7 +1625,7 @@ struct walk_dir_context* walk_dir_begin(const char *dir)
 	return ctx;
 }
 
-/* éå†ç›®å½•ä¸­çš„ä¸‹ä¸€é¡¹ */
+/* ±éÀúÄ¿Â¼ÖĞµÄÏÂÒ»Ïî */
 int walk_dir_next(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1646,7 +1646,7 @@ int walk_dir_next(struct walk_dir_context *ctx)
 	return 1;
 }
 
-/* è¯¥é¡¹æ˜¯å¦æ˜¯.(å½“å‰ç›®å½•) */
+/* ¸ÃÏîÊÇ·ñÊÇ.(µ±Ç°Ä¿Â¼) */
 int walk_entry_is_dot(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1663,7 +1663,7 @@ int walk_entry_is_dot(struct walk_dir_context *ctx)
 #endif
 }
 
-/* è¯¥é¡¹æ˜¯å¦æ˜¯..(ä¸Šçº§ç›®å½•) */
+/* ¸ÃÏîÊÇ·ñÊÇ..(ÉÏ¼¶Ä¿Â¼) */
 int walk_entry_is_dotdot(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1680,7 +1680,7 @@ int walk_entry_is_dotdot(struct walk_dir_context *ctx)
 #endif
 }
 
-/* è¯¥é¡¹æ˜¯å¦æ˜¯ç›®å½• */
+/* ¸ÃÏîÊÇ·ñÊÇÄ¿Â¼ */
 int walk_entry_is_dir(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1693,7 +1693,7 @@ int walk_entry_is_dir(struct walk_dir_context *ctx)
 #endif
 }
 
-/* è¯¥é¡¹æ˜¯å¦æ˜¯æ–‡ä»¶ */
+/* ¸ÃÏîÊÇ·ñÊÇÎÄ¼ş */
 int walk_entry_is_file(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1702,8 +1702,8 @@ int walk_entry_is_file(struct walk_dir_context *ctx)
     return !walk_entry_is_dir(ctx);
 }
 
-/* æ™®é€šæ–‡ä»¶çš„å®šä¹‰æ˜¯ï¼šåœ¨Widnowsç³»ç»Ÿä¸Šä¸æ˜¯éšè—æ–‡ä»¶ã€ç³»ç»Ÿæ–‡ä»¶ç­‰ï¼Œ
- * åœ¨Linuxç³»ç»Ÿä¸Šä¸æ˜¯å—è®¾å¤‡ã€å­—ç¬¦è®¾å¤‡ã€FIFOç­‰ */
+/* ÆÕÍ¨ÎÄ¼şµÄ¶¨ÒåÊÇ£ºÔÚWidnowsÏµÍ³ÉÏ²»ÊÇÒş²ØÎÄ¼ş¡¢ÏµÍ³ÎÄ¼şµÈ£¬
+ * ÔÚLinuxÏµÍ³ÉÏ²»ÊÇ¿éÉè±¸¡¢×Ö·ûÉè±¸¡¢FIFOµÈ */
 int walk_entry_is_regular(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1720,7 +1720,7 @@ int walk_entry_is_regular(struct walk_dir_context *ctx)
 #endif
 }
 
-/* è·å–æ­¤é¡¹è·¯å¾„å */
+/* »ñÈ¡´ËÏîÂ·¾¶Ãû */
 const char* walk_entry_name(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1740,7 +1740,7 @@ const char* walk_entry_name(struct walk_dir_context *ctx)
 #endif
 }
 
-/* è·å–æ­¤é¡¹è·¯å¾„å */
+/* »ñÈ¡´ËÏîÂ·¾¶Ãû */
 int walk_entry_path(struct walk_dir_context *ctx, char *buf, size_t len)
 {
 	const char* filename = walk_entry_name(ctx);
@@ -1754,7 +1754,7 @@ int walk_entry_path(struct walk_dir_context *ctx, char *buf, size_t len)
 	return 1;
 }
 
-/* ç»“æŸéå† */
+/* ½áÊø±éÀú */
 void walk_dir_end(struct walk_dir_context *ctx)
 {
 	if (!ctx)
@@ -1769,9 +1769,9 @@ void walk_dir_end(struct walk_dir_context *ctx)
 }
 
 /* 
- * åˆ›å»ºå•å±‚ç›®å½•ï¼ŒæˆåŠŸè¿”å›1
- * æ³¨æ„ï¼šWindowsä¸‹åˆ›å»ºç›®å½•æ—¶ç›®å½•åä¸¤è¾¹çš„ç©ºæ ¼ä¼šè¢«è‡ªåŠ¨åˆ é™¤ï¼Œ
- * æ–‡ä»¶å¤¹åæœ«å°¾çš„.ä¹Ÿä¼šè¢«è‡ªåŠ¨åˆ é™¤
+ * ´´½¨µ¥²ãÄ¿Â¼£¬³É¹¦·µ»Ø1
+ * ×¢Òâ£ºWindowsÏÂ´´½¨Ä¿Â¼Ê±Ä¿Â¼ÃûÁ½±ßµÄ¿Õ¸ñ»á±»×Ô¶¯É¾³ı£¬
+ * ÎÄ¼ş¼ĞÃûÄ©Î²µÄ.Ò²»á±»×Ô¶¯É¾³ı
  */
 int create_directory(const char *dir)
 {
@@ -1796,10 +1796,10 @@ int create_directory(const char *dir)
 }
 
 /*
- * é€’å½’åˆ›å»ºç›®å½•
- * æ³¨æ„ï¼š1ã€è·¯å¾„åå¿…é¡»æ˜¯ç»å¯¹è·¯å¾„å
- * 2ã€å¦‚æœè·¯å¾„åä»¥"\"ç»“å°¾ï¼Œé‚£æœ€åçš„éƒ¨åˆ†åˆ›å»ºä¸ºç›®å½•
- * æ³¨ï¼šlinuxä¸‹dirå¿…é¡»ä¸ºUTF-8ç¼–ç 
+ * µİ¹é´´½¨Ä¿Â¼
+ * ×¢Òâ£º1¡¢Â·¾¶Ãû±ØĞëÊÇ¾ø¶ÔÂ·¾¶Ãû
+ * 2¡¢Èç¹ûÂ·¾¶ÃûÒÔ"\"½áÎ²£¬ÄÇ×îºóµÄ²¿·Ö´´½¨ÎªÄ¿Â¼
+ * ×¢£ºlinuxÏÂdir±ØĞëÎªUTF-8±àÂë
  */
 int create_directories(const char* dir)
 {
@@ -1871,14 +1871,14 @@ int create_directories(const char* dir)
 		*p = PATH_SEP_CHAR;
 
 		if (++p >= pe)
-			break;								/* ä»¥"/"ç»“å°¾ */
+			break;								/* ÒÔ"/"½áÎ² */
 	}
 
 	return 1;
 #endif
 }
 
-/* åˆ é™¤ä¸€ä¸ªç©ºç›®å½• */
+/* É¾³ıÒ»¸ö¿ÕÄ¿Â¼ */
 int delete_directory(const char *dir)
 {	
 	if (!path_valid(dir, 0))
@@ -1906,7 +1906,7 @@ int delete_directory(const char *dir)
 	return 0;				\
 	}while(0)
 
-/* é€’å½’åˆ é™¤ç›®å½•ä¸‹çš„å†…å®¹ */
+/* µİ¹éÉ¾³ıÄ¿Â¼ÏÂµÄÄÚÈİ */
 static int _delete_directories(const char *dir, delete_dir_cb func, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
@@ -1919,11 +1919,11 @@ static int _delete_directories(const char *dir, delete_dir_cb func, void *arg)
 			if (walk_entry_is_dot(ctx)|| walk_entry_is_dotdot(ctx))
 				continue;
 			else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-				if (!walk_entry_is_dir(ctx)) {		//æ–‡ä»¶
+				if (!walk_entry_is_dir(ctx)) {		//ÎÄ¼ş
 					succ = delete_file(buf);
 					if ((func && !func(buf, 0, succ, arg)))
 						TRAV_RETURN_0;
-				} else {							//ç›®å½•
+				} else {							//Ä¿Â¼
 					succ = _delete_directories(buf, func, arg);
 					if ((func && !func(buf, 1, succ, arg)))
 						TRAV_RETURN_0;
@@ -1950,7 +1950,7 @@ int delete_directories(const char *dir, delete_dir_cb func, void *arg)
 	return _delete_directories(dir, func, arg);
 }
 
-/* åˆ¤æ–­ç›®å½•æ˜¯å¦æ˜¯ç©ºç›®å½• */
+/* ÅĞ¶ÏÄ¿Â¼ÊÇ·ñÊÇ¿ÕÄ¿Â¼ */
 int is_empty_dir(const char* dir)
 {
 	struct walk_dir_context* ctx = NULL;
@@ -1986,10 +1986,10 @@ static int _delete_empty_directories(const char* dir)
 			if (walk_entry_is_dot(ctx)|| walk_entry_is_dotdot(ctx))
 				continue;
 			else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-				if (walk_entry_is_dir(ctx)) {		//ç›®å½•
+				if (walk_entry_is_dir(ctx)) {		//Ä¿Â¼
 					if (!_delete_empty_directories(buf))
 						empty = 0;
-				} else								//æ–‡ä»¶
+				} else								//ÎÄ¼ş
 					empty = 0;
 			} else
 				TRAV_RETURN_0;
@@ -2003,17 +2003,17 @@ static int _delete_empty_directories(const char* dir)
 }
 
 /*
- * åˆ é™¤ç›®å½•ä¸‹çš„æ‰€æœ‰ç©ºç›®å½•
- * ä¸åˆ é™¤æ–‡ä»¶ã€åŠå‚æ•°ç›®å½•æœ¬èº«
- * è¿”å›å€¼ï¼šä»…å½“ç›®å½•ä¸‹æ²¡æœ‰ä»»ä½•æ–‡ä»¶æ—¶è¿”å›1ï¼Œå¦åˆ™éƒ½è¿”å›0
+ * É¾³ıÄ¿Â¼ÏÂµÄËùÓĞ¿ÕÄ¿Â¼
+ * ²»É¾³ıÎÄ¼ş¡¢¼°²ÎÊıÄ¿Â¼±¾Éí
+ * ·µ»ØÖµ£º½öµ±Ä¿Â¼ÏÂÃ»ÓĞÈÎºÎÎÄ¼şÊ±·µ»Ø1£¬·ñÔò¶¼·µ»Ø0
  */
 int delete_empty_directories(const char* dir)
 {
 	if (!path_valid(dir, 0))
 		return 0;
 
-	/* ä»…å½“æ‰€æœ‰å­ç›®å½•å‡ä¸åŒ…å«æ–‡ä»¶æ—¶è¿”å›1 */
-	/* æ­¤æ—¶_delete_empty_directoriesä¹Ÿä¼šåˆ é™¤å‚æ•°ç›®å½• */
+	/* ½öµ±ËùÓĞ×ÓÄ¿Â¼¾ù²»°üº¬ÎÄ¼şÊ±·µ»Ø1 */
+	/* ´ËÊ±_delete_empty_directoriesÒ²»áÉ¾³ı²ÎÊıÄ¿Â¼ */
 	if (_delete_empty_directories(dir))
 	{
 		IGNORE_RESULT(create_directory(dir)); //FIXME: handle failure
@@ -2023,16 +2023,16 @@ int delete_empty_directories(const char* dir)
 	return 0;
 }
 
-/* é€’å½’æ‹·è´ç›®å½•
- * curdiræ˜¯æŒ‡æœ¬æ¬¡è¦éå†çš„ç›®å½•ï¼Œsrcdirå’Œdstdiræ˜¯ä¸å˜çš„ï¼Œæ€»æ˜¯æŒ‡å‘æœ€åˆçš„ç›®å½•ï¼Œä¸”å¿…é¡»éƒ½ä»¥è·¯å¾„åˆ†éš”ç¬¦ç»“å°¾
- * å›è°ƒå‡½æ•°å‚æ•°actionï¼š0è¡¨ç¤ºæ‹·è´æ–‡ä»¶ï¼Œ1è¡¨ç¤ºæ‹·è´ç›®å½•ï¼Œ2è¡¨ç¤ºåˆ›å»ºç›®å½•
+/* µİ¹é¿½±´Ä¿Â¼
+ * curdirÊÇÖ¸±¾´ÎÒª±éÀúµÄÄ¿Â¼£¬srcdirºÍdstdirÊÇ²»±äµÄ£¬×ÜÊÇÖ¸Ïò×î³õµÄÄ¿Â¼£¬ÇÒ±ØĞë¶¼ÒÔÂ·¾¶·Ö¸ô·û½áÎ²
+ * »Øµ÷º¯Êı²ÎÊıaction£º0±íÊ¾¿½±´ÎÄ¼ş£¬1±íÊ¾¿½±´Ä¿Â¼£¬2±íÊ¾´´½¨Ä¿Â¼
  */
 static int _copy_directories(char *curdir, const char *srcdir, const char *dstdir,
 							copy_dir_cb func, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
-	char spath[MAX_PATH+1];				//éå†é¡¹è·¯å¾„
-	char dpath[MAX_PATH+1];				//æ‹·è´åˆ°è·¯å¾„;
+	char spath[MAX_PATH+1];				//±éÀúÏîÂ·¾¶
+	char dpath[MAX_PATH+1];				//¿½±´µ½Â·¾¶;
 	size_t srclen = strlen(srcdir);
 	size_t dstlen = strlen(dstdir);
 	int succ;
@@ -2041,31 +2041,31 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 	if (!ctx)
 		return 0;
 
-	//éå†ç›®å½•
+	//±éÀúÄ¿Â¼
 	do {
 		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
 			continue;
 		else if (likely(walk_entry_path(ctx, spath, MAX_PATH))) {
-			char *partial = spath + srclen;		    //æ–‡ä»¶ç›¸å¯¹äºè·¯å¾„
-			size_t	partlen = strlen(partial);		//ç›¸å¯¹è·¯å¾„é•¿åº¦
+			char *partial = spath + srclen;		    //ÎÄ¼şÏà¶ÔÓÚÂ·¾¶
+			size_t	partlen = strlen(partial);		//Ïà¶ÔÂ·¾¶³¤¶È
 
 			if (dstlen + partlen + 1 > sizeof(dpath))
 				TRAV_RETURN_0;
 
 			snprintf(dpath, sizeof(dpath), "%s%s", dstdir, partial);
 
-			if (!walk_entry_is_dir(ctx)) {		    //æ–‡ä»¶
-				//æ‹·è´æ­¤æ–‡ä»¶
+			if (!walk_entry_is_dir(ctx)) {		    //ÎÄ¼ş
+				//¿½±´´ËÎÄ¼ş
 				succ = copy_file(spath, dpath, 1);
 				if (func && !func(spath, dpath, 0, succ, arg))
 					TRAV_RETURN_0;
-			} else {							    //ç›®å½•
-				//åˆ›å»ºæ–°ç›®å½•
+			} else {							    //Ä¿Â¼
+				//´´½¨ĞÂÄ¿Â¼
 				succ = create_directory(dpath);
 				if (func && !func(spath, dpath, 2, succ, arg))
 					TRAV_RETURN_0;
 
-				//é€’å½’æ‹·è´ç›®å½•
+				//µİ¹é¿½±´Ä¿Â¼
 				succ = _copy_directories(spath, srcdir, dstdir, func, arg);
 				if (func && !func(spath, dpath, 1, succ, arg))
 					TRAV_RETURN_0;
@@ -2080,31 +2080,31 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 	return 1;
 }
 
-/* é€’å½’å¤åˆ¶ç›®å½•(å°†æºç›®å½•å¤åˆ¶åˆ°ç›®æ ‡ç›®å½•ä¸‹)
- * å¦‚å°†/aç›®å½•å¤åˆ¶åˆ°/bç›®å½•ä¸‹ï¼Œåˆ™å½¢æˆçš„ç›®å½•æ˜¯/b/a/
+/* µİ¹é¸´ÖÆÄ¿Â¼(½«Ô´Ä¿Â¼¸´ÖÆµ½Ä¿±êÄ¿Â¼ÏÂ)
+ * Èç½«/aÄ¿Â¼¸´ÖÆµ½/bÄ¿Â¼ÏÂ£¬ÔòĞÎ³ÉµÄÄ¿Â¼ÊÇ/b/a/
 
- * æ³¨æ„1ï¼ˆå¤±è´¥æƒ…å†µï¼‰ï¼š
- * 1ã€ç›®æ ‡ç›®å½•ä¸‹ä¸èƒ½æœ‰åŒåŸç›®å½•åç›¸åŒçš„ç›®å½•ï¼Œæ¯”å¦‚/b/a/ä¹‹å‰å°±å­˜åœ¨ï¼Œé‚£ä¹ˆä¼šå¤±è´¥
- * 2ã€å¦‚æœç›®æ ‡ç›®å½•ä¸‹æœ‰åŒæºç›®å½•åç›¸åŒåå­—çš„æ–‡ä»¶ï¼Œæ¯”å¦‚/b/aæ˜¯ä¸€ä¸ªæ–‡ä»¶ï¼Œé‚£å°±ä¹Ÿä¼šå¤±è´¥
+ * ×¢Òâ1£¨Ê§°ÜÇé¿ö£©£º
+ * 1¡¢Ä¿±êÄ¿Â¼ÏÂ²»ÄÜÓĞÍ¬Ô­Ä¿Â¼ÃûÏàÍ¬µÄÄ¿Â¼£¬±ÈÈç/b/a/Ö®Ç°¾Í´æÔÚ£¬ÄÇÃ´»áÊ§°Ü
+ * 2¡¢Èç¹ûÄ¿±êÄ¿Â¼ÏÂÓĞÍ¬Ô´Ä¿Â¼ÃûÏàÍ¬Ãû×ÖµÄÎÄ¼ş£¬±ÈÈç/b/aÊÇÒ»¸öÎÄ¼ş£¬ÄÇ¾ÍÒ²»áÊ§°Ü
  *
- * æ³¨æ„2 æœ‰ä¸¤ç§æƒ…å†µä¸‹å¤åˆ¶æ˜¯ä¸å…è®¸çš„ï¼š
- * 1ã€æºç›®å½•å’Œç›®æ ‡ç›®æ ‡ä¸èƒ½ç›¸åŒï¼Œæ€»ä¸èƒ½æŠŠè‡ªå·±æ‹·è´åˆ°è‡ªå·±ä¸‹é¢å§ -_-||
- * 2ã€ç›®æ ‡ç›®å½•æ˜¯æºç›®å½•çš„å­ç›®å½•ï¼Œæ¯”å¦‚å°†/usrå¤åˆ¶åˆ°/usr/include/ä¸­å»ï¼Œè¿™æ ·ä¼šé€ æˆæ­»å¾ªç¯
- * 3ã€åŸç›®å½•å·²ç»åœ¨ç›®æ ‡ç›®å½•ä¸‹ï¼Œå¦‚å°†/usr/include/å¤åˆ¶åˆ°/usr/ä¸‹ï¼Œè¿™æ ¹æœ¬ä¸ç”¨å¤åˆ¶
+ * ×¢Òâ2 ÓĞÁ½ÖÖÇé¿öÏÂ¸´ÖÆÊÇ²»ÔÊĞíµÄ£º
+ * 1¡¢Ô´Ä¿Â¼ºÍÄ¿±êÄ¿±ê²»ÄÜÏàÍ¬£¬×Ü²»ÄÜ°Ñ×Ô¼º¿½±´µ½×Ô¼ºÏÂÃæ°É -_-||
+ * 2¡¢Ä¿±êÄ¿Â¼ÊÇÔ´Ä¿Â¼µÄ×ÓÄ¿Â¼£¬±ÈÈç½«/usr¸´ÖÆµ½/usr/include/ÖĞÈ¥£¬ÕâÑù»áÔì³ÉËÀÑ­»·
+ * 3¡¢Ô­Ä¿Â¼ÒÑ¾­ÔÚÄ¿±êÄ¿Â¼ÏÂ£¬Èç½«/usr/include/¸´ÖÆµ½/usr/ÏÂ£¬Õâ¸ù±¾²»ÓÃ¸´ÖÆ
  *
- * æ³¨æ„3 åœ¨Windowsä¸‹ï¼Œå¦‚æœç›´æ¥å°†C:\å¤åˆ¶åˆ°D:\ï¼Œä¼šåˆ›å»ºD:\C_DRIVE\...
- * åœ¨Linuxä¸‹ï¼Œæ˜¯ä¸å¯èƒ½æŠŠ/å¤åˆ¶åˆ°ä»»æ„å…¶ä»–è·¯å¾„çš„ï¼Œå› ä¸ºè¿åäº†è§„åˆ™2
+ * ×¢Òâ3 ÔÚWindowsÏÂ£¬Èç¹ûÖ±½Ó½«C:\¸´ÖÆµ½D:\£¬»á´´½¨D:\C_DRIVE\...
+ * ÔÚLinuxÏÂ£¬ÊÇ²»¿ÉÄÜ°Ñ/¸´ÖÆµ½ÈÎÒâÆäËûÂ·¾¶µÄ£¬ÒòÎªÎ¥·´ÁË¹æÔò2
 
- * æ³¨æ„4 Linuxçš„è·¯å¾„æ“ä½œæ˜¯åŒºåˆ†å¤§å°å†™çš„ï¼Œå³aå’ŒAå¯åŒæ—¶å­˜åœ¨äºä¸€ä¸ªç›®å½•ä¸‹
- * è€Œåœ¨Windowsä¸‹æ“ä½œæ—¶ï¼Œä¸èƒ½åœ¨åŒä¸€ç›®å½•ä¸‹åˆ›å»ºå·²å­˜åœ¨æ–‡ä»¶/ç›®å½•åçš„å¤§å°å†™ä¸åŒç‰ˆæœ¬
- * å¦‚æœåœ¨Linuxä¸‹ä¸ºNTFS/FATæ–‡ä»¶ç³»ç»Ÿåˆ›å»ºäº†ä»…å¤§å°å†™ä¸åŒçš„æ–‡ä»¶/ç›®å½•ï¼Œå†åˆ‡æ¢åˆ°Windowsä¸‹æ˜¯ä¸å¯é¢„æµ‹çš„
- * ä¸ºäº†ç¼–å†™å¯ç§»æ¤çš„åº”ç”¨ç¨‹åºï¼Œä¸åº”è¯¥ä»¥å¤§å°å†™æ¥åŒºåˆ†ä¸åŒçš„æ–‡ä»¶æˆ–ç›®å½•ã€‚
+ * ×¢Òâ4 LinuxµÄÂ·¾¶²Ù×÷ÊÇÇø·Ö´óĞ¡Ğ´µÄ£¬¼´aºÍA¿ÉÍ¬Ê±´æÔÚÓÚÒ»¸öÄ¿Â¼ÏÂ
+ * ¶øÔÚWindowsÏÂ²Ù×÷Ê±£¬²»ÄÜÔÚÍ¬Ò»Ä¿Â¼ÏÂ´´½¨ÒÑ´æÔÚÎÄ¼ş/Ä¿Â¼ÃûµÄ´óĞ¡Ğ´²»Í¬°æ±¾
+ * Èç¹ûÔÚLinuxÏÂÎªNTFS/FATÎÄ¼şÏµÍ³´´½¨ÁË½ö´óĞ¡Ğ´²»Í¬µÄÎÄ¼ş/Ä¿Â¼£¬ÔÙÇĞ»»µ½WindowsÏÂÊÇ²»¿ÉÔ¤²âµÄ
+ * ÎªÁË±àĞ´¿ÉÒÆÖ²µÄÓ¦ÓÃ³ÌĞò£¬²»Ó¦¸ÃÒÔ´óĞ¡Ğ´À´Çø·Ö²»Í¬µÄÎÄ¼ş»òÄ¿Â¼¡£
  */
 int copy_directories(const char *src, const char *dst, 
 					copy_dir_cb func, void *arg)
 {
 	char sdir[MAX_PATH+1], ddir[MAX_PATH+1];
-	char dbuf[MAX_PATH+1], lastdir[256];	/* Linuxæ”¯æŒçš„æœ€é•¿æ–‡ä»¶å/ç›®å½•åä¸º255 */
+	char dbuf[MAX_PATH+1], lastdir[256];	/* LinuxÖ§³ÖµÄ×î³¤ÎÄ¼şÃû/Ä¿Â¼ÃûÎª255 */
 	char *p;
 	int ret;	
 
@@ -2117,7 +2117,7 @@ int copy_directories(const char *src, const char *dst,
 	if (!path_is_directory(src) || !path_is_directory(dst))
 		return 0;
 
-	/* ç¡®ä¿ç›®å½•ä»¥åˆ†éš”ç¬¦ç»“å°¾ */
+	/* È·±£Ä¿Â¼ÒÔ·Ö¸ô·û½áÎ² */
 	strcpy(sdir, src);
 	if (sdir[slen-1] != PATH_SEP_CHAR) {
 		sdir[slen++] = PATH_SEP_CHAR;
@@ -2130,7 +2130,7 @@ int copy_directories(const char *src, const char *dst,
 		ddir[dlen] = '\0';
 	}
 
-	/* æ£€æŸ¥è§„åˆ™1 */
+	/* ¼ì²é¹æÔò1 */
 #if defined OS_WIN
 	if (!strcasecmp(sdir, ddir))
 		goto copy_dirs_error;
@@ -2139,7 +2139,7 @@ int copy_directories(const char *src, const char *dst,
 		goto copy_dirs_error;
 #endif
 
-	/* æ£€æŸ¥è§„åˆ™2 */
+	/* ¼ì²é¹æÔò2 */
 #ifdef OS_WIN
 	p = strcasestr(ddir, sdir);
 #else
@@ -2149,7 +2149,7 @@ int copy_directories(const char *src, const char *dst,
 	if (p == ddir)
 		goto copy_dirs_error;
 
-	/* æ£€æŸ¥è§„åˆ™3 */
+	/* ¼ì²é¹æÔò3 */
 #ifdef OS_WIN
 	p = strcasestr(sdir, ddir);
 #else
@@ -2170,8 +2170,8 @@ int copy_directories(const char *src, const char *dst,
 			goto copy_dirs_error;
 	}
 
-	/* åœ¨ç›®æ ‡ç›®å½•ä¸‹åˆ›å»ºåŒåæ–‡ä»¶å¤¹ï¼Œéœ€è¦æ‰¾å‡ºæºç›®å½•çš„æœ€åä¸€çº§ç›®å½•å */
-	/* path_find_file_nameè¿”å›å€¼ä»¥/ç»“å°¾,è¿˜è¦æ³¨æ„æºç›®å½•æ˜¯C:\çš„æƒ…å†µ */
+	/* ÔÚÄ¿±êÄ¿Â¼ÏÂ´´½¨Í¬ÃûÎÄ¼ş¼Ğ£¬ĞèÒªÕÒ³öÔ´Ä¿Â¼µÄ×îºóÒ»¼¶Ä¿Â¼Ãû */
+	/* path_find_file_name·µ»ØÖµÒÔ/½áÎ²,»¹Òª×¢ÒâÔ´Ä¿Â¼ÊÇC:\µÄÇé¿ö */
 	p = (char*)path_find_file_name(sdir);
 	if (!p)
 		goto copy_dirs_error;
@@ -2194,13 +2194,13 @@ int copy_directories(const char *src, const char *dst,
 	strcpy(dbuf, ddir);
 	xstrlcat(dbuf, lastdir, sizeof(dbuf));
 
-	/* å¦‚æœç›®æ ‡ç›®å½•ä¸‹å·²ç»å­˜åœ¨æ­¤ç›®å½•æˆ–æ–‡ä»¶ */
+	/* Èç¹ûÄ¿±êÄ¿Â¼ÏÂÒÑ¾­´æÔÚ´ËÄ¿Â¼»òÎÄ¼ş */
 	dbuf[strlen(dbuf)-1] = '\0';
 	if (path_file_exists(dbuf)
 	   ||!create_directory(dbuf))
 		goto copy_dirs_error;
 
-	/* é€’å½’å¤åˆ¶ */
+	/* µİ¹é¸´ÖÆ */
 	dbuf[strlen(dbuf)] = PATH_SEP_CHAR;
 	ret = _copy_directories(sdir, sdir, dbuf, func, arg);
 
@@ -2212,9 +2212,9 @@ copy_dirs_error:
 }
 
 /* 
- *  æŸ¥æ‰¾å¹¶å¤„ç†ç›®å½•ä¸‹çš„æ¯ä¸ªæ–‡ä»¶ 
- * ã€å‚æ•°ã€‘recursivelyï¼šæ˜¯å¦é€’å½’æŸ¥æ‰¾æ–‡ä»¶ï¼Œregular_onlyï¼šæ˜¯å¦ä»…å¤„ç†æ™®é€šæ–‡ä»¶
- * ã€è¿”å›å€¼ã€‘1è¡¨ç¤ºæˆåŠŸå¤„ç†æ¯ä¸ªå‘ç°çš„æ–‡ä»¶ï¼Œ0è¡¨ç¤ºæŸ¥æ‰¾æœ‰è¯¯æˆ–å¤„ç†å‡½æ•°è¿”å›0
+ *  ²éÕÒ²¢´¦ÀíÄ¿Â¼ÏÂµÄÃ¿¸öÎÄ¼ş 
+ * ¡¾²ÎÊı¡¿recursively£ºÊÇ·ñµİ¹é²éÕÒÎÄ¼ş£¬regular_only£ºÊÇ·ñ½ö´¦ÀíÆÕÍ¨ÎÄ¼ş
+ * ¡¾·µ»ØÖµ¡¿1±íÊ¾³É¹¦´¦ÀíÃ¿¸ö·¢ÏÖµÄÎÄ¼ş£¬0±íÊ¾²éÕÒÓĞÎó»ò´¦Àíº¯Êı·µ»Ø0
  */
 int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int regular_only, void *arg)
 {
@@ -2227,12 +2227,12 @@ int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int
 			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
 				continue;
 			else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-				if (walk_entry_is_dir(ctx)){				//ç›®å½•
+				if (walk_entry_is_dir(ctx)){				//Ä¿Â¼
 					if (recursively){
 						if (!foreach_file(buf, func, recursively, regular_only, arg))
 							TRAV_RETURN_0;
 					}
-				} else {										//æ–‡ä»¶
+				} else {										//ÎÄ¼ş
 					if (!regular_only || walk_entry_is_regular(ctx)){
 						if (!(*func)(buf, arg))
 							TRAV_RETURN_0;
@@ -2250,8 +2250,8 @@ int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int
 }
 
 /* 
- *  æŸ¥æ‰¾å¹¶å¤„ç†ç›®å½•ä¸‹çš„æ¯ä¸ªç›®å½•
- * ã€è¿”å›å€¼ã€‘1è¡¨ç¤ºæˆåŠŸå¤„ç†æ¯ä¸ªå‘ç°çš„ç›®å½•ï¼Œ0è¡¨ç¤ºæŸ¥æ‰¾æœ‰è¯¯æˆ–å¤„ç†å‡½æ•°è¿”å›0
+ *  ²éÕÒ²¢´¦ÀíÄ¿Â¼ÏÂµÄÃ¿¸öÄ¿Â¼
+ * ¡¾·µ»ØÖµ¡¿1±íÊ¾³É¹¦´¦ÀíÃ¿¸ö·¢ÏÖµÄÄ¿Â¼£¬0±íÊ¾²éÕÒÓĞÎó»ò´¦Àíº¯Êı·µ»Ø0
  */
 int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 {
@@ -2263,7 +2263,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 		do {
 			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
 				continue;
-			else if (walk_entry_is_dir(ctx)) {				//ç›®å½•
+			else if (walk_entry_is_dir(ctx)) {				//Ä¿Â¼
 				if (walk_entry_path(ctx, buf, MAX_PATH)) {
 					if (!(*func)(buf, arg))
 						TRAV_RETURN_0;	
@@ -2279,7 +2279,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 	return 1;
 }
 
-/* åˆ é™¤æ–‡ä»¶ */
+/* É¾³ıÎÄ¼ş */
 int delete_file(const char *path)
 {
 	if (!path_valid(path, 0))
@@ -2302,45 +2302,45 @@ int delete_file(const char *path)
 #endif
 }
 
-/* åˆ é™¤æ–‡ä»¶åŠå‘ä¸Šçš„ç©ºç›®å½•ç›´åˆ°æŒ‡å®šç›®å½•
- * åˆ é™¤æ–‡ä»¶ï¼Œå¹¶æŸ¥çœ‹æ–‡ä»¶æ‰€åœ¨çš„ç›®å½•æ˜¯å¦æ˜¯ç©ºç›®å½•ï¼Œå¦‚æœæ˜¯ç©ºç›®å½•ä¸”ä¸æ˜¯top_dirï¼Œç»§ç»­åˆ é™¤æ­¤ç›®å½•
- * ä¾æ¬¡å‘ä¸Šæœå¯»ï¼Œé‡åˆ°éç©ºç›®å½•æˆ–å·²è¾¾åˆ°top_dirä¸ºæ­¢
- * pathå’Œtop_dirå¿…é¡»åŒæ—¶æ˜¯ç»å¯¹è·¯å¾„æˆ–è€…ç›¸å¯¹è·¯å¾„ï¼Œtop_diræ˜¯å¦ä»¥è·¯å¾„åˆ†éš”ç¬¦ç»“å°¾æ— å½±å“
- * æ³¨ï¼šåœ¨ä»»ä½•æƒ…å†µä¸‹ï¼Œå·²ç»ç¡®ä¿ä¸ä¼šåˆ é™¤æ ¹ç›®å½•(/æˆ–C:\)ï¼Œå¦åˆ™å°†æ˜¯ä¸€åœºç¾éš¾ï¼
+/* É¾³ıÎÄ¼ş¼°ÏòÉÏµÄ¿ÕÄ¿Â¼Ö±µ½Ö¸¶¨Ä¿Â¼
+ * É¾³ıÎÄ¼ş£¬²¢²é¿´ÎÄ¼şËùÔÚµÄÄ¿Â¼ÊÇ·ñÊÇ¿ÕÄ¿Â¼£¬Èç¹ûÊÇ¿ÕÄ¿Â¼ÇÒ²»ÊÇtop_dir£¬¼ÌĞøÉ¾³ı´ËÄ¿Â¼
+ * ÒÀ´ÎÏòÉÏËÑÑ°£¬Óöµ½·Ç¿ÕÄ¿Â¼»òÒÑ´ïµ½top_dirÎªÖ¹
+ * pathºÍtop_dir±ØĞëÍ¬Ê±ÊÇ¾ø¶ÔÂ·¾¶»òÕßÏà¶ÔÂ·¾¶£¬top_dirÊÇ·ñÒÔÂ·¾¶·Ö¸ô·û½áÎ²ÎŞÓ°Ïì
+ * ×¢£ºÔÚÈÎºÎÇé¿öÏÂ£¬ÒÑ¾­È·±£²»»áÉ¾³ı¸ùÄ¿Â¼(/»òC:\)£¬·ñÔò½«ÊÇÒ»³¡ÔÖÄÑ£¡
  */
 int	delete_file_empty_updir(const char* path, const char* top_dir)
 {
 	char pbuf[MAX_PATH], *p;
 	size_t top_len;
 
-	/* pathå¿…é¡»æ˜¯top_dirç›®å½•ä¸‹çš„æ–‡ä»¶ */
+	/* path±ØĞëÊÇtop_dirÄ¿Â¼ÏÂµÄÎÄ¼ş */
 	if (!path_valid(path, 0) 
 		|| !path_valid(top_dir, 0) 
 		|| strstr(path, top_dir) != path)
 		return 0;
 
-	/* åˆ é™¤æŒ‡å®šæ–‡ä»¶
-	 * å¦‚æœæ–‡ä»¶åˆ é™¤å¤±è´¥ï¼Œæˆ–è€…è·¯å¾„å‚æ•°æœ‰æ— ï¼Œæˆ–è€…æ–‡ä»¶æ­£åœ¨ä½¿ç”¨ï¼Œæˆ–è€…...
-	 * æ‰€ä»¥ç»§ç»­åˆ é™¤ç›®å½•ä¹Ÿå¾ˆæœ‰å¯èƒ½ä¼šå¤±è´¥ï¼Œå› æ­¤ç›´æ¥è¿”å›å¤±è´¥å€¼
+	/* É¾³ıÖ¸¶¨ÎÄ¼ş
+	 * Èç¹ûÎÄ¼şÉ¾³ıÊ§°Ü£¬»òÕßÂ·¾¶²ÎÊıÓĞÎŞ£¬»òÕßÎÄ¼şÕıÔÚÊ¹ÓÃ£¬»òÕß...
+	 * ËùÒÔ¼ÌĞøÉ¾³ıÄ¿Â¼Ò²ºÜÓĞ¿ÉÄÜ»áÊ§°Ü£¬Òò´ËÖ±½Ó·µ»ØÊ§°ÜÖµ
 	 */
 	if (!delete_file(path))
 		return 0;
 
-	/* å¤åˆ¶è·¯å¾„åˆ°ç¼“å†²åŒº */
+	/* ¸´ÖÆÂ·¾¶µ½»º³åÇø */
 	xstrlcpy(pbuf, path, MAX_PATH);
 
-	/* ç»ˆæ­¢ç›®å½•çš„è·¯å¾„é•¿åº¦ï¼ŒåŒ…æ‹¬ç»“å°¾çš„è·¯å¾„åˆ†éš”ç¬¦ */
+	/* ÖÕÖ¹Ä¿Â¼µÄÂ·¾¶³¤¶È£¬°üÀ¨½áÎ²µÄÂ·¾¶·Ö¸ô·û */
 	top_len = strlen(top_dir);
 	if (top_dir[top_len-1] != PATH_SEP_CHAR)
 		top_len++;
 
-	/* é€çº§åˆ é™¤ä¸Šå±‚ç©ºç›®å½• */
+	/* Öğ¼¶É¾³ıÉÏ²ã¿ÕÄ¿Â¼ */
 	while((p = strrchr(pbuf, PATH_SEP_CHAR)))
 	{
 		*(p+1) = '\0';
-		if (is_root_path(pbuf)					//Oops! ä¸è¦åˆ é™¤æ ¹æ–‡ä»¶ç³»ç»Ÿï¼
-			|| (size_t)(p - pbuf) < top_len		//åˆ°è¾¾é¡¶å±‚ç›®å½•
-			|| !is_empty_dir(pbuf))				//é‡åˆ°éç©ºç›®å½•
+		if (is_root_path(pbuf)					//Oops! ²»ÒªÉ¾³ı¸ùÎÄ¼şÏµÍ³£¡
+			|| (size_t)(p - pbuf) < top_len		//µ½´ï¶¥²ãÄ¿Â¼
+			|| !is_empty_dir(pbuf))				//Óöµ½·Ç¿ÕÄ¿Â¼
 			return 1;
 
 		if (!delete_directory(pbuf))
@@ -2352,7 +2352,7 @@ int	delete_file_empty_updir(const char* path, const char* top_dir)
 	return 1;
 }
 
-/* å¤åˆ¶æ–‡ä»¶ */
+/* ¸´ÖÆÎÄ¼ş */
 int copy_file(const char *exists, const char *newfile, int overwritten)
 {
 	if (!path_valid(exists, 0) || !path_valid(newfile, 0))
@@ -2408,12 +2408,12 @@ int copy_file(const char *exists, const char *newfile, int overwritten)
 }
 
 /* 
- * ç§»åŠ¨æ–‡ä»¶ (ä¸èƒ½ç§»åŠ¨ç›®å½•)
- * å¦‚æœä¸¤è·¯å¾„ä½äºåŒä¸€æ–‡ä»¶ç³»ç»Ÿä¸­ï¼Œåˆ™ä»…å¯¹æ–‡ä»¶é‡å‘½åå¹¶ç«‹å³è¿”å›ï¼›
- * å¦åˆ™ï¼Œå°†æºæ–‡ä»¶æ‹·è´åˆ°æ–°æ–‡ä»¶ä½ç½®ï¼Œå¹¶åˆ é™¤æºæ–‡ä»¶ã€‚
- * æ³¨æ„ï¼š1ã€æ–°æ–‡ä»¶åæ‰€åœ¨çš„ç›®å½•å¿…é¡»å­˜åœ¨ã€‚
- * 2ã€å¦‚æœæºæ–‡ä»¶å’Œç›®æ ‡æ–‡ä»¶ç›¸åŒï¼Œå°†æˆåŠŸè¿”å›
- * TODO:å¦‚æœexistså’Œnewfileæ˜¯æŒ‡å‘åŒä¸€ä¸ªæ–‡ä»¶çš„ç¡¬é“¾æ¥å¦‚ä½•å¤„ç†
+ * ÒÆ¶¯ÎÄ¼ş (²»ÄÜÒÆ¶¯Ä¿Â¼)
+ * Èç¹ûÁ½Â·¾¶Î»ÓÚÍ¬Ò»ÎÄ¼şÏµÍ³ÖĞ£¬Ôò½ö¶ÔÎÄ¼şÖØÃüÃû²¢Á¢¼´·µ»Ø£»
+ * ·ñÔò£¬½«Ô´ÎÄ¼ş¿½±´µ½ĞÂÎÄ¼şÎ»ÖÃ£¬²¢É¾³ıÔ´ÎÄ¼ş¡£
+ * ×¢Òâ£º1¡¢ĞÂÎÄ¼şÃûËùÔÚµÄÄ¿Â¼±ØĞë´æÔÚ¡£
+ * 2¡¢Èç¹ûÔ´ÎÄ¼şºÍÄ¿±êÎÄ¼şÏàÍ¬£¬½«³É¹¦·µ»Ø
+ * TODO:Èç¹ûexistsºÍnewfileÊÇÖ¸ÏòÍ¬Ò»¸öÎÄ¼şµÄÓ²Á´½ÓÈçºÎ´¦Àí
  */
 int move_file(const char* exists, const char* newfile, int overwritten)
 {
@@ -2446,7 +2446,7 @@ int move_file(const char* exists, const char* newfile, int overwritten)
 #else //Linux
 	if (rename(exists, newfile))
 	{
-		/* ä½äºä¸åŒæ–‡ä»¶ç³»ç»Ÿä¸­ */
+		/* Î»ÓÚ²»Í¬ÎÄ¼şÏµÍ³ÖĞ */
 		if (errno == EXDEV && copy_file(exists, newfile, 0))
 		{
 			IGNORE_RESULT(delete_file(exists));
@@ -2460,12 +2460,12 @@ int move_file(const char* exists, const char* newfile, int overwritten)
 #endif
 }
 
-/* è·å–æ–‡ä»¶é•¿åº¦ */
+/* »ñÈ¡ÎÄ¼ş³¤¶È */
 int64_t file_size(const char* path)
 {
 #ifdef OS_WIN
 	HANDLE handle;
-	LARGE_INTEGER li;
+	DWORD length;
 #ifdef USE_UTF8_STR
 	wchar_t wpath[MAX_PATH];
 	if (!path_valid(path, 0))
@@ -2478,13 +2478,13 @@ int64_t file_size(const char* path)
 #endif
 	if (handle == INVALID_HANDLE_VALUE)
 		return -1;
-	if (!GetFileSizeEx(handle, &li))
+	if (!GetFileSize(handle, &length))
 	{
 		CloseHandle(handle);
 		return -1;
 	}
 	CloseHandle(handle);
-	return li.QuadPart;
+	return length;
 #else /* POSIX */
 	struct stat st;
 	if (!path_valid(path, 0))
@@ -2496,7 +2496,7 @@ int64_t file_size(const char* path)
 #endif
 }
 
-/* è·å–æ–‡ä»¶æˆ–ç›®å½•æ‰€åœ¨æ–‡ä»¶ç³»ç»Ÿç£ç›˜åŒºå—çš„å¤§å° */
+/* »ñÈ¡ÎÄ¼ş»òÄ¿Â¼ËùÔÚÎÄ¼şÏµÍ³´ÅÅÌÇø¿éµÄ´óĞ¡ */
 int get_file_block_size(const char *path)
 {
 #ifdef OS_WIN
@@ -2506,14 +2506,14 @@ int get_file_block_size(const char *path)
 		DWORD TotalNumberOfClusters;
 		char drive[4];
 
-		/* æ£€æŸ¥æ˜¯å¦æ˜¯ç»å¯¹è·¯å¾„ */
+		/* ¼ì²éÊÇ·ñÊÇ¾ø¶ÔÂ·¾¶ */
 		if (!path_valid(path, 1))
 			return 0;
 
 		strncpy(drive, path, 3);
 		drive[3] = '\0';
 
-		/* è·å–ç£ç›˜åˆ†åŒºç°‡/å—å¤§å° */
+		/* »ñÈ¡´ÅÅÌ·ÖÇø´Ø/¿é´óĞ¡ */
 		if (!GetDiskFreeSpaceA(drive, &SectorsPerCluster, &BytesPerSector, &NumberOfFreeClusters, &TotalNumberOfClusters))
 			return 0;
 
@@ -2527,10 +2527,10 @@ int get_file_block_size(const char *path)
 #endif
 }
 
-/* è·å–æ–‡ä»¶å®é™…å ç”¨ç£ç›˜ç©ºé—´çš„å¤§å° */
-/* å‚æ•°fileå¿…é¡»æ˜¯ç»å¯¹è·¯å¾„ */
-/* åœ¨Linuxä¸‹ï¼Œç›®å½•æ–‡ä»¶ä¼šä¹Ÿä¼šå ç”¨ç£ç›˜å—ï¼Œè€ŒWindowsä¸‹ä¸å ç”¨ç£ç›˜ç©ºé—´ */
-/* ç©ºæ–‡ä»¶ï¼ˆé•¿åº¦ä¸º0ï¼‰å‡ä¸å ç”¨ç£ç›˜ç©ºé—´ */
+/* »ñÈ¡ÎÄ¼şÊµ¼ÊÕ¼ÓÃ´ÅÅÌ¿Õ¼äµÄ´óĞ¡ */
+/* ²ÎÊıfile±ØĞëÊÇ¾ø¶ÔÂ·¾¶ */
+/* ÔÚLinuxÏÂ£¬Ä¿Â¼ÎÄ¼ş»áÒ²»áÕ¼ÓÃ´ÅÅÌ¿é£¬¶øWindowsÏÂ²»Õ¼ÓÃ´ÅÅÌ¿Õ¼ä */
+/* ¿ÕÎÄ¼ş£¨³¤¶ÈÎª0£©¾ù²»Õ¼ÓÃ´ÅÅÌ¿Õ¼ä */
 int64_t get_file_disk_usage(const char *path)
 {
 #ifdef OS_WIN
@@ -2541,7 +2541,7 @@ int64_t get_file_disk_usage(const char *path)
 	if (blocksize <= 0)
 		return 0;
 
-	/* ç›®å½•ä¸å ç©ºé—´ */
+	/* Ä¿Â¼²»Õ¼¿Õ¼ä */
 	fsize = file_size(path);
 	if (fsize <= 0)
 		return 0;
@@ -2556,14 +2556,14 @@ int64_t get_file_disk_usage(const char *path)
 #endif
 }
 
-/* æ ¹æ®æ–‡ä»¶å®é™…å¤§å°å’Œåˆ†åŒºå—å¤§å°è·å–å®é™…å ç”¨ç£ç›˜ç©ºé—´ */
+/* ¸ù¾İÎÄ¼şÊµ¼Ê´óĞ¡ºÍ·ÖÇø¿é´óĞ¡»ñÈ¡Êµ¼ÊÕ¼ÓÃ´ÅÅÌ¿Õ¼ä */
 int64_t compute_file_disk_usage(int64_t real_size, int block_size)
 {
 	return (real_size + block_size) & (~(block_size - 1));
 }
 
-/* è·å–å¯è¯»æ€§å¼ºçš„æ–‡ä»¶å¤§å° */ 
-/* å¦‚3.51GB, 2.2MB, INT64_MAX æœ€é«˜å¯è¾¾ 8EB */
+/* »ñÈ¡¿É¶ÁĞÔÇ¿µÄÎÄ¼ş´óĞ¡ */ 
+/* Èç3.51GB, 2.2MB, INT64_MAX ×î¸ß¿É´ï 8EB */
 void file_size_readable(int64_t size, char* outbuf, int outlen)
 {
 	static const int64_t Byte = 1;
@@ -2617,7 +2617,7 @@ FILE* xfopen(const char* file, const char* mode)
 #endif
 }
 
-/* å…³é—­æ–‡ä»¶ */
+/* ¹Ø±ÕÎÄ¼ş */
 void xfclose(FILE* fp)
 {
 	if (!fp)
@@ -2630,13 +2630,13 @@ void xfclose(FILE* fp)
 	fclose(fp);
 }
 
-/* è¯»å–æ–‡ä»¶
- * è¯»å–æ–‡ä»¶ç›´åˆ°ï¼š
- * 1ã€separator>=0 ? é‡åˆ°separatorä¸ºæ­¢ï¼›
- * 2ã€maxcount>=0 ? æœ€å¤šmaxcountä¸ªå­—èŠ‚ä¸ºæ­¢
- * 3ã€æ–‡ä»¶æœ«å°¾ã€‚
- * è¿”å›å€¼ï¼š1ä»£è¡¨æˆåŠŸ0ä»£è¡¨å¤±è´¥ï¼Œå¦‚æœæˆåŠŸè¯»å–åˆ°çš„å†…å®¹å°†å­˜æ”¾äº*outbufä¸­ä¸”é•¿åº¦ä¸º*outlen
- * å¦‚æœæ˜¯é‡åˆ°åˆ†éš”ç¬¦è€Œç»“æŸï¼Œè¿”å›çš„å†…å®¹å°†åŒ…å«åˆ†éš”ç¬¦ï¼›ä»»ä½•æƒ…å†µä¸‹å‡ä»¥'\0'ç»“å°¾ï¼›
+/* ¶ÁÈ¡ÎÄ¼ş
+ * ¶ÁÈ¡ÎÄ¼şÖ±µ½£º
+ * 1¡¢separator>=0 ? Óöµ½separatorÎªÖ¹£»
+ * 2¡¢maxcount>=0 ? ×î¶àmaxcount¸ö×Ö½ÚÎªÖ¹
+ * 3¡¢ÎÄ¼şÄ©Î²¡£
+ * ·µ»ØÖµ£º1´ú±í³É¹¦0´ú±íÊ§°Ü£¬Èç¹û³É¹¦¶ÁÈ¡µ½µÄÄÚÈİ½«´æ·ÅÓÚ*outbufÖĞÇÒ³¤¶ÈÎª*outlen
+ * Èç¹ûÊÇÓöµ½·Ö¸ô·û¶ø½áÊø£¬·µ»ØµÄÄÚÈİ½«°üº¬·Ö¸ô·û£»ÈÎºÎÇé¿öÏÂ¾ùÒÔ'\0'½áÎ²£»
  */
 int xfread(FILE* fp, int separator, size_t max_count,
 			char** outbuf, size_t* outlen)
@@ -2680,11 +2680,11 @@ int xfread(FILE* fp, int separator, size_t max_count,
 	return 1;
 }
 
-/* å°†æ–‡ä»¶è¯»å…¥å†…å­˜ */
-/* å¦‚æœæ–‡ä»¶ä¸å­˜åœ¨æˆ–å¤§äº1GBï¼Œå°†è¿”å›NULL */
-/* å¦‚æœmax_sizeå¤§äºé›¶ï¼Œåˆ™ä»…å½“æ–‡ä»¶å¤§å°å°äºæŒ‡å®šå€¼æ—¶æ‰åŠ è½½ */
-/* å¦‚æœæ–‡ä»¶çš„é•¿åº¦ä¸º0ï¼Œåˆ™contentä¸ºNULLï¼Œä¸”lengthç­‰äº0 */
-/* å¦‚æœè¯»å…¥å†…å­˜æˆåŠŸï¼Œç¼“å†²åŒºå°†ä»¥'\0'ç»“å°¾ */
+/* ½«ÎÄ¼ş¶ÁÈëÄÚ´æ */
+/* Èç¹ûÎÄ¼ş²»´æÔÚ»ò´óÓÚ1GB£¬½«·µ»ØNULL */
+/* Èç¹ûmax_size´óÓÚÁã£¬Ôò½öµ±ÎÄ¼ş´óĞ¡Ğ¡ÓÚÖ¸¶¨ÖµÊ±²Å¼ÓÔØ */
+/* Èç¹ûÎÄ¼şµÄ³¤¶ÈÎª0£¬ÔòcontentÎªNULL£¬ÇÒlengthµÈÓÚ0 */
+/* Èç¹û¶ÁÈëÄÚ´æ³É¹¦£¬»º³åÇø½«ÒÔ'\0'½áÎ² */
 struct file_mem* read_file_mem(const char* file, size_t max_size)
 {
 	struct file_mem *fm;
@@ -2695,13 +2695,13 @@ struct file_mem* read_file_mem(const char* file, size_t max_size)
 	if (!path_valid(file, 0))
 		return NULL;
 
-	/* è·å–æ–‡ä»¶å¤§å° */
+	/* »ñÈ¡ÎÄ¼ş´óĞ¡ */
 	length = file_size(file);
 	if (length < 0 || length > (1<<30) || 
 		(max_size > 0 && length > (int64_t)max_size))
 		return NULL;
 
-	/* æ‰“å¼€è¯»å–æ–‡ä»¶ */
+	/* ´ò¿ª¶ÁÈ¡ÎÄ¼ş */
 	fp = xfopen(file, "rb");
 	if (!fp)
 		return NULL;
@@ -2715,7 +2715,7 @@ struct file_mem* read_file_mem(const char* file, size_t max_size)
 		return fm;
 	}
 
-	/* åˆ†é…å†…å­˜å¹¶è¯»å…¥ */
+	/* ·ÖÅäÄÚ´æ²¢¶ÁÈë */
 	fm->content = (char*)xmalloc(fm->length + 1);
 
 	readed = fread(fm->content, 1, fm->length, fp);
@@ -2732,7 +2732,7 @@ struct file_mem* read_file_mem(const char* file, size_t max_size)
 	return fm;
 }
 
-/* é‡Šæ”¾è¯»å–åˆ°å†…å­˜ä¸­çš„æ–‡ä»¶ */
+/* ÊÍ·Å¶ÁÈ¡µ½ÄÚ´æÖĞµÄÎÄ¼ş */
 void free_file_mem(struct file_mem *fm)
 {
 	if (fm)
@@ -2743,8 +2743,8 @@ void free_file_mem(struct file_mem *fm)
 	}
 }
 
-/* å°†å†…å­˜ä¸­çš„æ•°æ®å†™å…¥æ–‡ä»¶ */
-/* å‚æ•°append:å¦‚æœæ–‡ä»¶å·²å­˜åœ¨ï¼Œæ˜¯å¦è¿½åŠ æ•°æ®åˆ°æ–‡ä»¶ï¼ˆå¦åˆ™æ¸…ç©ºæºæ–‡ä»¶å†…å®¹ï¼‰ */
+/* ½«ÄÚ´æÖĞµÄÊı¾İĞ´ÈëÎÄ¼ş */
+/* ²ÎÊıappend:Èç¹ûÎÄ¼şÒÑ´æÔÚ£¬ÊÇ·ñ×·¼ÓÊı¾İµ½ÎÄ¼ş£¨·ñÔòÇå¿ÕÔ´ÎÄ¼şÄÚÈİ£© */
 int write_mem_file(const char* file, const void *data, size_t len)
 {
 	FILE *fp;
@@ -2765,9 +2765,9 @@ int write_mem_file(const char* file, const void *data, size_t len)
 	return 1;
 }
 
-/* å°†å†…å­˜ä¸­çš„æ•°æ®å†™å…¥æ–‡ä»¶ */
-/* è¯¥å‡½æ•°ä¸ä¼šç›´æ¥æ‰“å¼€å·²å­˜åœ¨çš„æ–‡ä»¶è¿›è¡Œå†™å…¥ï¼Œå› ä¸ºè¿™å°†ä¼šæˆªæ–­ä¹‹å‰çš„æ–‡ä»¶ */
-/* é¦–å…ˆåœ¨æ–‡ä»¶æ‰€åœ¨çš„æ–‡ä»¶ç³»ç»Ÿä¸­åˆ›å»ºä¸€ä¸´æ—¶æ–‡ä»¶ï¼Œå¾…å†™å…¥ä¸´æ—¶æ–‡ä»¶æˆåŠŸåå†é‡å‘½åä¸ºæŒ‡å®šæ–‡ä»¶ */
+/* ½«ÄÚ´æÖĞµÄÊı¾İĞ´ÈëÎÄ¼ş */
+/* ¸Ãº¯Êı²»»áÖ±½Ó´ò¿ªÒÑ´æÔÚµÄÎÄ¼ş½øĞĞĞ´Èë£¬ÒòÎªÕâ½«»á½Ø¶ÏÖ®Ç°µÄÎÄ¼ş */
+/* Ê×ÏÈÔÚÎÄ¼şËùÔÚµÄÎÄ¼şÏµÍ³ÖĞ´´½¨Ò»ÁÙÊ±ÎÄ¼ş£¬´ıĞ´ÈëÁÙÊ±ÎÄ¼ş³É¹¦ºóÔÙÖØÃüÃûÎªÖ¸¶¨ÎÄ¼ş */
 int write_mem_file_safe(const char *file, const void *data, size_t len)
 {
 	char tmpdir[MAX_PATH], tmpfile[MAX_PATH];
@@ -2788,14 +2788,14 @@ int write_mem_file_safe(const char *file, const void *data, size_t len)
 }
 
 /* 
- * ä»æ–‡ä»¶ä¸­è¯»å…¥ä»¥ä»»æ„åˆ†éš”ç¬¦ä¸ºç»“å°¾çš„ä¸€å—æ•°æ®
- * å¦‚æœåˆ†éš”ç¬¦æ˜¯'\n'ï¼Œå³æ˜¯ä»æ–‡ä»¶ä¸­è¯»å–ä¸€è¡Œ(å¦‚ä¸‹çš„get_lineå‡½æ•°)
- * ã€å‚æ•°ã€‘ï¼šå¦‚æœ*linepträ¸ä¸ºNULL,ä¸”è¯»å…¥æ•°æ®çš„é•¿åº¦å°äº*n,åˆ™å…¥è¯»è¡Œå­˜æ”¾äºåŸç¼“å†²åŒºä¸­ï¼›
- * å¦åˆ™å°†åŠ¨æ€ç”³è¯·ä¸€å—å†…å­˜ç”¨äºå­˜æ”¾è¯»å…¥å†…å®¹ï¼›å¦‚æœ*linepträ¸ºNULLï¼Œåˆ™æ€»æ˜¯åŠ¨æ€åˆ†é…å†…å­˜ï¼›
- * ã€æ³¨æ„ã€‘ï¼šä¼ å…¥çš„ç¼“å†²åŒºå¦‚æœä¸å¤Ÿå¤§å°†ä¸ä¼šè¢«é‡Šæ”¾(ä¸åŒäºGLIBCçš„getline)ï¼Œè¿™å°±æ„å‘³ç€
- * *lineptrå¿…é¡»æ˜¯æ•°ç»„æˆ–è€…allocaçš„å†…å­˜ã€‚è¿™æ ·å¯ä»¥å‡å°‘åŠ¨æ€ç”³è¯·/é‡Šæ”¾å†…å­˜çš„æ¬¡æ•°ã€‚
- * è¿”å›å€¼ï¼šè¿”å›æˆåŠŸè¯»å…¥çš„å­—èŠ‚æ•°ï¼ŒåŒ…æ‹¬åˆ†éš”ç¬¦ï¼Œä½†ä¸åŒ…æ‹¬ç»“å°¾çš„'\0'ã€‚å¦‚æœè¿”å›å€¼ä¸º0ï¼Œå¯èƒ½æ˜¯
- *        æ–‡ä»¶ä¸ºç©ºæˆ–æ–‡ä»¶å¤ªå¤§ã€‚
+ * ´ÓÎÄ¼şÖĞ¶ÁÈëÒÔÈÎÒâ·Ö¸ô·ûÎª½áÎ²µÄÒ»¿éÊı¾İ
+ * Èç¹û·Ö¸ô·ûÊÇ'\n'£¬¼´ÊÇ´ÓÎÄ¼şÖĞ¶ÁÈ¡Ò»ĞĞ(ÈçÏÂµÄget_lineº¯Êı)
+ * ¡¾²ÎÊı¡¿£ºÈç¹û*lineptr²»ÎªNULL,ÇÒ¶ÁÈëÊı¾İµÄ³¤¶ÈĞ¡ÓÚ*n,ÔòÈë¶ÁĞĞ´æ·ÅÓÚÔ­»º³åÇøÖĞ£»
+ * ·ñÔò½«¶¯Ì¬ÉêÇëÒ»¿éÄÚ´æÓÃÓÚ´æ·Å¶ÁÈëÄÚÈİ£»Èç¹û*lineptrÎªNULL£¬Ôò×ÜÊÇ¶¯Ì¬·ÖÅäÄÚ´æ£»
+ * ¡¾×¢Òâ¡¿£º´«ÈëµÄ»º³åÇøÈç¹û²»¹»´ó½«²»»á±»ÊÍ·Å(²»Í¬ÓÚGLIBCµÄgetline)£¬Õâ¾ÍÒâÎ¶×Å
+ * *lineptr±ØĞëÊÇÊı×é»òÕßallocaµÄÄÚ´æ¡£ÕâÑù¿ÉÒÔ¼õÉÙ¶¯Ì¬ÉêÇë/ÊÍ·ÅÄÚ´æµÄ´ÎÊı¡£
+ * ·µ»ØÖµ£º·µ»Ø³É¹¦¶ÁÈëµÄ×Ö½ÚÊı£¬°üÀ¨·Ö¸ô·û£¬µ«²»°üÀ¨½áÎ²µÄ'\0'¡£Èç¹û·µ»ØÖµÎª0£¬¿ÉÄÜÊÇ
+ *        ÎÄ¼şÎª¿Õ»òÎÄ¼şÌ«´ó¡£
  */
 size_t get_delim(char **lineptr, size_t *n, int delim, FILE *fp)
 {
@@ -2841,18 +2841,18 @@ size_t get_delim(char **lineptr, size_t *n, int delim, FILE *fp)
 			mallptr[count++] = ch;
 		}
 
-		//åˆ†éš”ç¬¦
+		//·Ö¸ô·û
 		if (ch == delim)
 			break;
 	}
 
-	//ç»“æŸç¬¦
+	//½áÊø·û
 	if (mallptr)
 		mallptr[count] = '\0';
 	else if (origptr && *n > 0)
 		origptr[count] = '\0';
 
-	//è®¾ç½®è¾“å‡º
+	//ÉèÖÃÊä³ö
 	if (mallptr)
 		*lineptr = mallptr;
 	*n = count;
@@ -2861,16 +2861,16 @@ size_t get_delim(char **lineptr, size_t *n, int delim, FILE *fp)
 }
 
 /*
- * ä»æ–‡ä»¶ä¸­è¯»å…¥ä¸€è¡Œ
- * ç±»ä¼¼äºGLIBCçš„getlineå‡½æ•°ï¼ŒC++ä¹Ÿå®ç°äº†å…¨å±€çš„getline
- * ä¸‹é¢çš„foreach_lineå‡½æ•°å¾ˆå¥½åœ°è¯ é‡Šäº†å¦‚ä½•ä½¿ç”¨æ­¤å‡½æ•°
+ * ´ÓÎÄ¼şÖĞ¶ÁÈëÒ»ĞĞ
+ * ÀàËÆÓÚGLIBCµÄgetlineº¯Êı£¬C++Ò²ÊµÏÖÁËÈ«¾ÖµÄgetline
+ * ÏÂÃæµÄforeach_lineº¯ÊıºÜºÃµØÚ¹ÊÍÁËÈçºÎÊ¹ÓÃ´Ëº¯Êı
  */
 size_t get_line(char **lineptr, size_t *n, FILE *fp)
 {
 	return get_delim(lineptr, n, '\n', fp);
 }
 
-/* ä»æ–‡ä»¶ä¸­è¯»å–æ¯ä¸ªåˆ†éš”ç¬¦å—è¿›è¡Œæ“ä½œ */
+/* ´ÓÎÄ¼şÖĞ¶ÁÈ¡Ã¿¸ö·Ö¸ô·û¿é½øĞĞ²Ù×÷ */
 int	foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
 {
 	char buf[1024], *block;
@@ -2899,14 +2899,14 @@ int	foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
 	return 1;
 }
 
-/* ä»æ–‡ä»¶æµä¸­è¯»å…¥æ¯ä¸€è¡Œå¹¶è¿›è¡Œæ“ä½œ */
+/* ´ÓÎÄ¼şÁ÷ÖĞ¶ÁÈëÃ¿Ò»ĞĞ²¢½øĞĞ²Ù×÷ */
 int	foreach_line(FILE* fp, foreach_line_cb func, void *arg)
 {
 	return foreach_block(fp, func, '\n', arg);
 }
 
-/* è·å–æ–‡ä»¶ç³»ç»Ÿçš„ä½¿ç”¨çŠ¶æ€ */
-/* å‚æ•°pathå¿…é¡»æ˜¯ç»å¯¹è·¯å¾„ */
+/* »ñÈ¡ÎÄ¼şÏµÍ³µÄÊ¹ÓÃ×´Ì¬ */
+/* ²ÎÊıpath±ØĞëÊÇ¾ø¶ÔÂ·¾¶ */
 int get_fs_usage(const char* path, struct fs_usage *fsp)
 {
 	if (!path_valid(path, 1) || !fsp)
@@ -2947,8 +2947,8 @@ int get_fs_usage(const char* path, struct fs_usage *fsp)
 	return 1;
 }
 
-/* è·å–å½“å‰è¿›ç¨‹æ–‡ä»¶çš„è·¯å¾„(argv[0]) */
-/* å¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸² */
+/* »ñÈ¡µ±Ç°½ø³ÌÎÄ¼şµÄÂ·¾¶(argv[0]) */
+/* Ê§°Ü·µ»Ø¿Õ×Ö·û´® */
 const char* get_execute_path()
 {
 	static char path[MAX_PATH];
@@ -2984,8 +2984,8 @@ const char* get_execute_path()
 	return path;
 }
 
-/* è·å–è¿›ç¨‹çš„æ–‡ä»¶å(åŒ…æ‹¬æ‰©å±•å) */
-/* å¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸² */
+/* »ñÈ¡½ø³ÌµÄÎÄ¼şÃû(°üÀ¨À©Õ¹Ãû) */
+/* Ê§°Ü·µ»Ø¿Õ×Ö·û´® */
 const char* get_execute_name()
 {
 	const char *path, *slash_end;
@@ -3001,9 +3001,9 @@ const char* get_execute_name()
 	return path + strlen(path);
 }
 
-/* å¸¸ç”¨ç›®å½• */
-/* è·å–è¿›ç¨‹èµ·å§‹ç›®å½•ï¼ˆå¯æ‰§è¡Œæ–‡ä»¶æ‰€åœ¨ç›®å½•ï¼‰,ä»¥è·¯å¾„åˆ†éš”ç¬¦ç»“å°¾ */
-/* è¿”å›å€¼ï¼šæˆåŠŸè·å–è¿”å›æŒ‡å‘è·¯å¾„å­—ç¬¦ä¸²ï¼Œå¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸² */
+/* ³£ÓÃÄ¿Â¼ */
+/* »ñÈ¡½ø³ÌÆğÊ¼Ä¿Â¼£¨¿ÉÖ´ĞĞÎÄ¼şËùÔÚÄ¿Â¼£©,ÒÔÂ·¾¶·Ö¸ô·û½áÎ² */
+/* ·µ»ØÖµ£º³É¹¦»ñÈ¡·µ»ØÖ¸ÏòÂ·¾¶×Ö·û´®£¬Ê§°Ü·µ»Ø¿Õ×Ö·û´® */
 const char* get_execute_dir()
 {
 	static char dir[MAX_PATH];
@@ -3029,41 +3029,41 @@ const char* get_execute_dir()
 	return dir;
 }
 
-/* è·å–å½“å‰è¿è¡Œæ¨¡å—çš„è·¯å¾„ */
-/* å³å¯æ‰§è¡Œæ–‡ä»¶æˆ–åŠ¨æ€é“¾æ¥åº“çš„è·¯å¾„ */
-const char* get_module_path()
-{
-	static char path[MAX_PATH];
+// /* »ñÈ¡µ±Ç°ÔËĞĞÄ£¿éµÄÂ·¾¶ */
+// /* ¼´¿ÉÖ´ĞĞÎÄ¼ş»ò¶¯Ì¬Á´½Ó¿âµÄÂ·¾¶ */
+// const char* get_module_path()
+// {
+// 	static char path[MAX_PATH];
+// 
+// #ifdef OS_WIN
+// 	HMODULE instance = NULL;
+// 	GetModuleHandleExA(
+// 		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | 
+// 		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+// 		(char*)get_module_path, 
+// 		&instance);
+// 
+// #ifdef USE_UTF8_STR
+// 	{
+// 		wchar_t wpath[MAX_PATH];
+// 		if (!GetModuleFileNameW(instance, wpath, MAX_PATH) ||
+// 			!UNI2UTF8(wpath, path, MAX_PATH))
+// 			path[0] = '\0';
+// 	}
+// #else
+// 	if (!GetModuleFileNameA(instance, path, MAX_PATH))
+// 		path[0] = '\0';
+// #endif
+// #else
+// 	NOT_IMPLEMENTED();
+// 	path[0] = '\0';
+// #endif
+// 	return path;
+// }
 
-#ifdef OS_WIN
-	HMODULE instance = NULL;
-	GetModuleHandleExA(
-		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | 
-		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-		(char*)get_module_path, 
-		&instance);
-
-#ifdef USE_UTF8_STR
-	{
-		wchar_t wpath[MAX_PATH];
-		if (!GetModuleFileNameW(instance, wpath, MAX_PATH) ||
-			!UNI2UTF8(wpath, path, MAX_PATH))
-			path[0] = '\0';
-	}
-#else
-	if (!GetModuleFileNameA(instance, path, MAX_PATH))
-		path[0] = '\0';
-#endif
-#else
-	NOT_IMPLEMENTED();
-	path[0] = '\0';
-#endif
-	return path;
-}
-
-/* è·å–è¿›ç¨‹å½“å‰å·¥ä½œç›®å½• */
-/* è¿”å›å€¼ï¼šæˆåŠŸè·å–è¿”å›æŒ‡å‘è·¯å¾„å­—ç¬¦ä¸²ï¼Œå¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸² */
-/* æ³¨ï¼šå› ä¸ºå½“å‰å·¥ä½œç›®å½•å¯èƒ½æ”¹å˜ï¼Œå› æ­¤ä¸èƒ½ä½¿ç”¨ä¸€æ¬¡åˆå§‹åŒ– */
+/* »ñÈ¡½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼ */
+/* ·µ»ØÖµ£º³É¹¦»ñÈ¡·µ»ØÖ¸ÏòÂ·¾¶×Ö·û´®£¬Ê§°Ü·µ»Ø¿Õ×Ö·û´® */
+/* ×¢£ºÒòÎªµ±Ç°¹¤×÷Ä¿Â¼¿ÉÄÜ¸Ä±ä£¬Òò´Ë²»ÄÜÊ¹ÓÃÒ»´Î³õÊ¼»¯ */
 const char* get_current_dir()
 {
 	static char path[MAX_PATH];
@@ -3096,7 +3096,7 @@ const char* get_current_dir()
 	return path;
 }
 
-/* è®¾ç½®è¿›ç¨‹å½“å‰çš„å·¥ä½œç›®å½• */
+/* ÉèÖÃ½ø³Ìµ±Ç°µÄ¹¤×÷Ä¿Â¼ */
 int set_current_dir(const char *dir)
 {
 #ifdef OS_WIN
@@ -3118,7 +3118,7 @@ int set_current_dir(const char *dir)
 }
 
 #ifdef OS_WIN
-/* è·å–Windowsä¸‹ç‰¹æ®Šç›®å½•çš„è·¯å¾„, pathçš„é•¿åº¦åº”è‡³å°‘ä¸ºMAX_PATH */
+/* »ñÈ¡WindowsÏÂÌØÊâÄ¿Â¼µÄÂ·¾¶, pathµÄ³¤¶ÈÓ¦ÖÁÉÙÎªMAX_PATH */
 static int GetShellSpecialFolder(int key, char* path) {
 #ifdef USE_UTF8_STR
 	wchar_t wpath[MAX_PATH];
@@ -3133,8 +3133,8 @@ static int GetShellSpecialFolder(int key, char* path) {
 }
 #endif
 
-/* è·å–å½“å‰ç”¨æˆ·çš„ä¸»ç›®å½•ï¼Œä»¥è·¯å¾„åˆ†éš”ç¬¦ç»“å°¾ */
-/* è¿”å›å€¼ï¼šè·å–æˆåŠŸè¿”å›è·¯å¾„å­—ç¬¦ä¸²ï¼Œå¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸² */
+/* »ñÈ¡µ±Ç°ÓÃ»§µÄÖ÷Ä¿Â¼£¬ÒÔÂ·¾¶·Ö¸ô·û½áÎ² */
+/* ·µ»ØÖµ£º»ñÈ¡³É¹¦·µ»ØÂ·¾¶×Ö·û´®£¬Ê§°Ü·µ»Ø¿Õ×Ö·û´® */
 const char*get_home_dir()
 {
 	static char path[MAX_PATH];
@@ -3151,7 +3151,7 @@ const char*get_home_dir()
 	{
 		wchar_t wpath[MAX_PATH];
 		wchar_t* last_slash;
-		if (!SHGetSpecialFolderPathW(NULL, wpath, CSIDL_MYDOCUMENTS, 0))
+		if (!SHGetSpecialFolderPathW(NULL, wpath, CSIDL_DESKTOP, 0))
 			goto failed;
 
 		last_slash = wcsrchr(wpath, '\\');
@@ -3183,15 +3183,15 @@ success:
 	return path;
 }
 
-/* è·å–ç¨‹åºçš„ç¼“å­˜æ–‡ä»¶ç›®å½• */
-/* Windowsä¸‹ä½äºC:\Users\xxx\AppData\Local\PACKAGE_NAME\ */
-/* Linuxä¸‹ä½äº~/.PACKAGE_NAMEï¼ŒåŒ get_config_dir() */
+/* »ñÈ¡³ÌĞòµÄ»º´æÎÄ¼şÄ¿Â¼ */
+/* WindowsÏÂÎ»ÓÚC:\Users\xxx\AppData\Local\PACKAGE_NAME\ */
+/* LinuxÏÂÎ»ÓÚ~/.PACKAGE_NAME£¬Í¬ get_config_dir() */
 const char* get_app_data_dir()
 {
 	static char path[MAX_PATH];
 
 #ifdef OS_WIN
-	if (!GetShellSpecialFolder(CSIDL_LOCAL_APPDATA, path))
+	if (!GetShellSpecialFolder(CSIDL_APPDATA, path))
 		goto failed;
 	xstrlcat(path, PATH_SEP_STR, MAX_PATH);
 #else /* OS_POSIX */ 
@@ -3210,9 +3210,9 @@ failed:
 	return path;
 }
 
-/* è·å–åº”ç”¨ç¨‹åºä¸´æ—¶ç›®å½• */
-/* åœ¨Windowsä¸‹è¿”å›å¦‚ C:\Windows\Temp\SafeSite\ */
-/* åœ¨Linuxä¸‹è¿”å›å¦‚ /tmp/SafeSite/ */
+/* »ñÈ¡Ó¦ÓÃ³ÌĞòÁÙÊ±Ä¿Â¼ */
+/* ÔÚWindowsÏÂ·µ»ØÈç C:\Windows\Temp\SafeSite\ */
+/* ÔÚLinuxÏÂ·µ»ØÈç /tmp/SafeSite/ */
 const char *get_temp_dir()
 {
 	static char path[MAX_PATH];
@@ -3258,11 +3258,11 @@ const char *get_temp_dir()
 	return path;
 }
 
-/* è·å–æŒ‡å®šç›®å½•ä¸‹å¯ç”¨çš„ä¸´æ—¶æ–‡ä»¶è·¯å¾„ */
-/* å¦‚æœæŒ‡å®šçš„ä¸´æ—¶ç›®å½•ä¸å­˜åœ¨ï¼Œå°†åˆ›å»ºæ­¤ç›®å½• */
-/* å¦‚æœprefixä¸ºNULLæˆ–ä¸ºç©ºå­—ç¬¦ä¸²ï¼Œå°†ä½¿ç”¨"temp"ä½œä¸ºå‰ç¼€ */
-/* æ³¨1ï¼šè¾“å‡ºç¼“å†²åŒºçš„é•¿åº¦åº”è‡³å°‘ä¸ºMAX_PATH */
-/* æ³¨2ï¼šæ­¤å‡½æ•°ä»…ä¿è¯åœ¨è°ƒç”¨æ—¶è¯¥ä¸´æ—¶æ–‡ä»¶ä¸å­˜åœ¨ */
+/* »ñÈ¡Ö¸¶¨Ä¿Â¼ÏÂ¿ÉÓÃµÄÁÙÊ±ÎÄ¼şÂ·¾¶ */
+/* Èç¹ûÖ¸¶¨µÄÁÙÊ±Ä¿Â¼²»´æÔÚ£¬½«´´½¨´ËÄ¿Â¼ */
+/* Èç¹ûprefixÎªNULL»òÎª¿Õ×Ö·û´®£¬½«Ê¹ÓÃ"temp"×÷ÎªÇ°×º */
+/* ×¢1£ºÊä³ö»º³åÇøµÄ³¤¶ÈÓ¦ÖÁÉÙÎªMAX_PATH */
+/* ×¢2£º´Ëº¯Êı½ö±£Ö¤ÔÚµ÷ÓÃÊ±¸ÃÁÙÊ±ÎÄ¼ş²»´æÔÚ */
 int get_temp_file_under(const char* tmpdir, const char *prefix, 
 	char *outbuf, size_t outlen)
 {
@@ -3305,8 +3305,8 @@ int get_temp_file_under(const char* tmpdir, const char *prefix,
 #endif
 }
 
-/* åœ¨é»˜è®¤ä¸´æ—¶ç›®å½•ä¸‹è·å–ä¸´æ—¶æ–‡ä»¶è·¯å¾„ */
-/* éçº¿ç¨‹å®‰å…¨ï¼Œå¤±è´¥è¿”å›ç©ºå­—ç¬¦ä¸² */
+/* ÔÚÄ¬ÈÏÁÙÊ±Ä¿Â¼ÏÂ»ñÈ¡ÁÙÊ±ÎÄ¼şÂ·¾¶ */
+/* ·ÇÏß³Ì°²È«£¬Ê§°Ü·µ»Ø¿Õ×Ö·û´® */
 const char* get_temp_file(const char* prefix)
 {
 	static char tmpfile[MAX_PATH];
@@ -3318,7 +3318,7 @@ const char* get_temp_file(const char* prefix)
 }
 
 /************************************************************************/
-/*                         Time & Timer æ—¶é—´å’Œå®šæ—¶å™¨                     */
+/*                         Time & Timer Ê±¼äºÍ¶¨Ê±Æ÷                     */
 /************************************************************************/
 
 static
@@ -3335,25 +3335,25 @@ const char*fmttime (time_t t, const char *fmt)
   return output;
 }
 
-/* è¿”å›ä¸€ä¸ª HH:MM:SS æ ·å¼çš„æ—¶é—´å­—ç¬¦ä¸²ï¼Œä¸å¯é‡å…¥ */
+/* ·µ»ØÒ»¸ö HH:MM:SS ÑùÊ½µÄÊ±¼ä×Ö·û´®£¬²»¿ÉÖØÈë */
 const char *time_str (time_t t)
 {
   return fmttime(t, "%H:%M:%S");
 }
 
-/* è¿”å›ä¸€ä¸ª YY-MM-DD æ ·å¼çš„æ—¥æœŸå­—ç¬¦ä¸²ï¼Œä¸å¯é‡å…¥ */
+/* ·µ»ØÒ»¸ö YY-MM-DD ÑùÊ½µÄÈÕÆÚ×Ö·û´®£¬²»¿ÉÖØÈë */
 const char *date_str (time_t t)
 {
 	return fmttime(t, "%Y-%m-%d");
 }
 
-/* è¿”å›ä¸€ä¸ª YY-MM-DD HH:MM:SS æ ·å¼çš„æ—¶é—´æ—¥æœŸå­—ç¬¦ä¸²ï¼Œä¸å¯é‡å…¥ */
+/* ·µ»ØÒ»¸ö YY-MM-DD HH:MM:SS ÑùÊ½µÄÊ±¼äÈÕÆÚ×Ö·û´®£¬²»¿ÉÖØÈë */
 const char *datetime_str (time_t t)
 {
   return fmttime(t, "%Y-%m-%d %H:%M:%S");
 }
 
-/* è¿”å›ä¸€ä¸ª YYMMDDHHMMSS æ ·å¼çš„æ—¶é—´æˆ³ */
+/* ·µ»ØÒ»¸ö YYMMDDHHMMSS ÑùÊ½µÄÊ±¼ä´Á */
 const char* timestamp_str(time_t t)
 {
 	return fmttime(t, "%Y%m%d%H%M%S");
@@ -3374,9 +3374,9 @@ static int tu_single_init = 0;
 static int tu_plural_init = 0;
 
 /* 
- * è®¾ç½®æ—¶é—´å•ä½çš„å•ã€å¤æ•°å½¢å¼ 
- * time_span_readable å°†ä¾æ®æ­¤å•ä½æ„é€ å›½é™…åŒ–çš„å­—ç¬¦ä¸² 
- * pluralä¸ºä¸ä¸º0è¡¨ç¤ºè®¾ç½®å¤æ•°å½¢å¼
+ * ÉèÖÃÊ±¼äµ¥Î»µÄµ¥¡¢¸´ÊıĞÎÊ½ 
+ * time_span_readable ½«ÒÀ¾İ´Ëµ¥Î»¹¹Ôì¹ú¼Ê»¯µÄ×Ö·û´® 
+ * pluralÎª²»Îª0±íÊ¾ÉèÖÃ¸´ÊıĞÎÊ½
  */
 void time_unit_localize(const char* year, const char* month, const char* day,
 						const char* hour, const char* minute, const char* second,
@@ -3403,7 +3403,7 @@ void time_unit_localize(const char* year, const char* month, const char* day,
 	xstrlcpy(intl->second, second, TIME_UNIT_MAX);
 }
 
-/* è¿”å›ä¸€ä¸ªå¯è¯»æ€§å¼ºçš„æ—¶é—´å·®(ä¸€æœˆä½œä¸º30å¤©)ï¼Œå¦‚2å°æ—¶15åˆ†ï¼Œ3å¤©ç­‰ */
+/* ·µ»ØÒ»¸ö¿É¶ÁĞÔÇ¿µÄÊ±¼ä²î(Ò»ÔÂ×÷Îª30Ìì)£¬Èç2Ğ¡Ê±15·Ö£¬3ÌìµÈ */
 void time_span_readable(int64_t diff, int cutoff, char* outbuf, size_t outlen)
 {
     static struct time_units tu_en_single = {" year", " month", " day", " hour", " minute", " second"};
@@ -3421,13 +3421,13 @@ void time_span_readable(int64_t diff, int cutoff, char* outbuf, size_t outlen)
 	const char *year_s, *month_s, *day_s, *hour_s, *minute_s, *second_s;
 	struct time_units *units_single, *units_plural;
 
-	/* æ—¶é—´å•ä½(å•æ•°å½¢å¼) */
+	/* Ê±¼äµ¥Î»(µ¥ÊıĞÎÊ½) */
 	if (tu_single_init)
 		units_single = &tu_locale_single;
 	else
 		units_single = &tu_en_single;
 
-	/* æ—¶é—´å•ä½(å¤æ•°å½¢å¼) */
+	/* Ê±¼äµ¥Î»(¸´ÊıĞÎÊ½) */
 	if (tu_plural_init)
 		units_plural = &tu_locale_plural;
 	else if (tu_single_init)
@@ -3470,7 +3470,7 @@ void time_span_readable(int64_t diff, int cutoff, char* outbuf, size_t outlen)
 #undef REACH_TIME_UNIT
 }
 
-/* ç¡çœ æŒ‡å®šç§’æ•° */
+/* Ë¯ÃßÖ¸¶¨ÃëÊı */
 void ssleep(int seconds)
 {
 #ifdef OS_POSIX
@@ -3480,7 +3480,7 @@ void ssleep(int seconds)
 #endif
 }
 
-/* ç¡çœ æŒ‡å®šæ¯«ç§’æ•° */
+/* Ë¯ÃßÖ¸¶¨ºÁÃëÊı */
 void msleep(int milliseconds)
 {
 #ifdef OS_POSIX
@@ -3501,7 +3501,7 @@ void msleep(int milliseconds)
 #endif
 }
 
-/* å¾®ç§’çº§è®¡æ—¶å™¨ */
+/* Î¢Ãë¼¶¼ÆÊ±Æ÷ */
 void time_meter_start(time_meter_t *meter)
 {
 #ifdef OS_POSIX
@@ -3520,7 +3520,7 @@ void time_meter_stop(time_meter_t *meter)
 #endif
 }
 
-/* ä»å¼€å§‹åˆ°åœæ­¢ç»å†çš„å¾®ç§’æ•° */
+/* ´Ó¿ªÊ¼µ½Í£Ö¹¾­ÀúµÄÎ¢ÃëÊı */
 double time_meter_elapsed_us(time_meter_t *meter)
 {
 #ifdef OS_POSIX
@@ -3533,19 +3533,19 @@ double time_meter_elapsed_us(time_meter_t *meter)
 #endif
 }
 
-/* ä»å¼€å§‹åˆ°åœæ­¢ç»å†çš„æ¯«ç§’æ•° */
+/* ´Ó¿ªÊ¼µ½Í£Ö¹¾­ÀúµÄºÁÃëÊı */
 double time_meter_elapsed_ms(time_meter_t *meter)
 {
 	return time_meter_elapsed_us(meter) / 1000;
 }
 
-/* ä»å¼€å§‹åˆ°åœæ­¢ç»å†çš„ç§’æ•° */
+/* ´Ó¿ªÊ¼µ½Í£Ö¹¾­ÀúµÄÃëÊı */
 double time_meter_elapsed_s(time_meter_t *meter)
 {
 	return time_meter_elapsed_us(meter) / 1000000;
 }
 
-/* ä»å¼€å§‹åˆ°ç°åœ¨ç»å†çš„å¾®å¦™æ•° */
+/* ´Ó¿ªÊ¼µ½ÏÖÔÚ¾­ÀúµÄÎ¢ÃîÊı */
 double time_meter_elapsed_us_till_now(time_meter_t *meter)
 {
 #ifdef OS_POSIX
@@ -3571,7 +3571,7 @@ double time_meter_elapsed_s_till_now(time_meter_t *meter)
 	return time_meter_elapsed_us_till_now(meter) / 1000000;
 }
 
-/* è·å–åŸºäºæ—¶é—´çš„ä¼ªéšæœºæ•° */
+/* »ñÈ¡»ùÓÚÊ±¼äµÄÎ±Ëæ»úÊı */
 int get_random()
 {
 #ifdef OS_POSIX
@@ -3586,17 +3586,17 @@ int get_random()
 }
 
 /************************************************************************/
-/*                         Charset å­—ç¬¦ç¼–ç ç±»å‡½æ•°	                    */
+/*                         Charset ×Ö·û±àÂëÀàº¯Êı	                    */
 /************************************************************************/
 
-/* UTF-7, UTF-8, UTF-16, UTF-32 ç¼–ç è½¬æ¢ */
+/* UTF-7, UTF-8, UTF-16, UTF-32 ±àÂë×ª»» */
 #include "deps/ConvertUTF-inl.h"
 
 #if defined(OS_POSIX) && !defined(OS_ANDROID)
 #include <langinfo.h>
 #endif
 
-//7ä½æ ‡å‡†ASCIIç 
+//7Î»±ê×¼ASCIIÂë
 int is_ascii(const void* pBuffer, size_t size)
 {
 	int IsASCII = 1;
@@ -3617,20 +3617,20 @@ int is_ascii(const void* pBuffer, size_t size)
 	return IsASCII;
 }
 
-//æ˜¯å¦æ˜¯UTF-8ç¼–ç 
+//ÊÇ·ñÊÇUTF-8±àÂë
 //
-//128ä¸ªUS-ASCIIå­—ç¬¦åªéœ€ä¸€ä¸ªå­—èŠ‚ç¼–ç ï¼ˆUnicodeèŒƒå›´ç”±U+0000è‡³U+007Fï¼‰ã€‚
-//å¸¦æœ‰é™„åŠ ç¬¦å·çš„æ‹‰ä¸æ–‡ã€å¸Œè…Šæ–‡ã€è¥¿é‡Œå°”å­—æ¯ã€äºšç¾å°¼äºšè¯­ã€å¸Œä¼¯æ¥æ–‡ã€é˜¿æ‹‰ä¼¯æ–‡ã€å™åˆ©äºšæ–‡åŠå®ƒæ‹¿å­—æ¯åˆ™éœ€è¦äºŒä¸ªå­—èŠ‚ç¼–ç ã€‚
-//å…¶ä»–åŸºæœ¬å¤šæ–‡ç§å¹³é¢ï¼ˆBMPï¼‰ä¸­çš„å­—ç¬¦ï¼ˆè¿™åŒ…å«äº†å¤§éƒ¨åˆ†å¸¸ç”¨å­—ï¼‰ä½¿ç”¨ä¸‰ä¸ªå­—èŠ‚ç¼–ç ã€‚
-//å…¶ä»–æå°‘ä½¿ç”¨çš„Unicode è¾…åŠ©å¹³é¢çš„å­—ç¬¦ä½¿ç”¨å››å­—èŠ‚ç¼–ç ã€‚
+//128¸öUS-ASCII×Ö·ûÖ»ĞèÒ»¸ö×Ö½Ú±àÂë£¨Unicode·¶Î§ÓÉU+0000ÖÁU+007F£©¡£
+//´øÓĞ¸½¼Ó·ûºÅµÄÀ­¶¡ÎÄ¡¢Ï£À°ÎÄ¡¢Î÷Àï¶û×ÖÄ¸¡¢ÑÇÃÀÄáÑÇÓï¡¢Ï£²®À´ÎÄ¡¢°¢À­²®ÎÄ¡¢ĞğÀûÑÇÎÄ¼°ËüÄÃ×ÖÄ¸ÔòĞèÒª¶ş¸ö×Ö½Ú±àÂë¡£
+//ÆäËû»ù±¾¶àÎÄÖÖÆ½Ãæ£¨BMP£©ÖĞµÄ×Ö·û£¨Õâ°üº¬ÁË´ó²¿·Ö³£ÓÃ×Ö£©Ê¹ÓÃÈı¸ö×Ö½Ú±àÂë¡£
+//ÆäËû¼«ÉÙÊ¹ÓÃµÄUnicode ¸¨ÖúÆ½ÃæµÄ×Ö·ûÊ¹ÓÃËÄ×Ö½Ú±àÂë¡£
 //
-//UCS-4ç¼–ç 	ä¸ UTF-8å­—èŠ‚æµ å¯¹åº”å…³ç³»å¦‚ä¸‹ï¼š
-//U+00000000 â€“ U+0000007F [1] 0xxxxxxx 
-//U+00000080 â€“ U+000007FF [2] 110xxxxx 10xxxxxx 
-//U+00000800 â€“ U+0000FFFF [3] 1110xxxx 10xxxxxx 10xxxxxx
-//U+00010000 â€“ U+001FFFFF [4] 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-//U+00200000 â€“ U+03FFFFFF [5] 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-//U+04000000 â€“ U+7FFFFFFF [6] 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+//UCS-4±àÂë	Óë UTF-8×Ö½ÚÁ÷ ¶ÔÓ¦¹ØÏµÈçÏÂ£º
+//U+00000000 ¨C U+0000007F [1] 0xxxxxxx 
+//U+00000080 ¨C U+000007FF [2] 110xxxxx 10xxxxxx 
+//U+00000800 ¨C U+0000FFFF [3] 1110xxxx 10xxxxxx 10xxxxxx
+//U+00010000 ¨C U+001FFFFF [4] 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+//U+00200000 ¨C U+03FFFFFF [5] 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+//U+04000000 ¨C U+7FFFFFFF [6] 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
 int is_utf8(const void* pBuffer, size_t size)
 {
 	int IsUTF8 = 1;
@@ -3638,7 +3638,7 @@ int is_utf8(const void* pBuffer, size_t size)
 	unsigned char* end = (unsigned char*)pBuffer + size;
 	while (start < end)
 	{
-		if (*start < 0x80)				/* 1å­—èŠ‚ */
+		if (*start < 0x80)				/* 1×Ö½Ú */
 		{
 			start++;
 		}
@@ -3647,7 +3647,7 @@ int is_utf8(const void* pBuffer, size_t size)
 			IsUTF8 = 0;
 			break;
 		}
-		else if (*start < (0xE0))		/* 2å­—èŠ‚ */
+		else if (*start < (0xE0))		/* 2×Ö½Ú */
 		{
 			if (start >= end - 1) 
 				break;
@@ -3658,7 +3658,7 @@ int is_utf8(const void* pBuffer, size_t size)
 			}
 			start += 2;
 		} 
-		else if (*start < (0xF0))		/* 3å­—èŠ‚ */
+		else if (*start < (0xF0))		/* 3×Ö½Ú */
 		{
 			if (start >= end - 2) 
 				break;
@@ -3669,7 +3669,7 @@ int is_utf8(const void* pBuffer, size_t size)
 			}
 			start += 3;
 		}
-		else if (*start < (0xF8))		/* 4å­—èŠ‚ */
+		else if (*start < (0xF8))		/* 4×Ö½Ú */
 		{
 			if (start >= end - 3)
 				break;
@@ -3689,7 +3689,7 @@ int is_utf8(const void* pBuffer, size_t size)
 	return IsUTF8;
 }
 
-//æ˜¯å¦æ˜¯GB2312ç¼–ç 
+//ÊÇ·ñÊÇGB2312±àÂë
 int is_gb2312(const void* pBuffer, size_t size)
 {
 	int IsGB2312 = 1;
@@ -3698,19 +3698,19 @@ int is_gb2312(const void* pBuffer, size_t size)
 
 	while (start < end)
 	{
-		if (*start < 0x80)			//0x00~0x7F ASCIIç 
+		if (*start < 0x80)			//0x00~0x7F ASCIIÂë
 			start++;
-		else if (*start < 0xA1)		//0x80~0xA0 ç©ºç 
+		else if (*start < 0xA1)		//0x80~0xA0 ¿ÕÂë
 		{
 			IsGB2312 = 0;
 			break;
 		}
-		else if (*start < 0xAA)		//0xA1~0xA9 å­—ç¬¦éƒ¨åˆ†
+		else if (*start < 0xAA)		//0xA1~0xA9 ×Ö·û²¿·Ö
 		{
 			if (start >= end -1)
 				break;
 
-			//ä½å­—èŠ‚èŒƒå›´ 0xA1~0xFE
+			//µÍ×Ö½Ú·¶Î§ 0xA1~0xFE
 			if (start[1] < 0xA1 || start[1] > 0xFE)
 			{
 				IsGB2312 = 0;
@@ -3719,17 +3719,17 @@ int is_gb2312(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xB0)		//0xAA~0xAF ç©ºç 
+		else if (*start < 0xB0)		//0xAA~0xAF ¿ÕÂë
 		{
 			IsGB2312 = 0;
 			break;
 		}
-		else if (*start < 0xF8)		//0xB0~0xF7 æ˜¯å¯¹GB2312æ±‰å­—è¡¨çš„æ‰©å……
+		else if (*start < 0xF8)		//0xB0~0xF7 ÊÇ¶ÔGB2312ºº×Ö±íµÄÀ©³ä
 		{
 			if (start >= end -1)
 				break;
 
-			//ä½å­—èŠ‚èŒƒå›´ 0xA1~0xFE(å‰”é™¤0x7F)
+			//µÍ×Ö½Ú·¶Î§ 0xA1~0xFE(ÌŞ³ı0x7F)
 			if (start[1] < 0xA1 || start[1] > 0xFE)
 			{
 				IsGB2312 = 0;
@@ -3738,7 +3738,7 @@ int is_gb2312(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else						//0xFF ç©ºç 
+		else						//0xFF ¿ÕÂë
 		{
 			IsGB2312 = 0;
 			break;
@@ -3748,7 +3748,7 @@ int is_gb2312(const void* pBuffer, size_t size)
 	return IsGB2312;
 }
 
-//æ˜¯å¦æ˜¯GBKç¼–ç 
+//ÊÇ·ñÊÇGBK±àÂë
 int is_gbk(const void* pBuffer, size_t size)
 {
 	int IsGBK = 1;
@@ -3757,19 +3757,19 @@ int is_gbk(const void* pBuffer, size_t size)
 
 	while (start < end)
 	{
-		if (*start < 0x80)			//0x00~0x7F ASCIIç 
+		if (*start < 0x80)			//0x00~0x7F ASCIIÂë
 			start++;
-		else if (*start < 0x81)		//0x80 ç©ºç 
+		else if (*start < 0x81)		//0x80 ¿ÕÂë
 		{
 			IsGBK = 0;
 			break;
 		}
-		else if (*start < 0xA1)		//0x81~0xA0 å­—ç¬¦è¡¨å‰çš„ä¸å¸¸ç”¨æ±‰å­—
+		else if (*start < 0xA1)		//0x81~0xA0 ×Ö·û±íÇ°µÄ²»³£ÓÃºº×Ö
 		{
 			if (start >= end -1)
 				break;
 
-			//ä½å­—èŠ‚èŒƒå›´ 0x40~0xFE (å‰”é™¤0x7F)
+			//µÍ×Ö½Ú·¶Î§ 0x40~0xFE (ÌŞ³ı0x7F)
 			if (start[1] < 0x40 || start[1] > 0xFE || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3778,23 +3778,23 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xAA)		//0xA1~0xA9 å­—ç¬¦éƒ¨åˆ†
+		else if (*start < 0xAA)		//0xA1~0xA9 ×Ö·û²¿·Ö
 		{
 			if (start >= end -1)
 				break;
 
-			if (*start < 0xA8)		//0xA1~0xA7 å’ŒGB2312ä¸€æ ·
+			if (*start < 0xA8)		//0xA1~0xA7 ºÍGB2312Ò»Ñù
 			{
-				//ä½å­—èŠ‚èŒƒå›´ 0xA1~0xFE
+				//µÍ×Ö½Ú·¶Î§ 0xA1~0xFE
 				if (start[1] < 0xA1 || start[1] > 0xFE)
 				{
 					IsGBK = 0;
 					break;
 				}
 			}
-			else					//0xA8~0xA9 æ‰©å……äº†GB2312ç¬¦å·
+			else					//0xA8~0xA9 À©³äÁËGB2312·ûºÅ
 			{
-				//ä½å­—èŠ‚èŒƒå›´ 0x40~0xEF(å‰”é™¤0x7F) (ä¸æ˜¯å¾ˆç²¾ç¡®)
+				//µÍ×Ö½Ú·¶Î§ 0x40~0xEF(ÌŞ³ı0x7F) (²»ÊÇºÜ¾«È·)
 				if (start[1] < 0x40 || start[1] > 0xEF || start[1] == 0x7F)
 				{
 					IsGBK = 0;
@@ -3804,12 +3804,12 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xB0)		//0xAA~0xAF æ˜¯GB2312æ±‰å­—è¡¨å‰æ–°æ·»åŠ çš„ç”Ÿåƒ»å­—
+		else if (*start < 0xB0)		//0xAA~0xAF ÊÇGB2312ºº×Ö±íÇ°ĞÂÌí¼ÓµÄÉúÆ§×Ö
 		{
 			if (start >= end -1)
 				break;
 
-			//ä½å­—èŠ‚èŒƒå›´ 0x40~0xA0(å‰”é™¤0x7F)
+			//µÍ×Ö½Ú·¶Î§ 0x40~0xA0(ÌŞ³ı0x7F)
 			if (start[1] < 0x40 || start[1] > 0xA0 || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3818,12 +3818,12 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xF8)		//0xB0~0xF7 æ˜¯å¯¹GB2312æ±‰å­—è¡¨çš„æ‰©å……
+		else if (*start < 0xF8)		//0xB0~0xF7 ÊÇ¶ÔGB2312ºº×Ö±íµÄÀ©³ä
 		{
 			if (start >= end -1)
 				break;
 
-			//ä½å­—èŠ‚èŒƒå›´ 0x40~0xFE(å‰”é™¤0x7F)
+			//µÍ×Ö½Ú·¶Î§ 0x40~0xFE(ÌŞ³ı0x7F)
 			if (start[1] < 0x40 || start[1] > 0xFE || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3832,12 +3832,12 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xFF)		//0xF8~0xFE æ˜¯GB2312æ±‰å­—è¡¨åæ–°æ·»åŠ çš„ç”Ÿåƒ»å­—
+		else if (*start < 0xFF)		//0xF8~0xFE ÊÇGB2312ºº×Ö±íºóĞÂÌí¼ÓµÄÉúÆ§×Ö
 		{
 			if (start >= end -1)
 				break;
 
-			//ä½å­—èŠ‚èŒƒå›´ 0x40~0xA0(å‰”é™¤0x7F)
+			//µÍ×Ö½Ú·¶Î§ 0x40~0xA0(ÌŞ³ı0x7F)
 			if (start[1] < 0x40 || start[1] > 0xA0 || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3846,7 +3846,7 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else						//0xFF ç©ºç 
+		else						//0xFF ¿ÕÂë
 		{
 			IsGBK = 0;
 			break;
@@ -3861,16 +3861,16 @@ int is_gbk(const void* pBuffer, size_t size)
 	xstrlcpy(outbuf, csname, outlen);	\
 	return 1;}
 
-/* è·å–å­—ç¬¦ä¸²çš„å‡†ç¡®å­—ç¬¦é›†(ASCII,UTF-8,GB2312,GBK,GB18030) */
-/* å¦‚æœcan_asciiä¸º0ï¼Œåˆ™è¿”å›åŒ…å«ASCIIå­—ç¬¦é›†çš„æœ€å°å­—ç¬¦é›† */
+/* »ñÈ¡×Ö·û´®µÄ×¼È·×Ö·û¼¯(ASCII,UTF-8,GB2312,GBK,GB18030) */
+/* Èç¹ûcan_asciiÎª0£¬Ôò·µ»Ø°üº¬ASCII×Ö·û¼¯µÄ×îĞ¡×Ö·û¼¯ */
 int get_charset(const void* str, size_t size, char *outbuf, size_t outlen, int can_ascii)
 {
 	if (can_ascii){
 		MATCH_CHARSET_RETURN(ascii, "ASCII");
 	}
 
-	/* æ¯ä¸ªæ±‰å­—å­—ç¬¦å 3ä¸ªå­—èŠ‚çš„UTF-8å­—ç¬¦ä¸²å¾ˆå®¹æ˜“è¢«è¯¯è®¤ä¸ºGBç³»åˆ—ç¼–ç ï¼Œåä¹‹åˆ™ä¸ç„¶ */
-	/* å› æ­¤å°±é¦–å…ˆæ£€æµ‹å…¶æ˜¯å¦æ˜¯UTF-8å­—ç¬¦ä¸² */
+	/* Ã¿¸öºº×Ö×Ö·ûÕ¼3¸ö×Ö½ÚµÄUTF-8×Ö·û´®ºÜÈİÒ×±»ÎóÈÏÎªGBÏµÁĞ±àÂë£¬·´Ö®Ôò²»È» */
+	/* Òò´Ë¾ÍÊ×ÏÈ¼ì²âÆäÊÇ·ñÊÇUTF-8×Ö·û´® */
 	MATCH_CHARSET_RETURN(utf8, "UTF-8");
 	MATCH_CHARSET_RETURN(gb2312, "GB2312");
 	MATCH_CHARSET_RETURN(gbk, "GBK");
@@ -3880,7 +3880,7 @@ int get_charset(const void* str, size_t size, char *outbuf, size_t outlen, int c
 
 #undef MATCH_CHARSET_RETURN
 
-/* æ£€æµ‹æ–‡ä»¶å­—ç¬¦é›†ä¸Šä¸‹æ–‡ä¿¡æ¯ */
+/* ¼ì²âÎÄ¼ş×Ö·û¼¯ÉÏÏÂÎÄĞÅÏ¢ */
 struct file_charset_info{
 	uint ascii;
 	uint utf8;
@@ -3893,7 +3893,7 @@ struct file_charset_info{
 	uint count;
 };
 
-/* æ£€æµ‹æ–‡ä»¶æ¯ä¸€è¡Œçš„å­—ç¬¦é›† */
+/* ¼ì²âÎÄ¼şÃ¿Ò»ĞĞµÄ×Ö·û¼¯ */
 static inline
 int get_line_charset(char *line, size_t len, size_t nline, void *arg)
 {
@@ -3910,10 +3910,10 @@ int get_line_charset(char *line, size_t len, size_t nline, void *arg)
 	else
 		fci->unknown++;
 
-	/* å·²æ£€æµ‹è¡Œæ•° */
+	/* ÒÑ¼ì²âĞĞÊı */
 	fci->count++;
 
-	/* æœ€å¤šæ£€æµ‹è¡Œæ•° */
+	/* ×î¶à¼ì²âĞĞÊı */
 	if (fci->max_line > 0 && nline + 2 > fci->max_line)
 		return 0;
 
@@ -3921,12 +3921,12 @@ int get_line_charset(char *line, size_t len, size_t nline, void *arg)
 }
 
 /* 
- * @fname: æ¢æµ‹æ–‡ä»¶çš„å­—ç¬¦é›† 
- * @param: outbuf: è¿”å›æ¢æµ‹åˆ°çš„å­—ç¬¦é›†ç¼–ç 
- * @param: outlen: ä¼ å…¥ç¼“å†²åŒºé•¿åº¦ï¼ˆåº”è‡³å°‘ä¸ºMAX_CHARSETï¼‰
- * @param: probability: æ˜¯æ­¤å­—ç¬¦é›†çš„å¯èƒ½æ€§(0~1.0, 0.95ä»¥ä¸Šå¯ç¡®ä¿¡)ï¼Œå¯ä¼ NULL
- * @param: max_line: æœ€å¤šæ¢æµ‹çš„è¡Œæ•° (0è¡¨ç¤ºæ£€æµ‹æ•´ä¸ªæ–‡ä»¶)
- * @return: 1: æˆåŠŸè¿”å›ï¼Œ0: æ— æ³•è·å–æŒ‡å®šæ–‡ä»¶çš„å­—ç¬¦é›†
+ * @fname: Ì½²âÎÄ¼şµÄ×Ö·û¼¯ 
+ * @param: outbuf: ·µ»ØÌ½²âµ½µÄ×Ö·û¼¯±àÂë
+ * @param: outlen: ´«Èë»º³åÇø³¤¶È£¨Ó¦ÖÁÉÙÎªMAX_CHARSET£©
+ * @param: probability: ÊÇ´Ë×Ö·û¼¯µÄ¿ÉÄÜĞÔ(0~1.0, 0.95ÒÔÉÏ¿ÉÈ·ĞÅ)£¬¿É´«NULL
+ * @param: max_line: ×î¶àÌ½²âµÄĞĞÊı (0±íÊ¾¼ì²âÕû¸öÎÄ¼ş)
+ * @return: 1: ³É¹¦·µ»Ø£¬0: ÎŞ·¨»ñÈ¡Ö¸¶¨ÎÄ¼şµÄ×Ö·û¼¯
  */
 int get_file_charset(const char* file, char *outbuf, size_t outlen,	
 					double* probability, int max_line)
@@ -3941,7 +3941,7 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 	if (!fp)
 		return 0;
 
-	/* æ–‡ä»¶æ˜¯å¦æœ‰BOMå¤´ */
+	/* ÎÄ¼şÊÇ·ñÓĞBOMÍ· */
 	if (read_file_bom(fp, outbuf, outlen))
 	{
 		xfclose(fp);
@@ -3952,26 +3952,26 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 	fci = XALLOCA(struct file_charset_info);
 	memset(fci, 0, sizeof(struct file_charset_info));
 
-	/* æœ€å¤šæ£€æµ‹è¡Œæ•° */
+	/* ×î¶à¼ì²âĞĞÊı */
 	fci->max_line = max_line > 0 ? max_line : 0;
 
-	/* æ¢æµ‹æ¯ä¸€è¡Œ */
+	/* Ì½²âÃ¿Ò»ĞĞ */
 	IGNORE_RESULT(foreach_line(fp, get_line_charset, fci));
 	xfclose(fp);
 
-	/* æ— æœ‰æ•ˆæ•°æ® */
+	/* ÎŞÓĞĞ§Êı¾İ */
 	if (!fci->count)
 		return 0;
 
-	/* ç¡®å®šå­—ç¬¦é›† */
+	/* È·¶¨×Ö·û¼¯ */
 	{
-		/* æ¯ç§å­—ç¬¦é›†çš„å¯èƒ½æ€§ */
+		/* Ã¿ÖÖ×Ö·û¼¯µÄ¿ÉÄÜĞÔ */
 		double prob_ascii = (double)fci->ascii / (double)fci->count;
 		double prob_utf8 =	(double)fci->utf8 / (double)fci->count;
 		double prob_gb2312 = (double)fci->gb2312 / (double)fci->count;
 		double prob_gbk =	(double)fci->gbk	 / (double)fci->count;
 
-		double prob_gbx = prob_gb2312 + prob_gbk;	/* GBç³»åˆ—æ€»å€¼ */
+		double prob_gbx = prob_gb2312 + prob_gbk;	/* GBÏµÁĞ×ÜÖµ */
 
 		char charset[MAX_CHARSET];
 		size_t cslen;
@@ -4002,15 +4002,15 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 		}
 		else
 		{
-			/* å­—ç¬¦é›†æœªçŸ¥ */
+			/* ×Ö·û¼¯Î´Öª */
 			return 0;
 		}
 
-		/* å·²ç»è·å–åˆ°æ–‡ä»¶å­—ç¬¦é›† */
+		/* ÒÑ¾­»ñÈ¡µ½ÎÄ¼ş×Ö·û¼¯ */
 		cslen = strlen(charset);
 		if (outlen > cslen)
 		{
-			/* æˆåŠŸè¿”å› */
+			/* ³É¹¦·µ»Ø */
 			if (probability)
 				*probability = prob;
 			strcpy(outbuf, charset);
@@ -4018,7 +4018,7 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 		}
 		else
 		{
-			/* è¾“å‡ºç¼“å†²åŒºå¤ªå° */
+			/* Êä³ö»º³åÇøÌ«Ğ¡ */
 			return 0;
 		}
 	}
@@ -4039,11 +4039,11 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 	}
 
 /*
- * @fname: è¯»å–æ–‡ä»¶çš„BOMå¤´
- * @param: fp: åˆšæ‰“å¼€çš„æ–‡ä»¶æµ
- * @outbuf: è¿”å›è¯»å–åˆ°å¾—BOMå¤´
- * @return: æˆåŠŸè¿”å›1ï¼Œoutbufå­˜æ”¾æ‰€ä»£è¡¨çš„å­—ç¬¦é›†
- *			å¦åˆ™è¿”å›0ï¼Œå¹¶å°†æ–‡ä»¶æµå®šä½åˆ°åŸæ¥çš„ä½ç½®
+ * @fname: ¶ÁÈ¡ÎÄ¼şµÄBOMÍ·
+ * @param: fp: ¸Õ´ò¿ªµÄÎÄ¼şÁ÷
+ * @outbuf: ·µ»Ø¶ÁÈ¡µ½µÃBOMÍ·
+ * @return: ³É¹¦·µ»Ø1£¬outbuf´æ·ÅËù´ú±íµÄ×Ö·û¼¯
+ *			·ñÔò·µ»Ø0£¬²¢½«ÎÄ¼şÁ÷¶¨Î»µ½Ô­À´µÄÎ»ÖÃ
  */
 int read_file_bom(FILE *fp, char *outbuf, size_t outlen)
 {
@@ -4097,7 +4097,7 @@ exit:
 
 #undef FOUND_FILE_BOM
 
-/* å¸¸ç”¨ç¼–ç çš„æ–‡ä»¶BOMå¤´ */
+/* ³£ÓÃ±àÂëµÄÎÄ¼şBOMÍ· */
 #define UTF8_BOM		"\xEF\xBB\xBF"
 #define UTF16LE_BOM		"\xFF\xFE"
 #define UTF16BE_BOM		"\xFE\xFF"
@@ -4112,10 +4112,10 @@ exit:
 	}
 
 /*
- * å†™å…¥æ–‡ä»¶çš„BOMå¤´
- * @param: charset: æ–‡ä»¶çš„ç¼–ç å­—ç¬¦é›†
- * @return: æˆåŠŸå†™å…¥å­—ç¬¦é›†æ‰€å¯¹åº”çš„BOMå¤´è¿”å›1;
- *			å¦‚æœå­—ç¬¦é›†æ²¡æœ‰ç›¸åº”BOMå¤´è¿”å›0;
+ * Ğ´ÈëÎÄ¼şµÄBOMÍ·
+ * @param: charset: ÎÄ¼şµÄ±àÂë×Ö·û¼¯
+ * @return: ³É¹¦Ğ´Èë×Ö·û¼¯Ëù¶ÔÓ¦µÄBOMÍ··µ»Ø1;
+ *			Èç¹û×Ö·û¼¯Ã»ÓĞÏàÓ¦BOMÍ··µ»Ø0;
  */
 int write_file_bom(FILE *fp, const char* charset)
 {
@@ -4136,15 +4136,15 @@ int write_file_bom(FILE *fp, const char* charset)
 	if (!len)
 		return 0;
 
-	/* å†™å…¥BOMå¤´ */;
+	/* Ğ´ÈëBOMÍ· */;
 	return fwrite(bom, len, 1, fp) == 1;
 }
 
 #undef ELSEIF_FILE_BOM
 
 
-/* è¡¨ç¤ºéASCIIå­—ç¬¦çš„å¤šå­—èŠ‚ä¸²çš„ç¬¬ä¸€ä¸ªå­—èŠ‚æ€»æ˜¯åœ¨0xC0åˆ°0xFDçš„èŒƒå›´é‡Œ */
-/* å¤šå­—èŠ‚ä¸²çš„å…¶ä½™å­—èŠ‚éƒ½åœ¨0x80åˆ°0xBFèŒƒå›´é‡Œ */
+/* ±íÊ¾·ÇASCII×Ö·ûµÄ¶à×Ö½Ú´®µÄµÚÒ»¸ö×Ö½Ú×ÜÊÇÔÚ0xC0µ½0xFDµÄ·¶Î§Àï */
+/* ¶à×Ö½Ú´®µÄÆäÓà×Ö½Ú¶¼ÔÚ0x80µ½0xBF·¶Î§Àï */
 #define UTF8_ASCII(ch)  (((byte)ch)<=0x7F)
 #define UTF8_FIRST(ch) ((((byte)ch)>=0xC0) && (((byte)ch)<=0xFD))
 #define UTF8_OTHER(ch) ((((byte)ch)>=0x80) && (((byte)ch)<=0xBF))
@@ -4169,10 +4169,10 @@ int utf8_len(const char* utf8)
 	return count;
 }
 
-/* æŒ‰ç…§ç»™å®šçš„æœ€å¤§å­—èŠ‚æ•°æˆªå–UTF-8å­—ç¬¦ä¸²ï¼Œ
- * æ­¤å‡½æ•°å†³å®šæœ€å¤šå¯ä»¥ä¿ç•™çš„å­—ç¬¦æ•°ï¼Œè¿”å›æ–°å­—ç¬¦ä¸²çš„å­—èŠ‚æ•°
- * outbufå¯ä¸ºNULLï¼›å¦‚æœä¸ä¸ºNULLï¼Œå…¶é•¿åº¦å¿…é¡»å¤§äºmax_byte (ä»¥æ·»åŠ '\0')ï¼Œä¸”æˆªå–åçš„å­—ä¸²ä¼šè¢«å¤åˆ¶åˆ°outbufä¸­
- * å¦‚æœä¼ å…¥çš„UTF-8å­—ç¬¦ä¸²æ— æ•ˆï¼Œè¿”å›ï¼1 */
+/* °´ÕÕ¸ø¶¨µÄ×î´ó×Ö½ÚÊı½ØÈ¡UTF-8×Ö·û´®£¬
+ * ´Ëº¯Êı¾ö¶¨×î¶à¿ÉÒÔ±£ÁôµÄ×Ö·ûÊı£¬·µ»ØĞÂ×Ö·û´®µÄ×Ö½ÚÊı
+ * outbuf¿ÉÎªNULL£»Èç¹û²»ÎªNULL£¬Æä³¤¶È±ØĞë´óÓÚmax_byte (ÒÔÌí¼Ó'\0')£¬ÇÒ½ØÈ¡ºóµÄ×Ö´®»á±»¸´ÖÆµ½outbufÖĞ
+ * Èç¹û´«ÈëµÄUTF-8×Ö·û´®ÎŞĞ§£¬·µ»Ø£­1 */
 int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
 {
 	size_t slen = strlen(utf8);
@@ -4198,7 +4198,7 @@ int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
 		p--;
 	}
 
-	/* æ‰¾åˆ°æˆªå–ä½ç½® */
+	/* ÕÒµ½½ØÈ¡Î»ÖÃ */
 	if (p >= begin)
 	{
 		ptrdiff_t count = p - begin;
@@ -4213,15 +4213,15 @@ int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
 	return -1;
 }
 
-/* ç®€å†™UTF-8å­—ç¬¦ä¸²åˆ°æŒ‡å®šæœ€å¤§é•¿åº¦ï¼Œä¿ç•™æœ€å‰å’Œæœ€åçš„å­—ç¬¦ï¼Œä¸­é—´ç”¨...è¡¨ç¤ºçœç•¥ 
- * æ¯”å¦‚ "c is a wonderful language" ç®€å†™ä¸º20ä¸ªå­—èŠ‚ï¼Œä¸”æœ€åä¿ç•™3ä¸ªå­—ç¬¦
- * ç»“æœä¸º "c is a wonderf...age"
- * æ³¨ï¼š1ã€"..."çš„é•¿åº¦ï¼ˆ3ä¸ªå­—èŠ‚ï¼‰åŒ…æ‹¬äº max_byte å‚æ•°ä¸­
- * 2ã€å¦‚æœlast_reserved_wordsä¸º0ï¼Œåˆ™"..."å°†è¢«æ”¾ç½®äºæœ€åï¼Œ
- *	å¦‚æœlast_reserved_wordså¤§äºç­‰äºmax_byte-3ï¼Œåˆ™"..."å°†è¢«ç½®äºæœ€å‰
- * 3ã€å—å¤šå­—èŠ‚ç¼–ç çš„å½±å“ï¼Œæœ€ç»ˆè¿”å›å­—ç¬¦ä¸²çš„é•¿åº¦å¯èƒ½å°äº max_byteï¼Œä½†ç›¸è¿‘
- * 4ã€outbufä¸èƒ½ä¸ºç©ºä¸”å…¶å¤§å°å¿…é¡»å¤§äº max_byte (å­˜æ”¾'\0')
- * è¿”å›å€¼ï¼šæˆåŠŸè¿”å›1ï¼Œå¤±è´¥è¿”å›-1
+/* ¼òĞ´UTF-8×Ö·û´®µ½Ö¸¶¨×î´ó³¤¶È£¬±£Áô×îÇ°ºÍ×îºóµÄ×Ö·û£¬ÖĞ¼äÓÃ...±íÊ¾Ê¡ÂÔ 
+ * ±ÈÈç "c is a wonderful language" ¼òĞ´Îª20¸ö×Ö½Ú£¬ÇÒ×îºó±£Áô3¸ö×Ö·û
+ * ½á¹ûÎª "c is a wonderf...age"
+ * ×¢£º1¡¢"..."µÄ³¤¶È£¨3¸ö×Ö½Ú£©°üÀ¨ÓÚ max_byte ²ÎÊıÖĞ
+ * 2¡¢Èç¹ûlast_reserved_wordsÎª0£¬Ôò"..."½«±»·ÅÖÃÓÚ×îºó£¬
+ *	Èç¹ûlast_reserved_words´óÓÚµÈÓÚmax_byte-3£¬Ôò"..."½«±»ÖÃÓÚ×îÇ°
+ * 3¡¢ÊÜ¶à×Ö½Ú±àÂëµÄÓ°Ïì£¬×îÖÕ·µ»Ø×Ö·û´®µÄ³¤¶È¿ÉÄÜĞ¡ÓÚ max_byte£¬µ«Ïà½ü
+ * 4¡¢outbuf²»ÄÜÎª¿ÕÇÒÆä´óĞ¡±ØĞë´óÓÚ max_byte (´æ·Å'\0')
+ * ·µ»ØÖµ£º³É¹¦·µ»Ø1£¬Ê§°Ü·µ»Ø-1
  */
 #define ABBR_DOTS_LEN	3	/* strlen("...") */
 
@@ -4248,7 +4248,7 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 		return 1;
 	}
 
-	/* æ‰¾åˆ°æ–°å­—ç¬¦ä¸²ä¸­"..."åé¢çš„å­—ç¬¦åœ¨æºå­—ç¬¦ä¸²ä¸­çš„ä½ç½® */
+	/* ÕÒµ½ĞÂ×Ö·û´®ÖĞ"..."ºóÃæµÄ×Ö·ûÔÚÔ´×Ö·û´®ÖĞµÄÎ»ÖÃ */
 	p = plast = utf8 + origlen - 1;
 	suffix_count = 0;
 	word_count = 0;
@@ -4257,7 +4257,7 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 		++suffix_count;
 		if (UTF8_ASCII(*p) || (UTF8_FIRST(*p))) {
 			if (suffix_count > max_byte) {
-				suffix_count -= plast - p;	/* å®šä½åˆ°ä¸Šæ¬¡æœªè¶…å‡ºèŒƒå›´çš„å­—ç¬¦å¤„ */
+				suffix_count -= plast - p;	/* ¶¨Î»µ½ÉÏ´ÎÎ´³¬³ö·¶Î§µÄ×Ö·û´¦ */
 				p = plast;
 				break;
 			}
@@ -4278,7 +4278,7 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 		return 1;
 	}
 
-	//æ‰¾åˆ°æ–°å­—ç¬¦ä¸²ä¸­"..."ä¹‹å‰çš„å­—ç¬¦æ•°ç›®
+	//ÕÒµ½ĞÂ×Ö·û´®ÖĞ"..."Ö®Ç°µÄ×Ö·ûÊıÄ¿
 	prefix_count = utf8_trim(utf8, NULL, left_room - ABBR_DOTS_LEN);
 	if (prefix_count == -1)
 		return 0;
@@ -4295,7 +4295,7 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 #undef UTF8_FIRST
 #undef UTF8_OTHER
 
-/* å°†å¤šå­—èŠ‚å­—ç¬¦ä¸²è½¬æ¢ä¸ºå®½å­—ç¬¦ä¸² */
+/* ½«¶à×Ö½Ú×Ö·û´®×ª»»Îª¿í×Ö·û´® */
 wchar_t* mbcs_to_wcs(const char* src)
 {
 #ifdef OS_WIN
@@ -4339,7 +4339,7 @@ wchar_t* mbcs_to_wcs(const char* src)
 #endif
 }
 
-/* å°†å®½å­—ç¬¦ä¸²è½¬æ¢ä¸ºå¤šå­—èŠ‚å­—ç¬¦ä¸² */
+/* ½«¿í×Ö·û´®×ª»»Îª¶à×Ö½Ú×Ö·û´® */
 char* wcs_to_mbcs(const wchar_t* src)
 {
 #ifdef OS_WIN
@@ -4383,7 +4383,7 @@ char* wcs_to_mbcs(const wchar_t* src)
 #endif
 }
 
-/* å°†UTF-8ç¼–ç çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-16å­—ç¬¦ä¸²ï¼Œéœ€å¤–éƒ¨é‡Šæ”¾ */
+/* ½«UTF-8±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-16×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
 UTF16* utf8_to_utf16(const UTF8* utf8, int strict)
 {
 	ConversionResult cr;
@@ -4405,8 +4405,8 @@ UTF16* utf8_to_utf16(const UTF8* utf8, int strict)
 	return NULL;
 }
 
-/* å°†UTF-16å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-8ç¼–ç çš„å­—ç¬¦ä¸²ï¼Œéœ€å¤–éƒ¨é‡Šæ”¾ */
-/* æ³¨ï¼šåœ¨UTF-8ç¼–ç ä¸­æ¯ä¸ªå­—ç¬¦ä¸€èˆ¬æœ€å¤šå 3ä¸ªå­—èŠ‚ï¼Œä½†æœ‰æœ‰å¯èƒ½æœ€å¤šå 6ä¸ªå­—èŠ‚ */
+/* ½«UTF-16×Ö·û´®×ª»»ÎªUTF-8±àÂëµÄ×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
+/* ×¢£ºÔÚUTF-8±àÂëÖĞÃ¿¸ö×Ö·ûÒ»°ã×î¶àÕ¼3¸ö×Ö½Ú£¬µ«ÓĞÓĞ¿ÉÄÜ×î¶àÕ¼6¸ö×Ö½Ú */
 UTF8* utf16_to_utf8(const UTF16* src, int strict)
 {
 	ConversionResult cr;
@@ -4432,7 +4432,7 @@ UTF8* utf16_to_utf8(const UTF16* src, int strict)
 				return uBegOrig;
 			}
 
-			/* æ— æ³•æ·»åŠ å­—ç¬¦ä¸²ç»“æŸç¬¦'\0' */
+			/* ÎŞ·¨Ìí¼Ó×Ö·û´®½áÊø·û'\0' */
 			cr = targetExhausted;
 		}
 
@@ -4444,7 +4444,7 @@ UTF8* utf16_to_utf8(const UTF16* src, int strict)
 	return NULL;
 }
 
-/* å°†UTF-8ç¼–ç çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-32å­—ç¬¦ä¸²ï¼Œéœ€å¤–éƒ¨é‡Šæ”¾ */
+/* ½«UTF-8±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-32×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
 UTF32* utf8_to_utf32(const UTF8* utf8, int strict)
 {
 	ConversionResult cr;
@@ -4466,8 +4466,8 @@ UTF32* utf8_to_utf32(const UTF8* utf8, int strict)
 	return NULL;
 }
 
-/* å°†UTF-32å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-8ç¼–ç çš„å­—ç¬¦ä¸²ï¼Œéœ€å¤–éƒ¨é‡Šæ”¾ */
-/* æ³¨ï¼šåœ¨UTF-8ç¼–ç ä¸­æ¯ä¸ªå­—ç¬¦ä¸€èˆ¬æœ€å¤šå 3ä¸ªå­—èŠ‚ï¼Œä½†æœ‰æœ‰å¯èƒ½æœ€å¤šå 6ä¸ªå­—èŠ‚ */
+/* ½«UTF-32×Ö·û´®×ª»»ÎªUTF-8±àÂëµÄ×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
+/* ×¢£ºÔÚUTF-8±àÂëÖĞÃ¿¸ö×Ö·ûÒ»°ã×î¶àÕ¼3¸ö×Ö½Ú£¬µ«ÓĞÓĞ¿ÉÄÜ×î¶àÕ¼6¸ö×Ö½Ú */
 UTF8* utf32_to_utf8(const UTF32* src, int strict)
 {
 	ConversionResult cr;
@@ -4493,7 +4493,7 @@ UTF8* utf32_to_utf8(const UTF32* src, int strict)
 				return uBegOrig;
 			}
 
-			/* æ— æ³•æ·»åŠ å­—ç¬¦ä¸²ç»“æŸç¬¦'\0' */
+			/* ÎŞ·¨Ìí¼Ó×Ö·û´®½áÊø·û'\0' */
 			cr = targetExhausted;
 		}
 
@@ -4505,7 +4505,7 @@ UTF8* utf32_to_utf8(const UTF32* src, int strict)
 	return NULL;
 }
 
-/* å°†UTF-16ç¼–ç çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-32å­—ç¬¦ä¸²ï¼Œéœ€å¤–éƒ¨é‡Šæ”¾ */
+/* ½«UTF-16±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-32×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
 UTF32* utf16_to_utf32(const UTF16* src, int strict)
 {
 	ConversionResult cr;
@@ -4528,7 +4528,7 @@ UTF32* utf16_to_utf32(const UTF16* src, int strict)
 	return NULL;
 }
 
-/* å°†UTF-32å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-16ç¼–ç çš„å­—ç¬¦ä¸²ï¼Œéœ€å¤–éƒ¨é‡Šæ”¾ */
+/* ½«UTF-32×Ö·û´®×ª»»ÎªUTF-16±àÂëµÄ×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
 UTF16* utf32_to_utf16(const UTF32* src, int strict)
 {
 	ConversionResult cr;
@@ -4551,7 +4551,7 @@ UTF16* utf32_to_utf16(const UTF32* src, int strict)
 	return NULL;
 }
 
-/*å°†UTF-8ç¼–ç å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-7å­—ç¬¦ä¸²ï¼Œéœ€è¦å¤–éƒ¨é‡Šæ”¾ï¼Œstrictæ— æ„ä¹‰*/
+/*½«UTF-8±àÂë×Ö·û´®×ª»»ÎªUTF-7×Ö·û´®£¬ĞèÒªÍâ²¿ÊÍ·Å£¬strictÎŞÒâÒå*/
 UTF7* utf8_to_utf7(const UTF8* src)
 {
 	ConversionResult cr;
@@ -4574,7 +4574,7 @@ UTF7* utf8_to_utf7(const UTF8* src)
 	return NULL;
 }
 
-/*å°†UTF-7ç¼–ç å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-8å­—ç¬¦ä¸²ï¼Œéœ€è¦å¤–éƒ¨é‡Šæ”¾ï¼Œstrictæ— æ„ä¹‰*/
+/*½«UTF-7±àÂë×Ö·û´®×ª»»ÎªUTF-8×Ö·û´®£¬ĞèÒªÍâ²¿ÊÍ·Å£¬strictÎŞÒâÒå*/
 UTF8* utf7_to_utf8(const UTF7* src)
 {
 	ConversionResult cr;
@@ -4593,7 +4593,7 @@ UTF8* utf7_to_utf8(const UTF7* src)
 	return NULL;
 }
 
-/* å°†UTF-8ç¼–ç çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºç³»ç»Ÿå¤šå­—èŠ‚ç¼–ç  */
+/* ½«UTF-8±àÂëµÄ×Ö·û´®×ª»»ÎªÏµÍ³¶à×Ö½Ú±àÂë */
 char* utf8_to_mbcs(const char* utf8, int strict)
 {
 	wchar_t *wcs;
@@ -4609,7 +4609,7 @@ char* utf8_to_mbcs(const char* utf8, int strict)
 	return mbcs;
 }
 
-/* å°†ç³»ç»Ÿå¤šå­—èŠ‚ç¼–ç çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºUTF-8ç¼–ç  */
+/* ½«ÏµÍ³¶à×Ö½Ú±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-8±àÂë */
 char* mbcs_to_utf8(const char* mbcs, int strict)
 {
 	wchar_t *wcs;
@@ -4648,7 +4648,7 @@ ssize_t utf32_len(const UTF32* u32)
 }
 
 #ifndef OS_ANDROID
-/* è·å–ç³»ç»Ÿé»˜è®¤å­—ç¬¦é›†(å¤šå­—èŠ‚ç¼–ç æ‰€ç”¨å­—ç¬¦é›†) */
+/* »ñÈ¡ÏµÍ³Ä¬ÈÏ×Ö·û¼¯(¶à×Ö½Ú±àÂëËùÓÃ×Ö·û¼¯) */
 const char *get_locale()
 {
 #ifdef OS_POSIX
@@ -4662,8 +4662,8 @@ const char *get_locale()
 }
 #endif
 
-/* è·å–ç³»ç»Ÿé»˜è®¤è¯­è¨€ */
-/* è¿”å›å€¼å¦‚ zh_CNï¼Œen_US */
+/* »ñÈ¡ÏµÍ³Ä¬ÈÏÓïÑÔ */
+/* ·µ»ØÖµÈç zh_CN£¬en_US */
 const char *get_language()
 {
 	static char lang[64];
@@ -4681,14 +4681,14 @@ const char *get_language()
 	//http://msdn.microsoft.com/en-us/library/ms912047(WinEmbedded.10).aspx
 	switch(lcid)
 	{
-	case 2052:	//ä¸­æ–‡ï¼ˆä¸­å›½ï¼‰
+	case 2052:	//ÖĞÎÄ£¨ÖĞ¹ú£©
 		strcpy(lang, "zh_CN");
 		break;
-	case 1028:	//ä¸­æ–‡ï¼ˆå°æ¹¾)
-	case 3076:	//ä¸­æ–‡ï¼ˆé¦™æ¸¯)
+	case 1028:	//ÖĞÎÄ£¨Ì¨Íå)
+	case 3076:	//ÖĞÎÄ£¨Ïã¸Û)
 		strcpy(lang, "zh_TW");
 		break;
-	case 1033:	//è‹±è¯­ (ç¾å›½)
+	case 1033:	//Ó¢Óï (ÃÀ¹ú)
 		strcpy(lang, "en_US");
 		break;
 	default:
@@ -4701,12 +4701,12 @@ const char *get_language()
 
 #ifdef _LIBICONV_H
 
-/* ä½¿ç”¨libiconvåº“è½¬æ¢å­—ç¬¦ç¼–ç 
- * æˆåŠŸè¿”å›è½¬æ¢åˆ°ç›®æ ‡ç¼–ç çš„é•¿åº¦
- * å¤±è´¥è¿”å›-1å¹¶è®¾ç½®errnoï¼Œåˆ†ä»¥ä¸‹å‡ ç§æƒ…å†µ:
- * 1ã€æ— æ•ˆçš„è¾“å…¥åºåˆ—ï¼Œè®¾ç½®errnoä¸ºEILSEQ
- * 2ã€ä¸å®Œæ•´çš„è¾“å…¥åºåˆ—ï¼Œè®¾ç½®errnoä¸ºEINVAL
- * 3ã€è¾“å‡ºç¼“å†²åŒºè¿‡å°ï¼Œè®¾ç½®errnoä¸ºE2BIG
+/* Ê¹ÓÃlibiconv¿â×ª»»×Ö·û±àÂë
+ * ³É¹¦·µ»Ø×ª»»µ½Ä¿±ê±àÂëµÄ³¤¶È
+ * Ê§°Ü·µ»Ø-1²¢ÉèÖÃerrno£¬·ÖÒÔÏÂ¼¸ÖÖÇé¿ö:
+ * 1¡¢ÎŞĞ§µÄÊäÈëĞòÁĞ£¬ÉèÖÃerrnoÎªEILSEQ
+ * 2¡¢²»ÍêÕûµÄÊäÈëĞòÁĞ£¬ÉèÖÃerrnoÎªEINVAL
+ * 3¡¢Êä³ö»º³åÇø¹ıĞ¡£¬ÉèÖÃerrnoÎªE2BIG
  */
 static inline
 size_t iconv_convert(const char* from_charset, const char* to_charset, 
@@ -4738,12 +4738,12 @@ size_t iconv_convert(const char* from_charset, const char* to_charset,
 }
 
 /*
- * å­—ç¬¦ç¼–ç è½¬æ¢
- * å¦‚æœoutbufä¸ä¸ºNULLä¸”outlençš„é•¿åº¦è¶³å¤Ÿå®¹çº³è½¬æ¢åçš„å­—ç¬¦
- * åˆ™è½¬æ¢åçš„å­—ç¬¦ä¸²å­˜æ”¾äºoutbufä¸­ï¼›å¦åˆ™å°†æ–°ç”³è¯·ä¸€å—å†…å­˜å¹¶é€šè¿‡outbufè¿”å›
- * outlenä¸ºè½¬æ¢åçš„å­—èŠ‚é•¿åº¦
- * è¿”å›å€¼ï¼šæˆåŠŸè¿”å›1ï¼Œå¤±è´¥è¿”å›0
- * æ³¨ï¼šè™½ç„¶inbufä¸€èˆ¬ä¸ä»¥'\0'ç»“å°¾ï¼Œä½†ä¼šä¿è¯è¾“å‡ºä»¥'\0'ç»“å°¾ï¼Œä»¥é˜²è¯¯ç”¨
+ * ×Ö·û±àÂë×ª»»
+ * Èç¹ûoutbuf²»ÎªNULLÇÒoutlenµÄ³¤¶È×ã¹»ÈİÄÉ×ª»»ºóµÄ×Ö·û
+ * Ôò×ª»»ºóµÄ×Ö·û´®´æ·ÅÓÚoutbufÖĞ£»·ñÔò½«ĞÂÉêÇëÒ»¿éÄÚ´æ²¢Í¨¹ıoutbuf·µ»Ø
+ * outlenÎª×ª»»ºóµÄ×Ö½Ú³¤¶È
+ * ·µ»ØÖµ£º³É¹¦·µ»Ø1£¬Ê§°Ü·µ»Ø0
+ * ×¢£ºËäÈ»inbufÒ»°ã²»ÒÔ'\0'½áÎ²£¬µ«»á±£Ö¤Êä³öÒÔ'\0'½áÎ²£¬ÒÔ·ÀÎóÓÃ
  */
 int convert_to_charset(const char* from, const char* to, 
 						const char* inbuf, size_t inlen, 
@@ -4756,7 +4756,7 @@ int convert_to_charset(const char* from, const char* to,
 	if (!inbuf || !inlen|| !outbuf || !outlen)
 		return 0;
 
-	/* åŸå­—ç¬¦é›†å’Œç›®æ ‡å­—ç¬¦é›†ç›¸åŒ */
+	/* Ô­×Ö·û¼¯ºÍÄ¿±ê×Ö·û¼¯ÏàÍ¬ */
 	if (!strcasecmp(from, to))
 	{
 		if (!*outbuf || *outlen <= inlen)
@@ -4784,15 +4784,15 @@ retry_convert:
 
 	dlen = iconv_convert(from, to, inbuf, inlen, tbuf, tlen, strict);
 
-	if ((dlen == (size_t)-1 && errno == E2BIG)			//è½¬æ¢å¤±è´¥ï¼ŒåŸå› æ˜¯è¾“å‡ºç¼“å†²åŒºå¤ªå°
-		|| (dlen != (size_t)-1 && tlen < dlen +1))		//è½¬æ¢æˆåŠŸï¼Œä½†æ— æ³•å®¹çº³é™„åŠ çš„'\0'
+	if ((dlen == (size_t)-1 && errno == E2BIG)			//×ª»»Ê§°Ü£¬Ô­ÒòÊÇÊä³ö»º³åÇøÌ«Ğ¡
+		|| (dlen != (size_t)-1 && tlen < dlen +1))		//×ª»»³É¹¦£¬µ«ÎŞ·¨ÈİÄÉ¸½¼ÓµÄ'\0'
 	{
 		tlen += inlen;
 
 		if (tbuf == *outbuf)
-			tbuf = (char*)xmalloc(tlen);				//é¦–æ¬¡å†…éƒ¨åˆ†é…
+			tbuf = (char*)xmalloc(tlen);				//Ê×´ÎÄÚ²¿·ÖÅä
 		else
-			tbuf = (char*)xrealloc(tbuf, tlen);			//é‡æ–°åˆ†é…å¤§å°
+			tbuf = (char*)xrealloc(tbuf, tlen);			//ÖØĞÂ·ÖÅä´óĞ¡
 
 		goto retry_convert;
 	}
@@ -4806,7 +4806,7 @@ retry_convert:
 
 	tbuf[dlen] = '\0';
 
-	//è®¾ç½®è¾“å‡ºå‚æ•°
+	//ÉèÖÃÊä³ö²ÎÊı
 	*outlen = dlen;
 	
 	if (tbuf != *outbuf)
@@ -4818,13 +4818,13 @@ retry_convert:
 #endif
 
 /************************************************************************/
-/*                         Process  å¤šè¿›ç¨‹                              */
+/*                         Process  ¶à½ø³Ì                              */
 /************************************************************************/
 
-/* åˆ›å»ºæ–°çš„è¿›ç¨‹ */
-/* å‚æ•°executableï¼šå°†è¦æ‰§è¡Œçš„å¯æ‰§è¡Œæ–‡ä»¶è·¯å¾„ */
-/* å‚æ•°paramï¼šä¼ é€’ç»™å¯æ‰§è¡Œæ–‡ä»¶çš„å‚æ•°æŒ‡é’ˆæ•°ç»„ï¼Œæœ€åä¸€ä¸ªå…ƒç´ å¿…é¡»ä¸ºNULL */
-/* è¿”å›å€¼ï¼šåˆ›å»ºæˆåŠŸè¿”å›è¿›ç¨‹æ ‡è¯†ç¬¦(process_t)ï¼Œå¤±è´¥è¿”å›INVALID_PROCESS */
+/* ´´½¨ĞÂµÄ½ø³Ì */
+/* ²ÎÊıexecutable£º½«ÒªÖ´ĞĞµÄ¿ÉÖ´ĞĞÎÄ¼şÂ·¾¶ */
+/* ²ÎÊıparam£º´«µİ¸ø¿ÉÖ´ĞĞÎÄ¼şµÄ²ÎÊıÖ¸ÕëÊı×é£¬×îºóÒ»¸öÔªËØ±ØĞëÎªNULL */
+/* ·µ»ØÖµ£º´´½¨³É¹¦·µ»Ø½ø³Ì±êÊ¶·û(process_t)£¬Ê§°Ü·µ»ØINVALID_PROCESS */
 process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 {
 #ifdef OS_WIN
@@ -4858,7 +4858,7 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 		startup_info.dwFlags = STARTF_USESHOWWINDOW;
 		startup_info.wShowWindow = show ? SW_SHOW : SW_HIDE;
 
-		/* CreateProcessä¼šä¿®æ”¹exe_paramå‚æ•°ï¼Œå› æ­¤ä¸èƒ½ç›´æ¥ä½¿ç”¨ */
+		/* CreateProcess»áĞŞ¸Äexe_param²ÎÊı£¬Òò´Ë²»ÄÜÖ±½ÓÊ¹ÓÃ */
 		cmdline = xstrdup(cmd_with_param);
 		if (!CreateProcessA(NULL, cmdline, NULL, NULL, 1, 0, NULL, NULL, &startup_info, &proc_info))
 		{
@@ -4880,7 +4880,7 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 	}
 	else if (pid == 0)
 	{
-		/* å­è¿›ç¨‹ */
+		/* ×Ó½ø³Ì */
 		int null_fd, new_fd;
 
         null_fd = HANDLE_FAILURE(open("/dev/null", O_RDONLY));
@@ -4897,7 +4897,7 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 		/* FIXME: why? */
         HANDLE_FAILURE(close(null_fd));
 
-		/* é‡ç½®ä¿¡å·å“åº”å‡½æ•° */
+		/* ÖØÖÃĞÅºÅÏìÓ¦º¯Êı */
 		signal(SIGHUP, SIG_DFL);
 		signal(SIGINT, SIG_DFL);
 		signal(SIGILL, SIG_DFL);
@@ -4908,10 +4908,10 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 		signal(SIGSYS, SIG_DFL);
 		signal(SIGTERM, SIG_DFL);
 
-		/* å¼€å§‹æ‰§è¡Œ */
+		/* ¿ªÊ¼Ö´ĞĞ */
 		execl("/bin/sh", "sh", "-c", cmd_with_param, NULL);
 
-		/* å¦‚æœæ‰§è¡ŒæˆåŠŸï¼Œä¸ä¼šè¿è¡Œåˆ°è¿™é‡Œ */
+		/* Èç¹ûÖ´ĞĞ³É¹¦£¬²»»áÔËĞĞµ½ÕâÀï */
 		_exit(127);
 	}
 	
@@ -4919,7 +4919,7 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 #endif
 }
 
-/* ç­‰å¾…è¿›ç¨‹ç»“æŸï¼Œè‹¥å‚æ•°ä¸º INFINITE åˆ™æ— é™ç­‰å¾… */
+/* µÈ´ı½ø³Ì½áÊø£¬Èô²ÎÊıÎª INFINITE ÔòÎŞÏŞµÈ´ı */
 int	process_wait(process_t process, int milliseconds, int *exit_code)
 {
 #ifdef OS_WIN
@@ -4936,7 +4936,7 @@ int	process_wait(process_t process, int milliseconds, int *exit_code)
 #else /* POSIX */
 	int status = -1;
     pid_t ret_pid = HANDLE_FAILURE(waitpid(process, &status, WNOHANG));
-	const int wait_per_cycle = 10; /* æ¯æ¬¡ç­‰å¾…10æ¯«ç§’ */
+	const int wait_per_cycle = 10; /* Ã¿´ÎµÈ´ı10ºÁÃë */
 	int time_waited = 0;
 
 	while (ret_pid == 0) {
@@ -4952,34 +4952,34 @@ int	process_wait(process_t process, int milliseconds, int *exit_code)
 	if (unlikely(ret_pid == -1))
 		return 0;
 	
-	/* å­è¿›ç¨‹è¢«ä¿¡å·æ‰€ç»ˆæ­¢ */
+	/* ×Ó½ø³Ì±»ĞÅºÅËùÖÕÖ¹ */
 	if (WIFSIGNALED(status)) {
 		if (exit_code)
 			*exit_code = -1;
 		return 1;
 	}
 
-	/* å­è¿›ç¨‹å·²é€€å‡º */
+	/* ×Ó½ø³ÌÒÑÍË³ö */
 	if (WIFEXITED(status)) {
 		if (exit_code)
 			*exit_code = WEXITSTATUS(status);
 		return 1;
 	}
 
-	/* å­è¿›ç¨‹å°šæœªç»ˆæ­¢ */
+	/* ×Ó½ø³ÌÉĞÎ´ÖÕÖ¹ */
 	return 0;
 
 #endif
 }
 
-/* æ€æ­»è¿›ç¨‹ */
+/* É±ËÀ½ø³Ì */
 int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 {
 #ifdef OS_WIN
 	if (!TerminateProcess(process, exit_code))
 		return 0;
 
-	//ç­‰å¾…è¿›ç¨‹å®Œæˆå¼‚æ­¥IOæ“ä½œ
+	//µÈ´ı½ø³ÌÍê³ÉÒì²½IO²Ù×÷
 	if (wait)
 	{
 		if (WaitForSingleObject(process, 60 * 1000) != WAIT_OBJECT_0)
@@ -4992,7 +4992,7 @@ int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 	if (kill(process, SIGTERM))
 		return 0;
 
-	//ç­‰å¾…è¿›ç¨‹å®Œæˆå¼‚æ­¥IOæ“ä½œ
+	//µÈ´ı½ø³ÌÍê³ÉÒì²½IO²Ù×÷
 	if (wait)
 	{
 		int tries = 60;
@@ -5008,7 +5008,7 @@ int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 			}
 			if (pid == -1) {
 				if (errno == ECHILD) {
-					/* å¦ä¸€ä¸ªè¿›ç¨‹ä¹Ÿåœ¨ç­‰å¾…ç›¸åŒçš„pid */
+					/* ÁíÒ»¸ö½ø³ÌÒ²ÔÚµÈ´ıÏàÍ¬µÄpid */
 					exited = 1;
 					break;
 				}
@@ -5019,7 +5019,7 @@ int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 				sleep_ms *= 2;
 		}
 
-		/* æ€ä¸æ­»ï¼Ÿç”¨SIGKILLä¿¡å·å†æ€ä¸€æ¬¡ */
+		/* É±²»ËÀ£¿ÓÃSIGKILLĞÅºÅÔÙÉ±Ò»´Î */
 		if (!exited)
 		{
 			ASSERT(!"Error waiting for process exit");
@@ -5065,8 +5065,8 @@ char* popen_readall(const char* command)
 
 #ifdef OS_WIN
 /* 
- * åˆ›å»ºå­è¿›ç¨‹ä»¥åŠä¸ä¹‹è¿æ¥çš„ç®¡é“ 
- * å¯ä»¥é€šè¿‡ç®¡é“è¯»å–å­è¿›ç¨‹è¾“å‡º(r)æˆ–å†™å…¥ç®¡é“ä½œä¸ºå­è¿›ç¨‹æ ‡å‡†è¾“å…¥(w)
+ * ´´½¨×Ó½ø³ÌÒÔ¼°ÓëÖ®Á¬½ÓµÄ¹ÜµÀ 
+ * ¿ÉÒÔÍ¨¹ı¹ÜµÀ¶ÁÈ¡×Ó½ø³ÌÊä³ö(r)»òĞ´Èë¹ÜµÀ×÷Îª×Ó½ø³Ì±ê×¼ÊäÈë(w)
  */
 FILE* popen(const char *cmd, const char *mode)
 {
@@ -5084,7 +5084,7 @@ FILE* popen(const char *cmd, const char *mode)
 #endif
 
 /*
- * TODO: linux, mac æ”¯æŒ
+ * TODO: linux, mac Ö§³Ö
  */
 int shell_execute(const char* cmd, const char* param, int show, int wait_timeout)
 {
@@ -5105,7 +5105,7 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
 	else
 		sei.nShow = SW_MAXIMIZE;
 
-	sei.fMask = SEE_MASK_NOASYNC;
+	//sei.fMask = SEE_MASK_NOASYNC;
 	if (wait_timeout > 0)
 		sei.fMask |= SEE_MASK_NOCLOSEPROCESS;
 
@@ -5160,16 +5160,16 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
 }
 
 /************************************************************************/
-/*                         Sync çº¿ç¨‹ä¸åŒæ­¥                               */
+/*                         Sync Ïß³ÌÓëÍ¬²½                               */
 /************************************************************************/
 
-//sync_fetch_and_* æ“ä½œç„¶åè¿”å›ä¹‹å‰çš„å€¼
-//sync_*_and_fetch æ“ä½œç„¶åè¿”å›æ–°çš„å€¼
+//sync_fetch_and_* ²Ù×÷È»ºó·µ»ØÖ®Ç°µÄÖµ
+//sync_*_and_fetch ²Ù×÷È»ºó·µ»ØĞÂµÄÖµ
 //http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
-//InterlockedExchangeAdd è¿”å›æ“ä½œä¹‹å‰çš„å€¼
-//InterlockedIncrement è¿”å›æ“ä½œä¹‹åçš„å€¼
+//InterlockedExchangeAdd ·µ»Ø²Ù×÷Ö®Ç°µÄÖµ
+//InterlockedIncrement ·µ»Ø²Ù×÷Ö®ºóµÄÖµ
 
-/* åŸå­å˜é‡æ“ä½œ */
+/* Ô­×Ó±äÁ¿²Ù×÷ */
 long atomic_get(const atomic_t *v)
 {
 #ifdef OS_WIN
@@ -5224,7 +5224,7 @@ void atomic_dec(atomic_t *v)
 #endif
 }
 
-/* è‡ªæ—‹é”å®ç° */
+/* ×ÔĞıËøÊµÏÖ */
 void spin_init(spin_lock_t* lock)
 {
 #ifdef OS_WIN
@@ -5270,7 +5270,7 @@ int spin_is_lock(spin_lock_t* lock)
 #endif
 }
 
-/* çº¿ç¨‹äº’æ–¥é‡å®ç° */
+/* Ïß³Ì»¥³âÁ¿ÊµÏÖ */
 void mutex_init(mutex_t *lock)
 {
 #if defined(COMPILER_MSVC) && _MSC_VER <= MSVC6
@@ -5326,7 +5326,7 @@ void mutex_destroy(mutex_t* lock)
 
 #ifdef USE_READ_WRITE_LOCK
 
-/* è¯»å†™é”å®ç° */
+/* ¶ÁĞ´ËøÊµÏÖ */
 /* http://stackoverflow.com/questions/1008726/win32-read-write-lock-using-only-critical-sections */
 
 void rwlock_init(rwlock_t *rwlock)
@@ -5409,7 +5409,7 @@ void rwlock_destroy(rwlock_t *rwlock)
 
 #ifdef USE_CONDITION_VARIABLE
 
-/* æ¡ä»¶å˜é‡ */
+/* Ìõ¼ş±äÁ¿ */
 void cond_init(cond_t *cond)
 {
 #ifdef OS_POSIX
@@ -5438,8 +5438,8 @@ int cond_wait_time(cond_t *cond, mutex_t *mutex, int milliseconds)
 	struct timespec ts;
 	int seconds, ms;
 
-	seconds = milliseconds / 1000;	//ç§’æ•°
-	ms = milliseconds % 1000;		//æ¯«ç§’æ•°(<1s)
+	seconds = milliseconds / 1000;	//ÃëÊı
+	ms = milliseconds % 1000;		//ºÁÃëÊı(<1s)
 	ts.tv_sec = seconds;
 	ts.tv_nsec = ms * 1000 * 1000;
 	return !pthread_cond_timedwait(cond, mutex, &ts);
@@ -5486,11 +5486,11 @@ void cond_destroy(cond_t *cond)
 #endif
 
 /************************************************************************/
-/*                         Thread  å¤šçº¿ç¨‹                               */
+/*                         Thread  ¶àÏß³Ì                               */
 /************************************************************************/
 
-/* åˆ›å»ºçº¿ç¨‹ */
-/* å¦‚æœstacksizeä¸º0åˆ™ä½¿ç”¨é»˜è®¤çš„å †æ ˆå¤§å° */
+/* ´´½¨Ïß³Ì */
+/* Èç¹ûstacksizeÎª0ÔòÊ¹ÓÃÄ¬ÈÏµÄ¶ÑÕ»´óĞ¡ */
 int thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize)
 {
 #ifdef OS_POSIX
@@ -5513,8 +5513,8 @@ int thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize)
 
 	return 1;
 #else
-	/* ä¸è¦ä½¿ç”¨CreateThreadï¼Œå¦åˆ™å¾ˆå¯èƒ½ä¼šé€ æˆå†…å­˜æ³„éœ² */
-	uintptr_t ret = _beginthreadex(NULL, stacksize, proc, arg, 0, NULL);
+	/* ²»ÒªÊ¹ÓÃCreateThread£¬·ñÔòºÜ¿ÉÄÜ»áÔì³ÉÄÚ´æĞ¹Â¶ */
+	uint ret = _beginthreadex(NULL, stacksize, proc, arg, 0, NULL);
 	if (!ret)
 	{
 		log_dprintf(LOG_ERROR, "thread create failed: %s", get_last_error_std());
@@ -5526,18 +5526,18 @@ int thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize)
 #endif
 }
 
-/* é€€å‡ºçº¿ç¨‹ */
+/* ÍË³öÏß³Ì */
 void thread_exit(size_t exit_code)
 {
 #ifdef OS_POSIX
 	pthread_exit((void*)exit_code);
 #else
-	/* ä¸è¦ä½¿ç”¨ExitThread */
+	/* ²»ÒªÊ¹ÓÃExitThread */
 	_endthreadex((unsigned)exit_code);
 #endif
 }
 
-/* ç­‰å¾…çº¿ç¨‹ */
+/* µÈ´ıÏß³Ì */
 int thread_join(thread_t t, thread_ret_t *exit_code)
 {
 #ifdef OS_POSIX
@@ -5556,7 +5556,7 @@ int thread_join(thread_t t, thread_ret_t *exit_code)
 	return 1;
 }
 
-/* åˆ›å»ºä¸€ä¸ªçº¿ç¨‹ç›¸å…³å­˜å‚¨ï¼ˆTLSï¼‰é”® */
+/* ´´½¨Ò»¸öÏß³ÌÏà¹Ø´æ´¢£¨TLS£©¼ü */
 int	thread_tls_create(thread_tls_t *tls)
 {
 #ifdef OS_POSIX
@@ -5573,7 +5573,7 @@ int	thread_tls_create(thread_tls_t *tls)
 #endif
 }
 
-/* è®¾ç½®TLSå€¼ */
+/* ÉèÖÃTLSÖµ */
 int thread_tls_set(thread_tls_t tls, void *data)
 {
 #ifdef OS_POSIX
@@ -5587,7 +5587,7 @@ int thread_tls_set(thread_tls_t tls, void *data)
 #endif
 }
 
-/* è·å–TLSå€¼ */
+/* »ñÈ¡TLSÖµ */
 int thread_tls_get(thread_tls_t tls, void **data)
 {
 #ifdef OS_POSIX
@@ -5604,7 +5604,7 @@ int thread_tls_get(thread_tls_t tls, void **data)
 #endif
 }
 
-/* é‡Šæ”¾TLS */
+/* ÊÍ·ÅTLS */
 int thread_tls_free(thread_tls_t tls)
 {
 #ifdef OS_POSIX
@@ -5619,14 +5619,14 @@ int thread_tls_free(thread_tls_t tls)
 #endif
 }
 
-/* åˆå§‹åŒ– thread_once_t ç»“æ„ä½“ */
+/* ³õÊ¼»¯ thread_once_t ½á¹¹Ìå */
 void thread_once_init(thread_once_t* once)
 {
 	once->inited = 0;
 	mutex_init(&once->lock);
 }
 
-/* æ‰§è¡Œçº¿ç¨‹ä¸€æ¬¡åˆå§‹åŒ– */
+/* Ö´ĞĞÏß³ÌÒ»´Î³õÊ¼»¯ */
 int thread_once(thread_once_t* once, thread_once_func func)
 {
 	int ret = 1;
@@ -5647,12 +5647,12 @@ int thread_once(thread_once_t* once, thread_once_func func)
 }
 
 /************************************************************************/
-/*							 Debugging  è°ƒè¯•					            */
+/*							 Debugging  µ÷ÊÔ					            */
 /************************************************************************/
 
 #define ERRBUF_LEN	128
 
-/* è·å–WIN32 APIå‡ºé”™åçš„ä¿¡æ¯ */
+/* »ñÈ¡WIN32 API³ö´íºóµÄĞÅÏ¢ */
 #ifdef OS_WIN
 const char* get_last_error_win32()
 {
@@ -5672,7 +5672,7 @@ const char* get_last_error_win32()
 }
 #endif
 
-/* è·å–WIN32 APIå‡ºé”™åçš„ä¿¡æ¯ */
+/* »ñÈ¡WIN32 API³ö´íºóµÄĞÅÏ¢ */
 const char* get_last_error_std()
 {
 	return strerror(errno);
@@ -5686,6 +5686,8 @@ const char* get_last_error()
 	return get_last_error_std();
 #endif
 }
+
+#ifdef USE_CRASH_HANDLER
 
 void set_crash_handler(crash_handler handler)
 {
@@ -5704,10 +5706,10 @@ enum BackTraceFlag{
 #endif
 };
 
-/* å´©æºƒè½¬å‚¨ */
+/* ±ÀÀ£×ª´¢ */
 #ifdef OS_WIN
 
-/* è·å–å †æ ˆè°ƒç”¨è®°å½• */
+/* »ñÈ¡¶ÑÕ»µ÷ÓÃ¼ÇÂ¼ */
 static void StackBackTraceMsg(const void* const* trace, size_t count, const char* info, int flag) 
 {
 	const int kMaxNameLength = 256;
@@ -5750,19 +5752,19 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 			snprintf(msgl, sizeof(msgl), "%d. [0x%p] (No Symbol) ", 
 						i+1, trace[i]);
 
-		/* è®°å½•æ—¥å¿— */
+		/* ¼ÇÂ¼ÈÕÖ¾ */
 		if (flag & BackTraceLogging)
 			log_dprintf(LOG_DEBUG, "%s", msgl);
 
-		/* æ‰“å°åˆ°æ ‡å‡†è¾“å‡º */
+		/* ´òÓ¡µ½±ê×¼Êä³ö */
 		if (flag & BackTraceStdout)
 			fprintf(stdout, "%s\n", msgl);
 
-		/* æ‰“å°åˆ°æ ‡å‡†é”™è¯¯è¾“å‡º */
+		/* ´òÓ¡µ½±ê×¼´íÎóÊä³ö */
 		if (flag & BackTraceStderr)
 			fprintf(stderr, "%s\n", msgl);
 
-		/* æ‰“å°åˆ°VCè¾“å‡ºçª—å£ */
+		/* ´òÓ¡µ½VCÊä³ö´°¿Ú */
 #ifdef _MSC_VER
 		if (flag & BackTraceOutput)
 		{
@@ -5771,7 +5773,7 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 		}
 #endif
 
-		/* å¯¹è¯æ¡†ä¿¡æ¯ */
+		/* ¶Ô»°¿òĞÅÏ¢ */
 		if (flag & BackTraceDialog)
 		{
 			if (i == 0)
@@ -5852,7 +5854,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 	handled = 1;
 
 	//////////////////////////////////////////////////////////////////////////
-	//ç”Ÿæˆå†…å­˜è½¬å‚¨æ–‡ä»¶
+	//Éú³ÉÄÚ´æ×ª´¢ÎÄ¼ş
 
 	snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_temp_dir(), 
 		g_product_name, timestamp_str(time(NULL)));
@@ -5872,18 +5874,18 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 		return EXCEPTION_EXECUTE_HANDLER;
 	}
 
-	// ç”Ÿæˆdumpæ–‡ä»¶
+	// Éú³ÉdumpÎÄ¼ş
 	dumpInfo.ExceptionPointers = pException;
 	dumpInfo.ThreadId = GetCurrentThreadId();
 	dumpInfo.ClientPointers = TRUE;
 	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hDumpFile, MiniDumpNormal, &dumpInfo, NULL, NULL);
 	CloseHandle(hDumpFile);
 
-	// æç¤ºç”¨æˆ·ä¸Šä¼ è½¬å‚¨æ–‡ä»¶ï¼Œåœ¨æœåŠ¡å™¨ä¸Šç»“åˆPDBæ–‡ä»¶ç”Ÿæˆå †æ ˆä¿¡æ¯
+	// ÌáÊ¾ÓÃ»§ÉÏ´«×ª´¢ÎÄ¼ş£¬ÔÚ·şÎñÆ÷ÉÏ½áºÏPDBÎÄ¼şÉú³É¶ÑÕ»ĞÅÏ¢
 	if (g_crash_handler)
 		g_crash_handler(dump_file);
 
-	// å¦‚æœæœ‰PDBæ–‡ä»¶ï¼Œç›´æ¥æ‰“å°å †æ ˆä¿¡æ¯
+	// Èç¹ûÓĞPDBÎÄ¼ş£¬Ö±½Ó´òÓ¡¶ÑÕ»ĞÅÏ¢
 	xstrlcpy(pdb, get_module_path(), sizeof(pdb));
 	ext = path_find_extension(pdb);
 	if (!strcasecmp(ext, ".exe"))
@@ -5944,7 +5946,7 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 		break;
 	}
 
-	//FIXME: coredumpæ–‡ä»¶çš„è·¯å¾„ï¼Ÿ
+	//FIXME: coredumpÎÄ¼şµÄÂ·¾¶£¿
 	if (g_crash_handler)
 		g_crash_handler("");
 
@@ -5964,53 +5966,55 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 
 #endif /* OS_WIN */
 
-/* è®°å½•å½“å‰å †æ ˆä¿¡æ¯å¹¶ç«‹å³é€€å‡º */
+#endif // #ifdef USE_CRASH_HANDLER
+
+/* ¼ÇÂ¼µ±Ç°¶ÑÕ»ĞÅÏ¢²¢Á¢¼´ÍË³ö */
 void fatal_exit(const char *fmt, ...)
 {
 	va_list args;
 	char msg[1024];
 
-	//æ‰“å°ä¿¡æ¯
+	//´òÓ¡ĞÅÏ¢
 	va_start(args, fmt);
 	IGNORE_RESULT(xvsnprintf(msg, sizeof(msg), fmt, args));
 	log_printf0(DEBUG_LOG, "%s\n", msg);
 	fprintf(stderr, "%s\n", msg);
     va_end(args);
 
-#ifdef _DEBUG
-	/* è°ƒè¯•æ¨¡å¼ä¸‹ï¼Œç›´æ¥æ‰“å°è°ƒç”¨å †æ ˆ */
-#ifdef OS_WIN
-	{
-	size_t count;
-	void *trace[62];
-	count = CaptureStackBackTrace(0, countof(trace), trace, NULL);
-	StackBackTraceMsg(trace, count, msg, BackTraceLogging|BackTraceDialog);
-	}
-#else
-	stack_backtrace(BackTraceLogging|BackTraceStderr);
-#endif /* OS_WIN */
-
-	log_close_all();
-
-#ifdef COMPILER_MSVC
-	__debugbreak();
-#endif
+// #ifdef _DEBUG
+// 	/* µ÷ÊÔÄ£Ê½ÏÂ£¬Ö±½Ó´òÓ¡µ÷ÓÃ¶ÑÕ» */
+// #ifdef OS_WIN
+// 	{
+// 	size_t count;
+// 	void *trace[62];
+// 	count = CaptureStackBackTrace(0, countof(trace), trace, NULL);
+// 	StackBackTraceMsg(trace, count, msg, BackTraceLogging|BackTraceDialog);
+// 	}
+// #else
+// 	stack_backtrace(BackTraceLogging|BackTraceStderr);
+// #endif /* OS_WIN */
+// 
+// 	log_close_all();
+// 
+// #ifdef COMPILER_MSVC
+// 	__debugbreak();
+// #endif
 
 	exit(2);
 
-#else
-	//å¦åˆ™ä½¿è½¯ä»¶å´©æºƒä»¥äº§ç”Ÿcore dumpæ–‡ä»¶
-	{
-	int *p = NULL;
-	*p = 0;
-	}
-#endif /* _DEBUG */
+//#else
+//	//·ñÔòÊ¹Èí¼ş±ÀÀ£ÒÔ²úÉúcore dumpÎÄ¼ş
+//	{
+//	int *p = NULL;
+//	*p = 0;
+//	}
+//#endif /* _DEBUG */
 }
 
-/* ä»¥åå…­è¿›åˆ¶çš„å½¢å¼æ‰“å°å‡ºä¸€ä¸ªç¼“å†²åŒºçš„å†…å®¹ */
+/* ÒÔÊ®Áù½øÖÆµÄĞÎÊ½´òÓ¡³öÒ»¸ö»º³åÇøµÄÄÚÈİ */
 char* hexdump(const void *data, size_t len)
 {
-	/* æ¯ä¸€ä¸ªå­—èŠ‚éœ€è¦ç”¨ä¸¤ä½æ•°åŠ ä¸€ä¸ªç©ºæ ¼æ¥è¡¨ç¤ºï¼Œæœ€ååŠ '\0' */
+	/* Ã¿Ò»¸ö×Ö½ÚĞèÒªÓÃÁ½Î»Êı¼ÓÒ»¸ö¿Õ¸ñÀ´±íÊ¾£¬×îºó¼Ó'\0' */
 	size_t buflen = len * 3 + 1;
 	char *buf = (char*)xmalloc(buflen);
 	size_t i;
@@ -6024,7 +6028,7 @@ char* hexdump(const void *data, size_t len)
 
 
 /************************************************************************/
-/*                         Log æ—¥å¿—ç³»ç»Ÿ		                            */
+/*                         Log ÈÕÖ¾ÏµÍ³		                            */
 /************************************************************************/
 
 #define LOG_VALID(id) ((id) >= DEBUG_LOG && (id) <= MAX_LOGS)
@@ -6039,8 +6043,8 @@ static const char* log_severity_names[] = {
 	"Alert",
 	"Fatal"};
 
-static int log_min_severity = 0;		/* è®¾ç½®æœ€ä½è®°å½•ç­‰çº§ */
-static int debug_log_to_stderr = 0;		/* è°ƒè¯•ä¿¡æ¯å‘é€åˆ°æ ‡å‡†é”™è¯¯è¾“å‡º */
+static int log_min_severity = 0;		/* ÉèÖÃ×îµÍ¼ÇÂ¼µÈ¼¶ */
+static int debug_log_to_stderr = 0;		/* µ÷ÊÔĞÅÏ¢·¢ËÍµ½±ê×¼´íÎóÊä³ö */
 
 static FILE* log_files[MAX_LOGS+1];
 static mutex_t log_locks[MAX_LOGS+1];
@@ -6085,15 +6089,15 @@ FILE* open_log_helper(const char *path, int append, int binary)
 #ifdef USE_UTF8_STR
 		fwrite(UTF8_BOM, strlen(UTF8_BOM), 1, fp);
 #endif
-		/* ä¸è·Ÿè¸ªæ—¥å¿—æ–‡ä»¶çš„å…³é—­æƒ…å†µ */
-		/* xfopenå·²å¯¹å…¶é€’å¢ï¼Œé€’å‡ä»¥ä¿æŒg_opened_filesä¸å˜ */
+		/* ²»¸ú×ÙÈÕÖ¾ÎÄ¼şµÄ¹Ø±ÕÇé¿ö */
+		/* xfopenÒÑ¶ÔÆäµİÔö£¬µİ¼õÒÔ±£³Ög_opened_files²»±ä */
 		g_opened_files--;
 	}
 
 	return fp;
 }
 
-/* æ‰“å¼€ç”¨æˆ·æ—¥å¿—æ–‡ä»¶ */
+/* ´ò¿ªÓÃ»§ÈÕÖ¾ÎÄ¼ş */
 int	log_open(const char *path, int append, int binary)
 {
 	int i;
@@ -6115,7 +6119,7 @@ int	log_open(const char *path, int append, int binary)
 	return LOG_INVALID;
 }
 
-/* æ‰“å¼€è°ƒè¯•æ—¥å¿—æ–‡ä»¶ */
+/* ´ò¿ªµ÷ÊÔÈÕÖ¾ÎÄ¼ş */
 int log_dopen(const char *path, int append, int binary)
 {
 	CHECK_INIT();
@@ -6133,7 +6137,7 @@ int log_dopen(const char *path, int append, int binary)
 	return log_files[DEBUG_LOG] ? DEBUG_LOG : LOG_INVALID;
 }
 
-/* åˆå§‹åŒ–æ—¥å¿—æ¨¡å— */
+/* ³õÊ¼»¯ÈÕÖ¾Ä£¿é */
 void log_init()
 {
 	int i;
@@ -6143,7 +6147,7 @@ void log_init()
 		mutex_init(&log_locks[i]);
 	}
 
-	/* æ‰“å¼€è½¯ä»¶å…¨å±€è°ƒè¯•æ—¥å¿— */
+	/* ´ò¿ªÈí¼şÈ«¾Öµ÷ÊÔÈÕÖ¾ */
 #ifdef USE_DEBUG_LOG
 	{
 		char exe_name[MAX_PATH], log_path[MAX_PATH];
@@ -6152,7 +6156,7 @@ void log_init()
 
 		IGNORE_RESULT(create_directory("log"));
 
-		/* å¦‚ Product_20140506143512_1432_debug.log */
+		/* Èç Product_20140506143512_1432_debug.log */
 		snprintf(log_path, MAX_PATH, "log%c%s_%s_%d_debug.log",
 			PATH_SEP_CHAR,exe_name, timestamp_str(time(NULL)), getpid());
 		log_dopen(log_path, 0, 0);
@@ -6179,7 +6183,7 @@ void log_printf0(int log_id, const char *fmt, ...)
 		return;
 	}
 
-	//æ­£æ–‡ä¿¡æ¯
+	//ÕıÎÄĞÅÏ¢
 	va_start(args, fmt);
 	vfprintf(fp, fmt, args);
 	va_end(args);
@@ -6191,9 +6195,9 @@ void log_printf0(int log_id, const char *fmt, ...)
 	log_unlock(log_id);
 }
 
-/* å†™å…¥æ—¥å¿—æ–‡ä»¶ */
-/* DEBUG æ¶ˆæ¯ä»…åœ¨DEBUGæ¨¡å¼ä¸‹æ‰ä¼šè®°å½• */
-/* FATAL æ¶ˆæ¯åœ¨è®°å½•ä¹‹åä¼šè®°å½•å †æ ˆå¹¶ä½¿ç¨‹åºé€€å‡º */
+/* Ğ´ÈëÈÕÖ¾ÎÄ¼ş */
+/* DEBUG ÏûÏ¢½öÔÚDEBUGÄ£Ê½ÏÂ²Å»á¼ÇÂ¼ */
+/* FATAL ÏûÏ¢ÔÚ¼ÇÂ¼Ö®ºó»á¼ÇÂ¼¶ÑÕ»²¢Ê¹³ÌĞòÍË³ö */
 void log_printf(int log_id, int severity, const char *fmt, ...)
 {
 	FILE *fp;
@@ -6220,7 +6224,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 		return;
 	}
 
-	//æ—¶é—´ä¿¡æ¯
+	//Ê±¼äĞÅÏ¢
 	t = time(NULL);
 	memset(tmbuf, 0, sizeof(tmbuf));
 	strftime(tmbuf, sizeof(tmbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
@@ -6230,13 +6234,13 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	if (log_id == DEBUG_LOG && debug_log_to_stderr)
 		fprintf(stderr, "%s ", tmbuf);
 
-	//ç­‰çº§ä¿¡æ¯
+	//µÈ¼¶ĞÅÏ¢
 	fprintf(fp, "[%s] ", log_severity_names[level]);
 
 	if (log_id == DEBUG_LOG && debug_log_to_stderr)
 		fprintf(stderr, "[%s] ", log_severity_names[level]);
 
-	//æ­£æ–‡ä¿¡æ¯
+	//ÕıÎÄĞÅÏ¢
 	va_start(args, fmt);
 	vfprintf(fp, fmt, args);
 	va_end(args);
@@ -6248,7 +6252,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
         va_end(argsd);
     }
 
-	//æ¢è¡Œç¬¦
+	//»»ĞĞ·û
 	p = fmt + strlen(fmt) - 1;
 	if (*p != '\n') {
 		fputc('\n', fp);
@@ -6262,7 +6266,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 
 	log_unlock(log_id);
 
-	/* å¦‚æœæ¶ˆæ¯ç­‰çº§ä¸ºFATALï¼Œåˆ™ç«‹å³è®°å½•è°ƒç”¨å †æ ˆï¼Œå¹¶å¼‚å¸¸é€€å‡º */
+	/* Èç¹ûÏûÏ¢µÈ¼¶ÎªFATAL£¬ÔòÁ¢¼´¼ÇÂ¼µ÷ÓÃ¶ÑÕ»£¬²¢Òì³£ÍË³ö */
 	if (level == LOG_FATAL)
 		fatal_exit("logging level fatal");
 }
@@ -6277,7 +6281,7 @@ void log_flush(int log_id)
 	log_unlock(log_id);
 }
 
-/* å…³é—­æ—¥å¿—æ–‡ä»¶ */
+/* ¹Ø±ÕÈÕÖ¾ÎÄ¼ş */
 void log_close(int log_id)
 {
 	if (!LOG_VALID(log_id))
@@ -6307,15 +6311,15 @@ void log_close_all()
 }
 
 /************************************************************************/
-/*              Memory Runtime Check è¿è¡Œæ—¶å†…å­˜æ£€æµ‹                      */
+/*              Memory Runtime Check ÔËĞĞÊ±ÄÚ´æ¼ì²â                      */
 /************************************************************************/
 
 #ifdef DBG_MEM_RT
 
-#define MEMRT_HASH_SIZE		16384									/* å“ˆå¸Œæ•°ç»„çš„å¤§å° */
-#define MEMRT_HASH(p) (((size_t)(p) >> 8) % MEMRT_HASH_SIZE)		/* å“ˆå¸Œç®—æ³• */
+#define MEMRT_HASH_SIZE		16384									/* ¹şÏ£Êı×éµÄ´óĞ¡ */
+#define MEMRT_HASH(p) (((size_t)(p) >> 8) % MEMRT_HASH_SIZE)		/* ¹şÏ£Ëã·¨ */
 
-static struct MEMRT_OPERATE* memrt_hash_table[MEMRT_HASH_SIZE];		/* å“ˆå¸Œæ•°ç»„é“¾è¡¨ */
+static struct MEMRT_OPERATE* memrt_hash_table[MEMRT_HASH_SIZE];		/* ¹şÏ£Êı×éÁ´±í */
 
 static mutex_t memrt_lock;
 static mutex_t memrt_print_lock;
@@ -6331,7 +6335,7 @@ static inline
 struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *file, 
 		const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
-	/* ä¸è¦ä½¿ç”¨xmallocï¼Œfatal_exitç­‰ï¼Œå¦åˆ™ä¼šé€ æˆæ­»å¾ªç¯ */
+	/* ²»ÒªÊ¹ÓÃxmalloc£¬fatal_exitµÈ£¬·ñÔò»áÔì³ÉËÀÑ­»· */
 	struct MEMRT_OPERATE *rtp = (struct MEMRT_OPERATE*)malloc(sizeof(struct MEMRT_OPERATE));
 	if (!rtp) 
 		abort();
@@ -6352,7 +6356,7 @@ struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *fil
 static inline 
 void memrt_dtor(struct MEMRT_OPERATE *rtp)
 {
-	/* ä¸è¦ä½¿ç”¨xfreeï¼Œå¦åˆ™ä¼šé€ æˆæ­»å¾ªç¯ */
+	/* ²»ÒªÊ¹ÓÃxfree£¬·ñÔò»áÔì³ÉËÀÑ­»· */
 	if (rtp->file)
 		free(rtp->file);
 	if (rtp->func)
@@ -6362,7 +6366,7 @@ void memrt_dtor(struct MEMRT_OPERATE *rtp)
 	free(rtp);
 }
 
-/* æ ¹æ®é”™è¯¯ç±»å‹è¾“å‡ºç›¸åº”å­—ç¬¦ä¸² */
+/* ¸ù¾İ´íÎóÀàĞÍÊä³öÏàÓ¦×Ö·û´® */
 static
 void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp)
 {
@@ -6386,7 +6390,7 @@ void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp)
 	}
 }
 
-/* è·Ÿè¸ªåˆ†é…å†…å­˜æ“ä½œ */
+/* ¸ú×Ù·ÖÅäÄÚ´æ²Ù×÷ */
 int __memrt_alloc(int mtd, void* addr, size_t sz, const char* file, 
 	const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
@@ -6402,7 +6406,7 @@ int __memrt_alloc(int mtd, void* addr, size_t sz, const char* file,
 	return MEMRTE_OK;
 }
 
-/* è·Ÿè¸ªé‡Šæ”¾å†…å­˜æ“ä½œ */
+/* ¸ú×ÙÊÍ·ÅÄÚ´æ²Ù×÷ */
 int __memrt_release(int mtd, void* addr, size_t sz, const char* file, 
 	const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
@@ -6440,7 +6444,7 @@ int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
 
 	mutex_unlock(&memrt_lock);
 
-	/* æ‰“å°é”™è¯¯ä¿¡æ¯ */
+	/* ´òÓ¡´íÎóĞÅÏ¢ */
 	if (ret != MEMRTE_OK && rtp->msgfunc)
 		rtp->msgfunc(ret, rtp);
 
@@ -6464,7 +6468,7 @@ int memrt_check()
 		isleaked = 1;
 		while (ptr)
 		{
-			/* æ‰“å°æœªé‡Šæ”¾ä¿¡æ¯ */
+			/* ´òÓ¡Î´ÊÍ·ÅĞÅÏ¢ */
 			if (ptr->msgfunc)
 				ptr->msgfunc(MEMRTE_NOFREE, ptr);
 
@@ -6480,7 +6484,7 @@ int memrt_check()
 	return isleaked;
 }
 
-/* è¾“å‡ºè°ƒè¯•ä¿¡æ¯  */
+/* Êä³öµ÷ÊÔĞÅÏ¢  */
 void __memrt_printf(const char *fmt, ...)
 {
 	char msg[1024];
@@ -6490,28 +6494,28 @@ void __memrt_printf(const char *fmt, ...)
 	vsnprintf (msg, 1024, fmt, args);
 	va_end (args);
 
-	/* è¾“å‡ºåˆ°å³æ—¶çª—å£ */
+	/* Êä³öµ½¼´Ê±´°¿Ú */
 #ifdef COMPILER_MSVC
 	OutputDebugStringA(msg);
 #else
 	fprintf(stderr, "%s", msg);
 #endif
 
-	/* è®°å½•ç³»ç»Ÿæ—¥å¿— */
+	/* ¼ÇÂ¼ÏµÍ³ÈÕÖ¾ */
 	log_dprintf(LOG_NOTICE, "%s", msg);
 }
 
 #endif /* DBG_MEM_RT */
 
 /************************************************************************/
-/*						    Version ç‰ˆæœ¬ç®¡ç†		                        */
+/*						    Version °æ±¾¹ÜÀí		                        */
 /************************************************************************/
 
-/* åˆ†æä¸€ä¸ªä»¥ç‚¹åˆ†éš”çš„ç‰ˆæœ¬å­—ç¬¦ä¸² */
-/* å­—ç¬¦ä¸²æ ¼å¼ä¾æ¬¡ä¸ºä»¥'.'åˆ†éš”çš„ä¸»ç‰ˆæœ¬å·ã€æ¬¡ç‰ˆæœ¬å·ã€ä¿®æ­£ç‰ˆæœ¬å·ã€å…¶ä»–ï¼ˆç¼–è¯‘æ¬¡æ•°æˆ–SVNå·ç­‰ï¼‰ã€åç¼€æè¿° */
-/* å‚æ•°major, minor, revision, build, suffix å‡å¯ä¸ºNULLï¼›å¦‚æœsuffixä¸ä¸ºNULLï¼Œåˆ™slenå¿…é¡»å¤§äº0 */
-/* æ³¨ï¼šå¸¸è§çš„åç¼€æè¿°æœ‰alpha1, beta2, Pro, Free, Ultimate, Stable.etc */
-/* ç¤ºä¾‹: 1.5.8.296 beta1 */
+/* ·ÖÎöÒ»¸öÒÔµã·Ö¸ôµÄ°æ±¾×Ö·û´® */
+/* ×Ö·û´®¸ñÊ½ÒÀ´ÎÎªÒÔ'.'·Ö¸ôµÄÖ÷°æ±¾ºÅ¡¢´Î°æ±¾ºÅ¡¢ĞŞÕı°æ±¾ºÅ¡¢ÆäËû£¨±àÒë´ÎÊı»òSVNºÅµÈ£©¡¢ºó×ºÃèÊö */
+/* ²ÎÊımajor, minor, revision, build, suffix ¾ù¿ÉÎªNULL£»Èç¹ûsuffix²»ÎªNULL£¬Ôòslen±ØĞë´óÓÚ0 */
+/* ×¢£º³£¼ûµÄºó×ºÃèÊöÓĞalpha1, beta2, Pro, Free, Ultimate, Stable.etc */
+/* Ê¾Àı: 1.5.8.296 beta1 */
 int version_parse(const char* version, int *major, int *minor,					
 	int *revision, int *build, char *suffix, size_t suffix_outbuf_len)
 {
@@ -6521,19 +6525,19 @@ int version_parse(const char* version, int *major, int *minor,
 	if (!version)
 		return 0;
 
-	/* åˆå§‹åŒ– */
+	/* ³õÊ¼»¯ */
 	if (major) *major = 0;
 	if (minor) *minor = 0;
 	if (revision) *revision = 0;
 	if (build) *build = 0;
 	if (suffix) *suffix = '\0';
 
-	/* åç¼€æè¿° */
+	/* ºó×ºÃèÊö */
 	p = strchr((char*)version, ' ');
 	if (p && suffix)
 		xstrlcpy(suffix, p+1, suffix_outbuf_len);
 	
-	/* ç‰ˆæœ¬å· */
+	/* °æ±¾ºÅ */
 	ver = p ? xstrndup(version, p - version) : xstrdup(version);
 	q = ver;
 
@@ -6557,9 +6561,9 @@ int version_parse(const char* version, int *major, int *minor,
 	return 1;
 }
 
-/* æ¯”è¾ƒv1å’Œv2ä¸¤ä¸ªç‰ˆæœ¬å·çš„å…¬æœ‰éƒ¨åˆ† */
-/* è¿”å›å€¼ï¼šå¦‚æœç›¸ç­‰è¿”å›0ï¼Œv1æ¯”v2æ—§è¿”å›-1ï¼Œv1æ¯”v2æ–°è¿”å›1 */
-/* æ³¨ï¼šä¸ä¼šæ¯”è¾ƒç‰ˆæœ¬åç¼€ä¿¡æ¯ */
+/* ±È½Ïv1ºÍv2Á½¸ö°æ±¾ºÅµÄ¹«ÓĞ²¿·Ö */
+/* ·µ»ØÖµ£ºÈç¹ûÏàµÈ·µ»Ø0£¬v1±Èv2¾É·µ»Ø-1£¬v1±Èv2ĞÂ·µ»Ø1 */
+/* ×¢£º²»»á±È½Ï°æ±¾ºó×ºĞÅÏ¢ */
 int version_compare(const char* v1, const char* v2)
 {
 	int major1, minor1, revision1, build1;
@@ -6569,44 +6573,44 @@ int version_compare(const char* v1, const char* v2)
 	    || !version_parse(v2, &major2, &minor2, &revision2, &build2, NULL, 0))
         return -2;
 
-	/* æ¯”è¾ƒä¸»ç‰ˆæœ¬å· */
+	/* ±È½ÏÖ÷°æ±¾ºÅ */
 	if (major1 > major2)
 		return 1;
 	else if (major1 < major2)
 		return -1;
 
-	/* ä¸»ç‰ˆæœ¬å·ç›¸åŒï¼Œæ¯”è¾ƒæ¬¡ç‰ˆæœ¬å· */
+	/* Ö÷°æ±¾ºÅÏàÍ¬£¬±È½Ï´Î°æ±¾ºÅ */
 	if (minor1 > minor2)
 		return 1;
 	else if (minor1 < minor2)
 		return -1;
 
-	/* æ¬¡ç‰ˆæœ¬å·ä¹Ÿç›¸åŒï¼Œæ¯”è¾ƒä¿®å®šç‰ˆæœ¬å· */
+	/* ´Î°æ±¾ºÅÒ²ÏàÍ¬£¬±È½ÏĞŞ¶¨°æ±¾ºÅ */
 	if (revision1 > revision2)
 		return 1;
 	else if (revision1 < revision2)
 		return -1;
 
-	/* ä¿®å®šç‰ˆæœ¬å·è¿˜ç›¸åŒï¼Œæ¯”è¾ƒç¼–è¯‘ç‰ˆæœ¬å· */
+	/* ĞŞ¶¨°æ±¾ºÅ»¹ÏàÍ¬£¬±È½Ï±àÒë°æ±¾ºÅ */
 	if (build1 > build2)
 		return 1;
 	else if (build1 < build2)
 		return -1;
 
-	/* æ‰€æœ‰ç‰ˆæœ¬å·å‡ç›¸åŒ */
+	/* ËùÓĞ°æ±¾ºÅ¾ùÏàÍ¬ */
 	return 0;
 }
 
 /************************************************************************/
-/*							 Others å…¶ä»–		                            */
+/*							 Others ÆäËû		                            */
 /************************************************************************/
 
 #define KEY_MAX 1024
 #define VAL_MAX 4096
 
-/* è®¾ç½®ç¯å¢ƒå˜é‡ */
-/* ä»…å½±å“å½“å‰è¿›ç¨‹çš„ç¯å¢ƒå˜é‡è¡¨ï¼Œä¸å¯¹ç³»ç»Ÿç¯å¢ƒå˜é‡äº§ç”Ÿå½±å“ */
-/* æ³¨ï¼šé”®çš„é•¿åº¦ä¸åº”è¶…è¿‡1kï¼Œå€¼çš„é•¿åº¦ä¸åº”è¶…è¿‡4K */
+/* ÉèÖÃ»·¾³±äÁ¿ */
+/* ½öÓ°Ïìµ±Ç°½ø³ÌµÄ»·¾³±äÁ¿±í£¬²»¶ÔÏµÍ³»·¾³±äÁ¿²úÉúÓ°Ïì */
+/* ×¢£º¼üµÄ³¤¶È²»Ó¦³¬¹ı1k£¬ÖµµÄ³¤¶È²»Ó¦³¬¹ı4K */
 int set_env(const char* key, const char* val)
 {
 #ifdef OS_WIN
@@ -6625,10 +6629,10 @@ int set_env(const char* key, const char* val)
 #endif
 }
 
-/* è·å–ç¯å¢ƒå˜é‡ */
-/* æˆåŠŸè¿”å›æŒ‡å‘è¯¥ç¯å¢ƒå˜é‡å€¼çš„å­—ç¬¦ä¸²ï¼Œé”®ä¸å­˜åœ¨è¿”å›NULL */
-/* æ³¨1ï¼šéçº¿ç¨‹å®‰å…¨ï¼Œä¸å¯é‡å…¥ */
-/* æ³¨2ï¼šå¤–ç•Œä¸å¯ä»¥æ”¹å˜è¿”å›çš„å­—ç¬¦ä¸² */
+/* »ñÈ¡»·¾³±äÁ¿ */
+/* ³É¹¦·µ»ØÖ¸Ïò¸Ã»·¾³±äÁ¿ÖµµÄ×Ö·û´®£¬¼ü²»´æÔÚ·µ»ØNULL */
+/* ×¢1£º·ÇÏß³Ì°²È«£¬²»¿ÉÖØÈë */
+/* ×¢2£ºÍâ½ç²»¿ÉÒÔ¸Ä±ä·µ»ØµÄ×Ö·û´® */
 const char*	get_env(const char* key)
 {
 #ifdef OS_WIN
@@ -6650,8 +6654,8 @@ const char*	get_env(const char* key)
 #endif
 }
 
-/* åˆ é™¤ç¯å¢ƒå˜é‡ */
-/* è¿”å›å€¼ï¼šé”®å€¼ä¸å­˜åœ¨æˆ–åˆ é™¤æˆåŠŸè¿”å›1ï¼Œå¦åˆ™è¿”å›0 */
+/* É¾³ı»·¾³±äÁ¿ */
+/* ·µ»ØÖµ£º¼üÖµ²»´æÔÚ»òÉ¾³ı³É¹¦·µ»Ø1£¬·ñÔò·µ»Ø0 */
 int unset_env(const char* key)
 {
 #ifdef OS_WIN
@@ -6672,7 +6676,7 @@ int unset_env(const char* key)
 #undef KEY_MAX
 #undef VAL_MAX
 
-/* å­—ç¬¦ä¸²æ•°å­—è½¬æ¢ */
+/* ×Ö·û´®Êı×Ö×ª»» */
 #define ATON(t,n,f)	\
 	t ato##n(const char* s){\
 		t i = 0;\
@@ -6688,7 +6692,7 @@ ATON(uint64_t, u64, "%" PRIu64)
 
 #undef ATON
 
-/* å°†æŒ‡é’ˆè½¬æ¢æˆåå…­è¿›åˆ¶çš„å­—ç¬¦ä¸² */
+/* ½«Ö¸Õë×ª»»³ÉÊ®Áù½øÖÆµÄ×Ö·û´® */
 int ptr_to_str(void *ptr, char* buf, int len)
 {
 	if (snprintf(buf, len, "%p", ptr) < 0)
@@ -6697,7 +6701,7 @@ int ptr_to_str(void *ptr, char* buf, int len)
 	return 1;
 }
 
-/* å°†ä»£è¡¨æŒ‡é’ˆçš„åå…­è¿›åˆ¶çš„å­—ç¬¦ä¸²è½¬æ¢ä¸ºæŒ‡é’ˆå€¼ */
+/* ½«´ú±íÖ¸ÕëµÄÊ®Áù½øÖÆµÄ×Ö·û´®×ª»»ÎªÖ¸ÕëÖµ */
 void* str_to_ptr(const char *str)
 {
 	void *ptr;
@@ -6710,7 +6714,7 @@ void* str_to_ptr(const char *str)
 	return ptr;
 }
 
-/* è·å–å¯ç”¨çš„CPUæ•°ç›® */
+/* »ñÈ¡¿ÉÓÃµÄCPUÊıÄ¿ */
 int number_of_processors()
 {
 #ifdef OS_WIN
@@ -6722,7 +6726,7 @@ int number_of_processors()
 #endif
 }
 
-/* è®¡ç®—æ‰“å°ä¸€ä¸ªæ•°å­—è¦å çš„å­—èŠ‚æ•° */
+/* ¼ÆËã´òÓ¡Ò»¸öÊı×ÖÒªÕ¼µÄ×Ö½ÚÊı */
 int num_bits (int64_t number)
 {
 	int cnt = 1;
