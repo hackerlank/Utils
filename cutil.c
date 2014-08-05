@@ -3322,7 +3322,7 @@ int get_temp_file_under(const char* tmpdir, const char *prefix,
 #else /* POSIX */
 	if (xstrlcpy(outbuf, tempdir_use, outlen) >= outlen ||
 		xstrlcat(outbuf, prefix_use, outlen) >= outlen ||
-		xstrlcat(outbuf, ".XXXXXX.tmp", outlen) >= outlen)
+		xstrlcat(outbuf, ".XXXXXXXX", outlen) >= outlen)
 		return 0;
 
 	if (!mktemp(outbuf))

@@ -155,10 +155,12 @@ MSVC_POP_WARNING()
 #endif
 #endif
 
+#ifdef OS_WIN
 #if __WORDSIZE == 64
 typedef int64_t ssize_t;
 #else
 typedef int ssize_t;
+#endif
 #endif
 
 #ifndef OS_WIN
