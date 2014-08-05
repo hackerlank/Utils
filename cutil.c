@@ -309,6 +309,8 @@ int set_default_interrupt_handler()
 	return set_interrupt_handler(default_interrupt_handler);
 }
 
+#ifdef USE_CRASH_HANDLER
+
 /* 设置默认的崩溃处理函数 */
 /* Windows下生成minidump文件，且如果存在pdb将堆栈显示在弹出对话框中 */
 /* Linux下生成coredump文件，且如果是debug版打印堆栈到标准错误输出(需使用-rdynamic链接选项) */
@@ -346,6 +348,8 @@ void set_default_crash_handler()
 #endif
 #endif /* OS_WIN */
 }
+
+#endif /* #ifdef USE_CRASH_HANDLER */
 
 /************************************************************************/
 /*                         Memory 内存管理                               */
@@ -3258,30 +3262,52 @@ const char *get_temp_dir()
 	return path;
 }
 
-/* 获取指定目录下可用的临时文件路径 */
-/* 如果指定的临时目录不存在，将创建此目录 */
-/* 如果prefix为NULL或为空字符串，将使用"temp"作为前缀 */
-/* 注1：输出缓冲区的长度应至少为MAX_PATH */
-/* 注2：此函数仅保证在调用时该临时文件不存在 */
+/* 
+ * 获取指定目录下可用的临时文件路径
+ *
+ * 如果指定的临时目录不存在，将创建此目录。
+ * 如果prefix为NULL或为空字符串，将使用g_product_name作为前缀 
+ *
+ * 注1：即使不以路径分隔符结尾，tmpdir的最后一部分将被视为目录名 
+ * 注2：输出缓冲区的长度应至少为MAX_PATH 
+ * 注3：此函数仅保证在调用时该临时文件不存在 
+ */
+
 int get_temp_file_under(const char* tmpdir, const char *prefix, 
 	char *outbuf, size_t outlen)
 {
-	const char *prefix_use = "temp";
-	if (prefix && prefix[0])
-		prefix_use = prefix;
+	char tempdir_use[MAX_PATH];
+	const char *prefix_use = g_product_name;
+	size_t dlen;
 
 	if (!tmpdir || !outbuf || outlen < MAX_PATH)
 		return 0;
 
-	if (path_is_file(tmpdir) 
-		||!create_directories(tmpdir))
+	if (prefix && prefix[0])
+		prefix_use = prefix;
+
+	dlen = xstrlcpy(tempdir_use, tmpdir, MAX_PATH);
+	if (dlen >= MAX_PATH)
+		return 0;
+
+	/* 确保 tempdir_use 以'/'结尾 */
+	if (tmpdir[dlen-1] != PATH_SEP_CHAR) {
+		if (dlen == MAX_PATH - 1)
+			return 0;
+
+		tempdir_use[dlen] = PATH_SEP_CHAR;
+		tempdir_use[dlen + 1] = '\0';
+		++dlen;
+	}
+
+	if (!create_directories(tempdir_use))
 		return 0;
 
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	{
 		wchar_t wtmpdir[MAX_PATH], wtmpfile[MAX_PATH], wprefix[128];
-		if (!UTF82UNI(tmpdir, wtmpdir, MAX_PATH)
+		if (!UTF82UNI(tempdir_use, wtmpdir, MAX_PATH)
 			|| !UTF82UNI(prefix_use, wprefix, sizeof(wprefix))
 			|| !GetTempFileNameW(wtmpdir, wprefix, 0, wtmpfile)
 			|| !UNI2UTF8(wtmpfile, outbuf, outlen))
@@ -3289,18 +3315,19 @@ int get_temp_file_under(const char* tmpdir, const char *prefix,
 		return 1;
 	}
 #else /* MBCS */
-	if (!GetTempFileNameA(tmpdir, prefix_use, 0, tmpfile))
+	if (!GetTempFileNameA(tempdir_use, prefix_use, 0, tmpfile))
 		return 0;
 	return 1;
 #endif
 #else /* POSIX */
-	{
-		char *tempname = tempnam(tmpdir, prefix_use);
-		if (!tempname)
-			return 0;
-		xstrlcpy(outbuf, tempname, outlen);
-		free(tempname);
-	}
+	if (xstrlcpy(outbuf, tempdir_use, outlen) >= outlen ||
+		xstrlcat(outbuf, prefix_use, outlen) >= outlen ||
+		xstrlcat(outbuf, ".XXXXXX.tmp", outlen) >= outlen)
+		return 0;
+
+	if (!mktemp(outbuf))
+		return 0;
+
 	return 1;
 #endif
 }
@@ -5687,6 +5714,8 @@ const char* get_last_error()
 #endif
 }
 
+#ifdef USE_CRASH_HANDLER
+
 void set_crash_handler(crash_handler handler)
 {
 	g_crash_handler = handler;
@@ -5960,9 +5989,11 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 	log_close_all();
 	exit(3);
 }
-#endif
+#endif /* #idef _DEBUG */
 
-#endif /* OS_WIN */
+#endif /* #ifdef OS_WIN */
+
+#endif /* #ifdef USE_CRASH_HANDLER */
 
 /* 记录当前堆栈信息并立即退出 */
 void fatal_exit(const char *fmt, ...)
