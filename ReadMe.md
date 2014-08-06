@@ -1,1 +1,1 @@
-见本项目的 (wiki)[http://192.168.1.6/misc/utils/wikis/home]
+见本项目的 [wiki](http://192.168.1.6/misc/utils/wikis/home)
