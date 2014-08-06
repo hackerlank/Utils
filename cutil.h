@@ -9,31 +9,6 @@
 */
 
 /*
-* 兼容平台：
-* slackware 13.1 32-bit + GCC 4.4.4 
-* ubuntu 12.04 64-bit + GCC 4.6.3 
-* WinXP 32-bit + VC 6.0
-* Win7 32/64-bit + VS2010
-* Qt Mingw g++
-* Qt arm-linux-androideabi-g++
-* Mac OS X + Xcode / QtCreator
-*/
-
-/*
- * 注意：
- * 一、若使用本库，应在程序起始和结束位置分别调用cutil_init()和cutil_exit()函数；
- * 二、如果函数的执行成功与否以int型的返回值表示，那么1表示成功，0表示失败；
- * 三、对于文件系统及相关函数：
- *		在Windows下字符串参数默认使用系统多字节编码(如GBK)，如果宏USE_UTF8_STR被定义则假定使用UTF-8编码；
- *		在Linux下应该总是使用UTF-8编码，否则某些函数(如create_directories)可能行为异常。
- * 四、对于需要输出缓冲区及长度参数的函数(如file_size_readable)，应使用推荐缓冲区大小的宏（如 FILE_SIZE_BUFSIZE）。
- * 五、如果函数需要传入一个缓冲区，那么其后一般会有一个表示缓冲区大小的参数。
- * 六、在debug模式下，调用 NOT_REACHED(), NOT_IMPLEMENTED,log_[d]printf(LOG_FATAL,...)及ASSERT/VERIFY失败 均会使当前进程记录堆栈信息后立即退出。
- * 七、使用大写的ASSERT和VERFITY宏来启用断言堆栈记录功能（非小写的assert）。ASSERT仅在调试模式下有效，而VERIFY在Release模式下也生效，并且调用失败会使进程崩溃。
- * 八、返回目录路径的函数都保证以路径分隔符结尾。
- */
-
-/*
  * 包括以下模块：
  *
  * 一、常用头文件
@@ -491,9 +466,7 @@ int			foreach_dir(const char* dir, foreach_dir_func_t func, void *arg) WUR;	/* �
 /* 文件操作 */
 int			copy_file(const char* exists, const char* newfile, int overwritten) WUR;/* 复制文件 */
 int			move_file(const char* exists, const char* newfile, int overwritten) WUR;/* 移动文件 */
-
 int			delete_file(const char* path) WUR;										/* 删除文件 */
-int			delete_file_empty_updir(const char* path, const char* top_dir) WUR;		/* 删除文件及向上的空目录直到指定目录 */
 
 int64_t		file_size(const char* path);											/* 获取指定文件的长度，最大8EB... */
 void		file_size_readable(int64_t size, char *outbuf, int outlen);				/* 获取可读性强的文件大小，如3.5GB，建议outlen>64 */

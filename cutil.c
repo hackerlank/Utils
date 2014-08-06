@@ -2290,56 +2290,6 @@ int delete_file(const char *path)
 #endif
 }
 
-/* 删除文件及向上的空目录直到指定目录
- * 删除文件，并查看文件所在的目录是否是空目录，如果是空目录且不是top_dir，继续删除此目录
- * 依次向上搜寻，遇到非空目录或已达到top_dir为止
- * path和top_dir必须同时是绝对路径或者相对路径，top_dir是否以路径分隔符结尾无影响
- * 注：在任何情况下，已经确保不会删除根目录(/或C:\)，否则将是一场灾难！
- */
-int	delete_file_empty_updir(const char* path, const char* top_dir)
-{
-	char pbuf[MAX_PATH], *p;
-	size_t top_len;
-
-	/* path必须是top_dir目录下的文件 */
-	if (!_path_valid(path, 0) 
-		|| !_path_valid(top_dir, 0) 
-		|| strstr(path, top_dir) != path)
-		return 0;
-
-	/* 删除指定文件
-	 * 如果文件删除失败，或者路径参数有无，或者文件正在使用，或者...
-	 * 所以继续删除目录也很有可能会失败，因此直接返回失败值
-	 */
-	if (!delete_file(path))
-		return 0;
-
-	/* 复制路径到缓冲区 */
-	xstrlcpy(pbuf, path, MAX_PATH);
-
-	/* 终止目录的路径长度，包括结尾的路径分隔符 */
-	top_len = strlen(top_dir);
-	if (top_dir[top_len-1] != PATH_SEP_CHAR)
-		top_len++;
-
-	/* 逐级删除上层空目录 */
-	while((p = strrchr(pbuf, PATH_SEP_CHAR)))
-	{
-		*(p+1) = '\0';
-		if (is_root_path(pbuf)					//Oops! 不要删除根文件系统！
-			|| (size_t)(p - pbuf) < top_len		//到达顶层目录
-			|| !is_empty_dir(pbuf))				//遇到非空目录
-			return 1;
-
-		if (!delete_directory(pbuf))
-			return 0;
-
-		*p = '\0';
-	}
-
-	return 1;
-}
-
 /* 复制文件 */
 int copy_file(const char *exists, const char *newfile, int overwritten)
 {
