@@ -985,7 +985,7 @@ size_t hash_pjw (const char *x, size_t tablesize)
 /* 判断路径名是否有效 */
 /* 若路径有效，返回路径名字符串的长度；否则返回0 */
 static inline 
-size_t path_valid(const char* path, int absolute)
+size_t _path_valid(const char* path, int absolute)
 {
 	size_t len;
 
@@ -1179,7 +1179,7 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 /* 路径所指文件/目录是否存在 */
 int path_file_exists(const char* path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1206,7 +1206,7 @@ int path_file_exists(const char* path)
 /* 路径是否是有效目录 */
 int path_is_directory(const char* path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1234,7 +1234,7 @@ int path_is_directory(const char* path)
 /* 路径是否是文件（存在且不是目录） */
 int path_is_file(const char* path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1364,7 +1364,7 @@ int unique_file(const char* path, char *buf, size_t len)
 	size_t plen, elen;
 	int i;
 
-	plen = path_valid(path, 0);
+	plen = _path_valid(path, 0);
 	if (!plen)
 		return 0;
 
@@ -1404,7 +1404,7 @@ int unique_dir(const char* path, char *buf, size_t len)
 {
 	int has_slash, i;
 
-	size_t plen = path_valid(path, 0); 
+	size_t plen = _path_valid(path, 0); 
 	if (!plen)
 		return 0;
 
@@ -1579,7 +1579,7 @@ struct walk_dir_context* walk_dir_begin(const char *dir)
 	char buf[MAX_PATH + 3];   /* strlen("*.*") */
 #endif
 
-	len = path_valid(dir, 0);
+	len = _path_valid(dir, 0);
 	if (!len)
 		return NULL;
 
@@ -1778,7 +1778,7 @@ void walk_dir_end(struct walk_dir_context *ctx)
  */
 int create_directory(const char *dir)
 {
-	if (!path_valid(dir, 0))
+	if (!_path_valid(dir, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1810,7 +1810,11 @@ int create_directories(const char* dir)
 	char u8dir[MAX_PATH];
 	size_t len;
 
-	len = path_valid(dir, 1);
+#if (defined OS_WIN) && (!defined USE_UTF8_STR)
+	char wbuf[MAX_PATH];
+#endif
+
+	len = _path_valid(dir, 1);
 	if (!len)
 		return 0;
 
@@ -1852,8 +1856,17 @@ int create_directories(const char* dir)
 	{
 		*p = '\0';
 
+		/* 如果在Windows下使用多字节字符集，
+		 * path_is_directory 等系列函数参数也应为多字节字符串，不能直接使用 */
+#if (defined OS_WIN) && (!defined USE_UTF8_STR)
+		if (!MBCS2UNI(pb, wbuf, MAX_PATH))
+			return 0;
+		if (PathIsDirectoryW(wbuf) && !CreateDirectoryW(wbuf))
+			return 0;
+#else
 		if (!path_is_directory(pb) && !create_directory(pb))
 			return 0;
+#endif
 
 		*p = PATH_SEP_CHAR;
 
@@ -1868,7 +1881,7 @@ int create_directories(const char* dir)
 /* 删除一个空目录 */
 int delete_directory(const char *dir)
 {	
-	if (!path_valid(dir, 0))
+	if (!_path_valid(dir, 0))
 		return 0;
 	
 #ifdef OS_WIN
@@ -1984,7 +1997,7 @@ static int _delete_empty_directories(const char* dir)
  */
 int delete_empty_directories(const char* dir)
 {
-	if (!path_valid(dir, 0))
+	if (!_path_valid(dir, 0))
 		return 0;
 
 	/* 仅当所有子目录均不包含文件时返回1 */
@@ -2083,8 +2096,8 @@ int copy_directories(const char *src, const char *dst,
 	char *p;
 	int ret;	
 
-	size_t slen = path_valid(src, 0);
-	size_t dlen = path_valid(dst, 0);
+	size_t slen = _path_valid(src, 0);
+	size_t dlen = _path_valid(dst, 0);
 
 	if (!slen || !dlen)
 		return 0;
@@ -2257,7 +2270,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 /* 删除文件 */
 int delete_file(const char *path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -2289,8 +2302,8 @@ int	delete_file_empty_updir(const char* path, const char* top_dir)
 	size_t top_len;
 
 	/* path必须是top_dir目录下的文件 */
-	if (!path_valid(path, 0) 
-		|| !path_valid(top_dir, 0) 
+	if (!_path_valid(path, 0) 
+		|| !_path_valid(top_dir, 0) 
 		|| strstr(path, top_dir) != path)
 		return 0;
 
@@ -2330,7 +2343,7 @@ int	delete_file_empty_updir(const char* path, const char* top_dir)
 /* 复制文件 */
 int copy_file(const char *exists, const char *newfile, int overwritten)
 {
-	if (!path_valid(exists, 0) || !path_valid(newfile, 0))
+	if (!_path_valid(exists, 0) || !_path_valid(newfile, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -2392,7 +2405,7 @@ int copy_file(const char *exists, const char *newfile, int overwritten)
  */
 int move_file(const char* exists, const char* newfile, int overwritten)
 {
-	if (!path_valid(exists, 0) || !path_valid(newfile, 0))
+	if (!_path_valid(exists, 0) || !_path_valid(newfile, 0))
 		return 0;
 
 	if (!path_is_file(exists) || path_is_directory(newfile))
@@ -2443,7 +2456,7 @@ int64_t file_size(const char* path)
 	LARGE_INTEGER li;
 #ifdef USE_UTF8_STR
 	wchar_t wpath[MAX_PATH];
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return -1;
 	if (!UTF82UNI(path, wpath, MAX_PATH))
 		return -1;
@@ -2462,7 +2475,7 @@ int64_t file_size(const char* path)
 	return li.QuadPart;
 #else /* POSIX */
 	struct stat st;
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return -1;
 	if (stat(path, &st))
 		return -1;
@@ -2482,7 +2495,7 @@ int get_file_block_size(const char *path)
 		char drive[4];
 
 		/* 检查是否是绝对路径 */
-		if (!path_valid(path, 1))
+		if (!_path_valid(path, 1))
 			return 0;
 
 		strncpy(drive, path, 3);
@@ -2667,7 +2680,7 @@ struct file_mem* read_file_mem(const char* file, size_t max_size)
 	int64_t length;
 	size_t readed;
 
-	if (!path_valid(file, 0))
+	if (!_path_valid(file, 0))
 		return NULL;
 
 	/* 获取文件大小 */
@@ -2884,7 +2897,7 @@ int	foreach_line(FILE* fp, foreach_line_cb func, void *arg)
 /* 参数path必须是绝对路径 */
 int get_fs_usage(const char* path, struct fs_usage *fsp)
 {
-	if (!path_valid(path, 1) || !fsp)
+	if (!_path_valid(path, 1) || !fsp)
 		return 0;
 
 #ifdef OS_WIN
@@ -3117,7 +3130,7 @@ const char*get_home_dir()
 	size_t len;
 
 	val = get_env("HOME");
-	if ((len = path_valid(val, 1))) {
+	if ((len = _path_valid(val, 1))) {
 		xstrlcpy(path, val, MAX_PATH);
 		goto success;
 	}
@@ -3932,7 +3945,7 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 	FILE *fp;
 	struct file_charset_info* fci;
 
-	if (!path_valid(file, 0) || !outbuf)
+	if (!_path_valid(file, 0) || !outbuf)
 		return 0;
 
 	fp = xfopen(file, "rb");
