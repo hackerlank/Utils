@@ -999,7 +999,7 @@ size_t path_valid(const char* path, int absolute)
 
 #ifdef OS_WIN
 		if (xisalpha(path[0]) && !(path[1] == ':' && path[2] == '\\') &&		/* 本地磁盘 */
-			!(path[0] == '\\' && path[1] == '\\'))		/* 网络共享 */
+			!(path[0] == '\\' && path[1] == '\\'))		/* UNC 网络共享 */
 			return 0;
 #else
 		if (path[0] != '/')
@@ -1018,7 +1018,7 @@ int	is_absolute_path(const char* path)
 
 #ifdef OS_WIN
 	if ((xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') ||	/* 本地磁盘 */
-		(path[0] == '\\' && path[1] == '\\'))						/* 网络共享 */
+		(path[0] == '\\' && path[1] == '\\'))						/* UNC 网络共享 */
 		return 1;
 #else
 	if (path[0] == '/')
@@ -1492,8 +1492,7 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
 	for (p = q = path; *p; p++) {
 		if (PATH_CHAR_ILLEGAL(*p, platform) && 
 			(!reserve_separator || *p != PATH_SEP_CHAR)) {
-			if (*q != ' ')
-				*q = ' ';
+			*q = ' ';
 			if (q == path || *(q-1) != ' ')
 				q++;
 		} else {
@@ -1585,7 +1584,7 @@ struct walk_dir_context* walk_dir_begin(const char *dir)
 		return NULL;
 
 	ctx = XCALLOC(struct walk_dir_context);
-	strcpy(ctx->basedir, dir);
+	memcpy(ctx->basedir, dir, len + 1);
 
 	p = dir + len - 1;
 	if (*p != PATH_SEP_CHAR) {
@@ -1596,7 +1595,7 @@ struct walk_dir_context* walk_dir_begin(const char *dir)
 	}
 
 #ifdef OS_WIN
-	snprintf(buf, MAX_PATH, "%s*.*", ctx->basedir);
+	xsnprintf(buf, sizeof(buf), "%s*.*", ctx->basedir);
 #ifdef USE_UTF8_STR
 	{
 		wchar_t wbuf[MAX_PATH];
@@ -1795,7 +1794,7 @@ int create_directory(const char *dir)
 	return CreateDirectoryA(dir, NULL);
 #endif
 #else //Linux
-	return mkdir(dir, 0755) == 0;
+	return mkdir(dir, 0700) == 0;
 #endif
 }
 
@@ -1807,79 +1806,63 @@ int create_directory(const char *dir)
  */
 int create_directories(const char* dir)
 {
-#ifdef OS_WIN
-	wchar_t wdir[MAX_PATH];
-	wchar_t *pb, *p, *pe;
+	char *pb, *p, *pe;
+	char u8dir[MAX_PATH];
+	size_t len;
 
-	size_t len = path_valid(dir, 1);
+	len = path_valid(dir, 1);
 	if (!len)
 		return 0;
-	else if (len == MIN_PATH)			/* "C:\", "/" */
+
+	if (is_root_path(dir))
 		return 1;
 
-#ifdef USE_UTF8_STR
-	if (!UTF82UNI(dir, wdir, MAX_PATH))
+	/* 如果在Windows下使用多字节字符集，首先转为UTF-8字符集 */
+#if (defined OS_WIN) && (!defined USE_UTF8_STR)
+	{
+	wchar_t wbuf[MAX_PATH];
+	if (!MBCS2UNI(dir, wbuf, MAX_PATH) ||
+		!UNI2UTF8(wbuf, u8dir, MAX_PATH))
 		return 0;
+	}
+	len = strlen(u8dir);
 #else
-	if (!MBCS2UNI(dir, wdir, MAX_PATH))
-		return 0;
+	memcpy(u8dir, dir, len + 1);
 #endif
 
-	pb = wdir;
-	pe = wdir + len;
+	pb = u8dir;
+	pe = u8dir + len;
 
-	p = pb + MIN_PATH;
-	while((p = wcschr(p, PATH_SEP_WCHAR)))
+	/* 定位到路径的第一个有效文件[夹] */
+#ifdef OS_WIN
+	/* UNC路径要忽略主机名 */
+	if (*pb == PATH_SEP_CHAR) {		  /* \\192.168.1.6\shared\  */
+		p = strchr(pb + 2, PATH_SEP_CHAR);
+		if (!p)
+			return 0;
+		++p;
+	} else
+		p = pb + MIN_PATH;				/* "a\b\c\d.txt */
+#else
+	p = pb + MIN_PATH;					/* "a/b/c/d.txt */
+#endif
+
+	/* 逐级创建文件夹 */
+	while((p = strchr(p, PATH_SEP_CHAR)))
 	{
-		*p = L'\0';
+		*p = '\0';
 
-		if (PathFileExistsW(pb))
-		{
-			if (!PathIsDirectoryW(pb))
-				return 0;
-		}
-		else if (!CreateDirectoryW(pb, NULL))
+		if (!path_is_directory(pb) && !create_directory(pb))
 			return 0;
 
-		*p = PATH_SEP_WCHAR;
+		*p = PATH_SEP_CHAR;
 
+		/* 路径最后以"/"结尾 */
 		if (++p >= pe)
 			break;
 	}
 
 	return 1;
-
-#else //Linux
-	char *pb, *p, *pe;
-	char buf[MAX_PATH+1];
-
-	size_t len = path_valid(dir, 1);
-	if (!len)
-		return 0;
-	else if (len == MIN_PATH)			/* "C:\", "/" */
-		return 1;
-
-	strcpy(buf, dir);
-
-	pb = buf;							/* path begin */
-	pe = buf + len;						/* path end */
-
-	p = pb + MIN_PATH;							/* "a\b\c\d.txt */
-	while((p = strchr(p, PATH_SEP_CHAR)))
-	{
-		*p = '\0';
-
-		if (path_is_file(pb) || (!path_is_directory(pb) && !create_directory(pb)))
-			return 0;
-
-		*p = PATH_SEP_CHAR;
-
-		if (++p >= pe)
-			break;								/* 以"/"结尾 */
-	}
-
-	return 1;
-#endif
 }
 
 /* 删除一个空目录 */
@@ -1905,40 +1888,40 @@ int delete_directory(const char *dir)
 #endif
 }
 
-#define TRAV_RETURN_0 do{	\
+#define WALK_END_RETURN_0 do{	\
 	walk_dir_end(ctx);		\
 	return 0;				\
-	}while(0)
+}while(0)
 
 /* 递归删除目录下的内容 */
-static int _delete_directories(const char *dir, delete_dir_cb func, void *arg)
+int delete_directories(const char *dir, delete_dir_cb func, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
 	char buf[MAX_PATH];
 	int succ;
 
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx)|| walk_entry_is_dotdot(ctx))
-				continue;
-			else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-				if (!walk_entry_is_dir(ctx)) {		//文件
-					succ = delete_file(buf);
-					if ((func && !func(buf, 0, succ, arg)))
-						TRAV_RETURN_0;
-				} else {							//目录
-					succ = _delete_directories(buf, func, arg);
-					if ((func && !func(buf, 1, succ, arg)))
-						TRAV_RETURN_0;
-				}
-			} else
-				TRAV_RETURN_0;
-		}while(walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (!ctx)
 		return 0;
+
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
+			if (!walk_entry_is_dir(ctx)) {		//文件
+				succ = delete_file(buf);
+				if ((func && !func(buf, 0, succ, arg)))
+					WALK_END_RETURN_0;
+			} else {							//目录
+				succ = delete_directories(buf, func, arg);
+				if ((func && !func(buf, 1, succ, arg)))
+					WALK_END_RETURN_0;
+			}
+		} else
+			WALK_END_RETURN_0;
+	} while(walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 
 	if (!delete_directory(dir))
 		return 0;
@@ -1946,35 +1929,23 @@ static int _delete_directories(const char *dir, delete_dir_cb func, void *arg)
 	return 1;
 }
 
-int delete_directories(const char *dir, delete_dir_cb func, void *arg)
-{
-	if (!path_valid(dir, 0))
-		return 0;
-
-	return _delete_directories(dir, func, arg);
-}
-
 /* 判断目录是否是空目录 */
 int is_empty_dir(const char* dir)
 {
 	struct walk_dir_context* ctx = NULL;
-
-	if (!path_is_directory(dir))
-		return 0;
-
+	
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
-				continue;
-			else 
-				TRAV_RETURN_0;
-		} while (walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (!ctx)
 		return 0;
 
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else 
+			WALK_END_RETURN_0;
+	} while (walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 	return 1;
 }
 
@@ -1996,7 +1967,7 @@ static int _delete_empty_directories(const char* dir)
 				} else								//文件
 					empty = 0;
 			} else
-				TRAV_RETURN_0;
+				WALK_END_RETURN_0;
 		} while(walk_dir_next(ctx));
 
 		walk_dir_end(ctx);
@@ -2054,7 +2025,7 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 			size_t	partlen = strlen(partial);		//相对路径长度
 
 			if (dstlen + partlen + 1 > sizeof(dpath))
-				TRAV_RETURN_0;
+				WALK_END_RETURN_0;
 
 			snprintf(dpath, sizeof(dpath), "%s%s", dstdir, partial);
 
@@ -2062,20 +2033,20 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 				//拷贝此文件
 				succ = copy_file(spath, dpath, 1);
 				if (func && !func(spath, dpath, 0, succ, arg))
-					TRAV_RETURN_0;
+					WALK_END_RETURN_0;
 			} else {							    //目录
 				//创建新目录
 				succ = create_directory(dpath);
 				if (func && !func(spath, dpath, 2, succ, arg))
-					TRAV_RETURN_0;
+					WALK_END_RETURN_0;
 
 				//递归拷贝目录
 				succ = _copy_directories(spath, srcdir, dstdir, func, arg);
 				if (func && !func(spath, dpath, 1, succ, arg))
-					TRAV_RETURN_0;
+					WALK_END_RETURN_0;
 			}
 		} else
-			TRAV_RETURN_0;
+			WALK_END_RETURN_0;
 
 	} while (walk_dir_next(ctx));
 
@@ -2234,16 +2205,16 @@ int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int
 				if (walk_entry_is_dir(ctx)){				//目录
 					if (recursively){
 						if (!foreach_file(buf, func, recursively, regular_only, arg))
-							TRAV_RETURN_0;
+							WALK_END_RETURN_0;
 					}
 				} else {										//文件
 					if (!regular_only || walk_entry_is_regular(ctx)){
 						if (!(*func)(buf, arg))
-							TRAV_RETURN_0;
+							WALK_END_RETURN_0;
 					}
 				}
 			} else
-				TRAV_RETURN_0;
+				WALK_END_RETURN_0;
 		}while(walk_dir_next(ctx));
 
 		walk_dir_end(ctx);
@@ -2270,9 +2241,9 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 			else if (walk_entry_is_dir(ctx)) {				//目录
 				if (walk_entry_path(ctx, buf, MAX_PATH)) {
 					if (!(*func)(buf, arg))
-						TRAV_RETURN_0;	
+						WALK_END_RETURN_0;	
 				} else
-					TRAV_RETURN_0;
+					WALK_END_RETURN_0;
 			}
 		} while (walk_dir_next(ctx));
 
