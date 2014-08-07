@@ -1010,6 +1010,30 @@ size_t _path_valid(const char* path, int absolute)
 	return len;
 }
 
+/* 保证目录路径以分隔符结尾，返回新路径的长度 */
+/* path和outubf可以相同，表示对某一路径缓冲区进行操作 */
+/* 失败返回0 */
+static
+size_t _end_with_slash(const char* path, char* outbuf, size_t outlen) 
+{
+	size_t len = _path_valid(path, 0);
+	if (!len || outlen <= len)
+		return 0;
+
+	if (path != outbuf)
+		memcpy(outbuf, path, len + 1);
+
+	if (path[len - 1] != PATH_SEP_CHAR) {
+		if (len + 1 == outlen)
+			return 0;
+
+		outbuf[len] = PATH_SEP_CHAR;
+		outbuf[++len] = '\0';
+	}
+
+	return len;
+}
+
 /* 判断path所指的路径是否是绝对路径 */
 int	is_absolute_path(const char* path)
 {
@@ -1112,6 +1136,7 @@ const char* path_find_extension(const char* path)
 }
 
 /* 返回路径所指目录/文件的上级目录路径(包含最后的路径分隔符) */
+/* path和outbuf可以相同，表示在某一路径缓冲区中进行操作 */
 /* 例1: C:\a.txt -> C:\ */
 /* 例2: /usr/include/ -> /usr/ */
 /* 返回值: 成功返回1，错误返回0并且outbuf为"" */
@@ -1120,12 +1145,12 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 {
 	size_t plen, nlen;
 
-	if (!path)
+	plen = _path_valid(path, 0);
+	if (!plen)
 		return 0;
 
-	plen = strlen(path);
-
-	memset(outbuf, 0, outlen);
+	if (outbuf != path)
+		memset(outbuf, 0, outlen);
 
 #if (defined OS_WIN) && (!defined USE_UTF8_STR)
 	{
@@ -1154,9 +1179,8 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 	}
 #else //UTF-8
 	{
-		const char* p;
+		const char* p = path + plen - 1;
 
-		p = path + plen - 1;
 		while (*p == PATH_SEP_CHAR && p != path)
 			--p;
 		
@@ -1169,7 +1193,11 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 		nlen = p - path + 1 + 1;
 		if (outlen < nlen)
 			return 0;
-		xstrlcpy(outbuf, path, nlen);
+
+		if (outbuf == path)
+			outbuf[nlen-1] = '\0';
+		else
+			xstrlcpy(outbuf, path, nlen);
 	
 		return 1;
 	}
@@ -1572,26 +1600,15 @@ struct walk_dir_context {
 struct walk_dir_context* walk_dir_begin(const char *dir)
 {
 	struct walk_dir_context* ctx = NULL;
-	const char* p;
-	size_t len;
 
 #ifdef OS_WIN
 	char buf[MAX_PATH + 3];   /* strlen("*.*") */
 #endif
 
-	len = _path_valid(dir, 0);
-	if (!len)
-		return NULL;
-
 	ctx = XCALLOC(struct walk_dir_context);
-	memcpy(ctx->basedir, dir, len + 1);
-
-	p = dir + len - 1;
-	if (*p != PATH_SEP_CHAR) {
-		if (len + 1 == MAX_PATH)
-			return NULL;
-
-		ctx->basedir[len] = PATH_SEP_CHAR;
+	if (!_end_with_slash(dir, ctx->basedir, sizeof(ctx->basedir))) {
+		xfree(ctx);
+		return NULL;
 	}
 
 #ifdef OS_WIN
@@ -1861,7 +1878,7 @@ int create_directories(const char* dir)
 #if (defined OS_WIN) && (!defined USE_UTF8_STR)
 		if (!MBCS2UNI(pb, wbuf, MAX_PATH))
 			return 0;
-		if (PathIsDirectoryW(wbuf) && !CreateDirectoryW(wbuf))
+		if (!PathIsDirectoryW(wbuf) && !CreateDirectoryW(wbuf))
 			return 0;
 #else
 		if (!path_is_directory(pb) && !create_directory(pb))
@@ -2069,6 +2086,7 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 }
 
 /* 递归复制目录(将源目录复制到目标目录下)
+ * 如果目标目录不存在将被创建
  * 如将/a目录复制到/b目录下，则形成的目录是/b/a/
 
  * 注意1（失败情况）：
@@ -2091,32 +2109,18 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 int copy_directories(const char *src, const char *dst, 
 					copy_dir_cb func, void *arg)
 {
-	char sdir[MAX_PATH+1], ddir[MAX_PATH+1];
-	char dbuf[MAX_PATH+1], lastdir[256];	/* Linux支持的最长文件名/目录名为255 */
+	char sdir[MAX_PATH], ddir[MAX_PATH];
+	char target_dir[MAX_PATH];
 	char *p;
-	int ret;	
 
-	size_t slen = _path_valid(src, 0);
-	size_t dlen = _path_valid(dst, 0);
-
+	/* 确保目录以分隔符结尾 */
+	size_t slen = _end_with_slash(src, sdir, sizeof(sdir));
+	size_t dlen = _end_with_slash(dst, ddir, sizeof(ddir));
 	if (!slen || !dlen)
 		return 0;
 
-	if (!path_is_directory(src) || !path_is_directory(dst))
+	if (!path_is_directory(sdir) || !create_directories(ddir))
 		return 0;
-
-	/* 确保目录以分隔符结尾 */
-	strcpy(sdir, src);
-	if (sdir[slen-1] != PATH_SEP_CHAR) {
-		sdir[slen++] = PATH_SEP_CHAR;
-		sdir[slen] = '\0';
-	}
-
-	strcpy(ddir, dst);
-	if (ddir[dlen-1] != PATH_SEP_CHAR) {
-		ddir[dlen++] = PATH_SEP_CHAR;
-		ddir[dlen] = '\0';
-	}
 
 	/* 检查规则1 */
 #if defined OS_WIN
@@ -2137,62 +2141,41 @@ int copy_directories(const char *src, const char *dst,
 	if (p == ddir)
 		goto copy_dirs_error;
 
-	/* 检查规则3 */
-#ifdef OS_WIN
-	p = strcasestr(sdir, ddir);
-#else
-	p = strstr(sdir, ddir);
-#endif
-
-	if (p == sdir)
+	/* 合成目标目录 */
 	{
-		char *q = sdir + dlen;
-		char *end = sdir + slen;
-		int slashes = 0;
+		char dirname[MAX_PATH];
+		const char* fn = path_find_file_name(sdir);
+		if (!fn)
+			goto copy_dirs_error;
 
-		for (;q < end; q++)
-			if (*q == PATH_SEP_CHAR)
-				slashes++;
+		strcpy(dirname, fn);
 
-		if (slashes == 1)
+#ifdef OS_WIN
+		if (strlen(fn) == MIN_PATH)		/* 源目录是根驱动器的情况 */
+			xsnprintf(dirname, MAX_PATH, "%c_DRIVE", fn[0]);
+#endif
+		memcpy(target_dir, ddir, dlen + 1);
+		if (!dirname || xstrlcat(target_dir, dirname, MAX_PATH) >= MAX_PATH)
 			goto copy_dirs_error;
 	}
 
-	/* 在目标目录下创建同名文件夹，需要找出源目录的最后一级目录名 */
-	/* path_find_file_name返回值以/结尾,还要注意源目录是C:\的情况 */
-	p = (char*)path_find_file_name(sdir);
-	if (!p)
+	/* 检查规则3 */
+	if (
+#ifdef OS_WIN
+		!strcasecmp(sdir, target_dir)
+#else
+		!strcmp(sdir, target_dir)
+#endif
+		)
 		goto copy_dirs_error;
 
-	memset(lastdir, 0, sizeof(lastdir));
-#ifdef OS_WIN
-	if (strlen(p) == MIN_PATH)	/* C:\ */
-	{
-		lastdir[0] = p[0];
-		strcpy(lastdir+1, "_DRIVE\\");
-	}
-	else
-		xstrlcpy(lastdir, p, sizeof(lastdir));
-#else
-	ASSERT(strlen(p) != MIN_PATH);
-	xstrlcpy(lastdir, p, sizeof(lastdir));
-#endif
-
-	memset(dbuf, 0, sizeof(dbuf));
-	strcpy(dbuf, ddir);
-	xstrlcat(dbuf, lastdir, sizeof(dbuf));
-
 	/* 如果目标目录下已经存在此目录或文件 */
-	dbuf[strlen(dbuf)-1] = '\0';
-	if (path_file_exists(dbuf)
-	   ||!create_directory(dbuf))
+	if (path_file_exists(target_dir) || 
+		!create_directory(target_dir))
 		goto copy_dirs_error;
 
 	/* 递归复制 */
-	dbuf[strlen(dbuf)] = PATH_SEP_CHAR;
-	ret = _copy_directories(sdir, sdir, dbuf, func, arg);
-
-	return ret;
+	return _copy_directories(sdir, sdir, target_dir, func, arg);
 
 copy_dirs_error:
 
@@ -3005,7 +2988,6 @@ const char* get_module_path()
 const char* get_current_dir()
 {
 	static char path[MAX_PATH];
-	size_t len;
 
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
@@ -3022,13 +3004,7 @@ const char* get_current_dir()
 		path[0] = '\0';
 #endif /* OS_WIN */
 
-	len = strlen(path);
-	if (len > 0 && len < MAX_PATH + 1)
-	{
-		if (path[len-1] != PATH_SEP_CHAR)
-			path[len] = PATH_SEP_CHAR;
-	}
-	else
+	if (!_end_with_slash(path, path, sizeof(path)))
 		path[0] = '\0';
 
 	return path;
@@ -3076,27 +3052,15 @@ static int GetShellSpecialFolder(int key, char* path) {
 const char*get_home_dir()
 {
 	static char path[MAX_PATH];
-	const char* val;
-	size_t len;
 
-	val = get_env("HOME");
-	if ((len = _path_valid(val, 1))) {
-		xstrlcpy(path, val, MAX_PATH);
-		goto success;
-	}
+	if (_end_with_slash(get_env("HOME"), path, MAX_PATH))
+		return path;
 
 #ifdef OS_WIN
 	{
 		wchar_t wpath[MAX_PATH];
-		wchar_t* last_slash;
 		if (!SHGetSpecialFolderPathW(NULL, wpath, CSIDL_MYDOCUMENTS, 0))
 			goto failed;
-
-		last_slash = wcsrchr(wpath, '\\');
-		if (!last_slash || (len = last_slash - wpath) <= MIN_PATH - 1)
-			goto failed;
-
-		wpath[++len] = '\0';
 
 #ifdef USE_UTF8_STR
 		if (!UNI2UTF8(wpath, path, MAX_PATH))
@@ -3105,20 +3069,21 @@ const char*get_home_dir()
 #endif /* USE_UTF8_STR */
 			goto failed;
 
+		if (!path_find_directory(path, path, MAX_PATH))
+			goto failed;
+
 		return path;
 	}
 
 failed:
-    path[0] = '\0';
-    return path;
-
-#endif /* OS_WIN */
-
-success:
-	if (path[len-1] != PATH_SEP_CHAR)
-		path[len] = PATH_SEP_CHAR;
-
+	path[0] = '\0';
 	return path;
+
+#else
+	/* 一般POSIX系统都会设置HOME环境变量 */
+	path[0] = '\0';
+	return path;
+#endif /* OS_WIN */
 }
 
 /* 获取程序的缓存文件目录 */
@@ -3169,15 +3134,15 @@ const char *get_temp_dir()
 		if (!GetTempPathA(MAX_PATH, path))
 			path[0] = '\0';
 #endif /* USE_UTF8_STR */
-		len = strlen(path);
-		if (path[len-1] != PATH_SEP_CHAR)
-			path[len++] = PATH_SEP_CHAR;
+		len = _end_with_slash(path, path, MAX_PATH);
+		if (!len)
+			path[0] = '\0';
 #else /* OS_POSIX */
 		strcpy(path, "/tmp/");
 		len = 5;
 #endif /* OS_WIN */
 
-		if (len + strlen(g_product_name) < MAX_PATH - 2)
+		if (len > 0 && (len + strlen(g_product_name) < MAX_PATH - 2))
 		{
 			strcpy(path + len, g_product_name);
 			strcat(path, PATH_SEP_STR);
@@ -3187,8 +3152,6 @@ const char *get_temp_dir()
 				!create_directory(path))
 				path[0] = '\0';
 		}
-		else
-			path[0] = '\0';
 
 		init = 1;
 	}
@@ -3214,28 +3177,18 @@ int get_temp_file_under(const char* tmpdir, const char *prefix,
 	const char *prefix_use = g_product_name;
 	size_t dlen;
 
-	if (!tmpdir || !outbuf || outlen < MAX_PATH)
+	if (!outbuf || outlen < MAX_PATH)
+		return 0;
+
+	dlen = _end_with_slash(tmpdir, tempdir_use, MAX_PATH);
+	if (!dlen)
+		return 0;
+
+	if (!create_directories(tempdir_use))
 		return 0;
 
 	if (prefix && prefix[0])
 		prefix_use = prefix;
-
-	dlen = xstrlcpy(tempdir_use, tmpdir, MAX_PATH);
-	if (dlen >= MAX_PATH)
-		return 0;
-
-	/* 确保 tempdir_use 以'/'结尾 */
-	if (tmpdir[dlen-1] != PATH_SEP_CHAR) {
-		if (dlen == MAX_PATH - 1)
-			return 0;
-
-		tempdir_use[dlen] = PATH_SEP_CHAR;
-		tempdir_use[dlen + 1] = '\0';
-		++dlen;
-	}
-
-	if (!create_directories(tempdir_use))
-		return 0;
 
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
