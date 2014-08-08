@@ -2459,7 +2459,7 @@ int64_t get_file_disk_usage(const char *path)
 	if (fsize <= 0)
 		return 0;
 
-	return (fsize + blocksize) & (~(blocksize - 1));
+	return CALC_DISK_USAGE(fsize, blocksize);
 #else
 	struct stat st;
 	if (stat(path, &st))
@@ -5550,24 +5550,41 @@ int thread_once(thread_once_t* once, thread_once_func func)
 /*							 Debugging  调试					            */
 /************************************************************************/
 
-#define ERRBUF_LEN	128
-
 /* 获取WIN32 API出错后的信息 */
 #ifdef OS_WIN
 const char* get_last_error_win32()
 {
-	static char errbuf[ERRBUF_LEN];
+	static char errbuf[128];
+	int flag = FORMAT_MESSAGE_ALLOCATE_BUFFER|
+		FORMAT_MESSAGE_IGNORE_INSERTS|
+		FORMAT_MESSAGE_FROM_SYSTEM;
 
-	LPSTR lpBuffer;
-	FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, GetLastError(), LANG_NEUTRAL, (LPSTR)&lpBuffer, 0, NULL);
+#ifdef USE_UTF8_STR
+	LPWSTR lpBuffer = NULL;
+	FormatMessageW(flag, NULL, GetLastError(), LANG_NEUTRAL, (LPWSTR)&lpBuffer, 0, NULL);
+	if (!lpBuffer)
+		goto not_found;
+
+	if (!UNI2UTF8(lpBuffer, errbuf, sizeof(errbuf)))
+		goto not_found;
+#else
+	LPSTR lpBuffer = NULL;
+	FormatMessageA(flag, NULL, GetLastError(), LANG_NEUTRAL, (LPSTR)&lpBuffer, 0, NULL);
+	if (!lpBuffer)
+		goto not_found;
+
+	if (xstrlcpy(errbuf, lpBuffer, sizeof(errbuf)) >= sizeof(errbuf))
+		goto not_found;	
+#endif
+
+	LocalFree(lpBuffer);
+	return errbuf;
+
+not_found:
+	xstrlcpy(errbuf, "No corresponding error message.", sizeof(errbuf));
 
 	if (lpBuffer)
-		xstrlcpy(errbuf, lpBuffer, ERRBUF_LEN);
-	else
-		xstrlcpy(errbuf, "No corresponding error message.", ERRBUF_LEN);
-
-	LocalFree (lpBuffer);
+		LocalFree(lpBuffer);
 	return errbuf;
 }
 #endif
