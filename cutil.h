@@ -392,23 +392,23 @@ size_t hash_pjw (const char *s, size_t tablesize);						        /* 字符串hash
 #pragma message("Can not fseek/ftell large file (>2GB)")
 #endif
 
-int			is_root_path(const char* path);											/* 判断path是否是根目录(/或X:\)  */
-int			is_absolute_path(const char* path);										/* 判断path所指的路径是否是绝对路径 */
+int		is_root_path(const char* path);											/* 判断path是否是根目录(/或X:\)  */
+int		is_absolute_path(const char* path);										/* 判断path所指的路径是否是绝对路径 */
 
-int			absolute_path(const char* relpath, char* buf, size_t len) WUR;			/* 获取文件/目录相对于当前工作目录的绝对路径 */
-int			relative_path(const char* base_path, const char* full_path, char sep,
-							char* buf, size_t len) WUR;								/* 获取full_path相对于base_path的相对路径 */
+int		absolute_path(const char* relpath, char* buf, size_t len) WUR;			/* 获取文件/目录相对于当前工作目录的绝对路径 */
+int		relative_path(const char* base_path, const char* full_path, char sep,
+					char* buf, size_t len) WUR;									/* 获取full_path相对于base_path的相对路径 */
 
-const char* path_find_file_name(const char* path);									/* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
-const char* path_find_extension(const char* path);									/* 返回文件的扩展名，目录返回NULL */
-int			path_find_directory(const char* path, char* buf, size_t len) WUR;		/* 返回路径所指目录/文件的上级目录路径(路径名需为UTF-8编码) */
+const char* path_find_file_name(const char* path);								/* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
+const char* path_find_extension(const char* path);								/* 返回文件的扩展名，目录返回NULL */
+int		path_find_directory(const char* path, char* buf, size_t len) WUR;		/* 返回路径所指目录/文件的上级目录路径(路径名需为UTF-8编码) */
 
-int			path_file_exists(const char* path);										/* 路径所指文件/目录是否存在 */
-int			path_is_directory(const char* path);									/* 路径是否是有效目录 */
-int			path_is_file(const char* path);											/* 路径是否是有效文件 */
+int		path_file_exists(const char* path);										/* 路径所指文件/目录是否存在 */
+int		path_is_directory(const char* path);									/* 路径是否是有效目录 */
+int		path_is_file(const char* path);											/* 路径是否是有效文件 */
 
-int			unique_file(const char* path, char *buf, size_t len) WUR;				/* 获取当前可用的文件路径 */
-int			unique_dir(const char* path, char *buf, size_t len) WUR;				/* 获取当前可用的目录路径 */
+int		unique_file(const char* path, char *buf, size_t len) WUR;				/* 获取当前可用的文件路径 */
+int		unique_dir(const char* path, char *buf, size_t len) WUR;				/* 获取当前可用的目录路径 */
 
 /* 路径合法化 */
 #define PATH_UNIX		1
@@ -420,91 +420,111 @@ int			unique_dir(const char* path, char *buf, size_t len) WUR;				/* 获取当�
 #define PATH_PLATFORM PATH_UNIX
 #endif
 
-char*		path_escape(const char* path, int platform, int reserve_separator);		/* 将路径中的非法字符替换为%HH的形式，需外部释放 */
-void		path_illegal_blankspace(char *path, int platform, int reserve_separator);	/* 将路径中的非法字符替换为空格符 */
+char*	path_escape(const char* path, int platform, int reserve_separator);		/* 将路径中的非法字符替换为%HH的形式，需外部释放 */
+void	path_illegal_blankspace(char *path, int platform, int reserve_separator);	/* 将路径中的非法字符替换为空格符 */
 
 /* 遍历目录 */
 struct walk_dir_context;
 
-struct walk_dir_context* walk_dir_begin(const char* dir) WUR;						/* 开始遍历 */
-int			walk_dir_next(struct walk_dir_context *ctx) WUR;						/* 获取一项 */
-void		walk_dir_end(struct walk_dir_context *ctx);								/* 结束遍历 */
+struct walk_dir_context* walk_dir_begin(const char* dir) WUR;					/* 开始遍历 */
+int		walk_dir_next(struct walk_dir_context *ctx) WUR;						/* 获取一项 */
+void	walk_dir_end(struct walk_dir_context *ctx);								/* 结束遍历 */
 
-const char*	walk_entry_name(struct walk_dir_context *ctx);							/* 文件/目录名 */
-int			walk_entry_path(struct walk_dir_context *ctx, char* buf, size_t len) WUR;	/* 完整路径名 */
+const char*	walk_entry_name(struct walk_dir_context *ctx);						/* 文件/目录名 */
+int		walk_entry_path(struct walk_dir_context *ctx, char* buf, size_t len) WUR;/* 完整路径名 */
 
-int			walk_entry_is_dot(struct walk_dir_context *ctx) WUR;					/* 该项是.(当前目录) */
-int			walk_entry_is_dotdot(struct walk_dir_context *ctx) WUR;					/* 该项是..(上级目录) */
-int			walk_entry_is_dir(struct walk_dir_context *ctx) WUR;					/* 该项类型是目录 */
-int			walk_entry_is_file(struct walk_dir_context *ctx) WUR;					/* 该项类型是文件 */
-int			walk_entry_is_regular(struct walk_dir_context *ctx) WUR;				/* 该项类型是普通文件 */
+int		walk_entry_is_dot(struct walk_dir_context *ctx) WUR;					/* 该项是.(当前目录) */
+int		walk_entry_is_dotdot(struct walk_dir_context *ctx) WUR;					/* 该项是..(上级目录) */
+int		walk_entry_is_dir(struct walk_dir_context *ctx) WUR;					/* 该项类型是目录 */
+int		walk_entry_is_file(struct walk_dir_context *ctx) WUR;					/* 该项类型是文件 */
+int		walk_entry_is_regular(struct walk_dir_context *ctx) WUR;				/* 该项类型是普通文件 */
 
 /* 目录操作 */
-int			create_directory(const char *dir) WUR;									/* 创建单层目录（父目录必须存在）,成功返回1 */
-int			create_directories(const char* dir) WUR;								/* 递归创建目录结构*/
+int		create_directory(const char *dir) WUR;									/* 创建单层目录（父目录必须存在）,成功返回1 */
+int		create_directories(const char* dir) WUR;								/* 递归创建目录结构*/
 
-int			delete_directory(const char* dir) WUR;									/* 删除一个目录（必须为空） */
+int		delete_directory(const char* dir) WUR;									/* 删除一个目录（必须为空） */
 
-typedef	int	(*delete_dir_cb)(const char* path, int type, int succ, void *arg);		/* 删除整个目录回调函数，type参数0、1分别表示文件和目录 */
-int			delete_directories(const char* dir, delete_dir_cb func, void *arg) WUR;	/* 删除一个目录及包含的所有内容 */
+typedef	int	(*delete_dir_cb)(const char* path, int type, int succ, void *arg);	/* 删除整个目录回调函数，type参数0、1分别表示文件和目录 */
+int		delete_directories(const char* dir, delete_dir_cb func, void *arg) WUR;	/* 删除一个目录及包含的所有内容 */
 
-int			is_empty_dir(const char* dir);											/* 判断目录是否是空目录 */
-int			delete_empty_directories(const char* dir) WUR;							/* 删除一个目录下的所有不包含文件的目录（不删除参数目录本身） */
+int		is_empty_dir(const char* dir);											/* 判断目录是否是空目录 */
+int		delete_empty_directories(const char* dir) WUR;							/* 删除一个目录下的所有不包含文件的目录（不删除参数目录本身） */
 
-typedef int (*copy_dir_cb)(const char* src, const char *dst,						/* 拷贝整个目录回调函数*/																					
-							int action, int succ, void *arg);						/* action参数0、1、2分别表示拷贝文件、拷贝目录和创建目录  */
-int			copy_directories(const char* srcdir, const char* dstdir,				/* 将src目录拷贝到dst目录下（用法及注意见copy_directories） */
+typedef int (*copy_dir_cb)(const char* src, const char *dst,					/* 拷贝整个目录回调函数*/																					
+							int action, int succ, void *arg);					/* action参数0、1、2分别表示拷贝文件、拷贝目录和创建目录  */
+int		copy_directories(const char* srcdir, const char* dstdir,				/* 将src目录拷贝到dst目录下（用法及注意见copy_directories） */
 							copy_dir_cb func, void *arg) WUR;
 
-typedef		int (*foreach_file_func_t)(const char* fpath, void *arg);				/* 文件处理函数 */
-typedef		foreach_file_func_t foreach_dir_func_t;									/* 目录处理函数 */
+typedef	int (*foreach_file_func_t)(const char* fpath, void *arg);				/* 文件处理函数 */
+typedef	foreach_file_func_t foreach_dir_func_t;									/* 目录处理函数 */
 
-int			foreach_file(const char* dir, foreach_file_func_t func,					/* 查找并处理目录下的每个文件 */
+int		foreach_file(const char* dir, foreach_file_func_t func,					/* 查找并处理目录下的每个文件 */
 						int recursively, int regular_only, void *arg) WUR;
-int			foreach_dir(const char* dir, foreach_dir_func_t func, void *arg) WUR;	/* 查找并处理目录下的每个目录(不递归) */
+int		foreach_dir(const char* dir, foreach_dir_func_t func, void *arg) WUR;	/* 查找并处理目录下的每个目录(不递归) */
 
 /* 文件操作 */
-int			copy_file(const char* exists, const char* newfile, int overwritten) WUR;/* 复制文件 */
-int			move_file(const char* exists, const char* newfile, int overwritten) WUR;/* 移动文件 */
-int			delete_file(const char* path) WUR;										/* 删除文件 */
+int		copy_file(const char* exists, const char* newfile, int overwritten) WUR;/* 复制文件 */
+int		move_file(const char* exists, const char* newfile, int overwritten) WUR;/* 移动文件 */
+int		delete_file(const char* path) WUR;										/* 删除文件 */
 
-int64_t		file_size(const char* path);											/* 获取指定文件的长度，最大8EB... */
-void		file_size_readable(int64_t size, char *outbuf, int outlen);				/* 获取可读性强的文件大小，如3.5GB，建议outlen>64 */
+int64_t	file_size(const char* path);											/* 获取指定文件的长度，最大8EB... */
+void	file_size_readable(int64_t size, char *outbuf, int outlen);				/* 获取可读性强的文件大小，如3.5GB，建议outlen>64 */
 
-int64_t		get_file_disk_usage(const char *absolute_path);							/* 获取文件或目录实际占用磁盘空间的大小 */
-int			get_file_block_size(const char *absolute_path);							/* 获取文件或目录所在文件系统磁盘区块的大小 */
+int64_t	get_file_disk_usage(const char *absolute_path);							/* 获取文件或目录实际占用磁盘空间的大小 */
+int		get_file_block_size(const char *absolute_path);							/* 获取文件或目录所在文件系统磁盘区块的大小 */
 
-#define		CALC_DISK_USAGE(real_size, block_size) \
-			(((real_size) + (block_size)) & (~((block_size) - 1)))					/* 根据文件实际大小和分区块大小计算实际占用的磁盘空间 */
+#define	CALC_DISK_USAGE(real_size, block_size) \
+		(((real_size) + (block_size)) & (~((block_size) - 1)))					/* 根据文件实际大小和分区块大小计算实际占用的磁盘空间 */
 
-FILE*		xfopen(const char* file, const char* mode);								/* 打开文件 */
-int			xfread(FILE* fp, int separator, size_t max_count,							
-					char** outbuf, size_t* outlen) WUR;								/* 读取文件，需外部释放 */
-void		xfclose(FILE *fp);														/* 关闭文件 */
+FILE*	xfopen(const char* file, const char* mode);								/* 打开文件 */
+void	xfclose(FILE *fp);														/* 关闭文件 */
 
-/* 文件内容信息 */
-struct file_mem {
-	char*	content;																/* 文件内容 */
-	size_t	length;																	/* 文件长度 */
-};
+/* 
+ * 从文件中读取数据
+ * 如果读取过程中：遇到指定分隔符、达到指定最多读取字节数或读到文件末尾则结束
+ * 【参数】：如果separator为-1，则不比较分隔符；
+ * 如果max_bytes设置为0或-1，也表示不限制读取的字节数
+ * 如果*lineptr不为NULL,且读入数据的长度小于*n,则入读行存放于原缓冲区中；
+ * 否则将动态申请一块内存用于存放读入内容；如果*lineptr为NULL，则总是动态分配内存；
+ * 【注意】：传入的缓冲区如果不够大将不会被释放(不同于GLIBC的getline)，这就意味着
+ * *lineptr必须是数组或者alloca的内存。这样可以减少动态申请/释放内存的次数。
+ * 返回值：返回成功读入的字节数，包括分隔符，但不包括结尾的'\0'。文件为空或过大返回0
+ */
+size_t	xfread(FILE *fp, int separator, size_t max_bytes, 
+	char **lineptr, size_t *n) WUR;
 
-/* 读入整个文件 */
-struct file_mem* read_file_mem(const char* file, size_t max_size);					/* 将文件内容读取到内存中 */
-void	free_file_mem(struct file_mem *fm);											/* 释放读取到内存中的文件 */
-
-/* 写入整个文件 */
-int		write_mem_file(const char *file, const void *data, size_t len) WUR;			/* 将内存中的数据写入文件 */
-int		write_mem_file_safe(const char *file, const void *data, size_t len) WUR;	/* 同上，避免写入错误或不完整导致文件损坏 */
-#define touch(file) write_mem_file(file, "", 0)
-
-size_t	get_delim(char **lineptr, size_t *n, int delim, FILE *fp);					/* 从文件中读取以delim为分隔符的一块数据 */
-size_t	get_line (char **lineptr, size_t *n, FILE *fp);								/* 从文件中读取一行 */
+/*
+ * 从文件中读入一行
+ * 类似于GLIBC的getline函数，C++也实现了全局的getline
+ * 下面的foreach_line函数很好地诠释了如何使用此函数
+ */
+size_t	get_line(FILE *fp, char **lineptr, size_t *n) WUR;
 
 typedef int (*foreach_block_cb)(char *line, size_t len, size_t nblock, void *arg);	/* 成功处理此分隔符块返回1，若返回0将终止 */
 typedef int (*foreach_line_cb)(char *line, size_t len, size_t nline, void *arg);	/* 成功处理此行返回1，若返回0将不再处理以后的行 */
 
 int		foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg) WUR;	/* 读取文件每个分隔符块进行操作，若成功处理所有行返回1 */
 int		foreach_line (FILE* fp, foreach_line_cb func, void *arg) WUR;				/* 读取文件的每一行进行操作，若成功处理所有行返回1 */
+
+/* 文件内容信息 */
+struct file_mem {
+	char*	content;															/* 文件内容 */
+	size_t	length;																/* 文件长度 */
+};
+
+/* 将文件读入内存 */
+/* 如果文件不存在或大于1GB，将返回NULL */
+/* 如果max_size大于零，则仅当文件大小小于指定值时才加载 */
+/* 如果文件的长度为0，则content为NULL，且length等于0 */
+/* 如果读入内存成功，缓冲区将以'\0'结尾 */
+struct file_mem* read_file_mem(const char* file, size_t max_size);
+void free_file_mem(struct file_mem *fm);
+
+/* 写入整个文件 */
+int		write_mem_file(const char *file, const void *data, size_t len) WUR;			/* 将内存中的数据写入文件 */
+int		write_mem_file_safe(const char *file, const void *data, size_t len) WUR;	/* 同上，避免写入错误或不完整导致文件损坏 */
+#define touch(file) write_mem_file(file, "", 0)
 
 /* 磁盘空间 */
 struct fs_usage {
@@ -1012,10 +1032,6 @@ uint		atou(const char* str);												/* 转换为uint */
 size_t		atos(const char* str);												/* 转换为size_t */
 int64_t		atoi64(const char* str);											/* 转换为int64_t */
 uint64_t	atou64(const char* str);											/* 转换为uint64_t */
-
-/* 指针<=>字符串 */
-int			ptr_to_str(void *ptr, char* buf, int len) WUR;						/* 将指针转换成十六进制的字符串，需手动释放 */
-void*		str_to_ptr(const char *str);										/* 将代表指针的十六进制的字符串转换为指针值 */
 
 int			number_of_processors();												/* 获取CPU核心数目 */
 

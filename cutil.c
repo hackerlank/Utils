@@ -2537,61 +2537,111 @@ void xfclose(FILE* fp)
 	fclose(fp);
 }
 
-/* 读取文件
- * 读取文件直到：
- * 1、separator>=0 ? 遇到separator为止；
- * 2、maxcount>=0 ? 最多maxcount个字节为止
- * 3、文件末尾。
- * 返回值：1代表成功0代表失败，如果成功读取到的内容将存放于*outbuf中且长度为*outlen
- * 如果是遇到分隔符而结束，返回的内容将包含分隔符；任何情况下均以'\0'结尾；
- */
-int xfread(FILE* fp, int separator, size_t max_count,
-			char** outbuf, size_t* outlen)
+size_t xfread(FILE *fp, int separator, size_t max_bytes, 
+				char **lineptr, size_t *n)
 {
-    char *content;
-	size_t n = 0, bufsize = 1024;
-    int ch;
+	char *origptr, *mallptr;
+	size_t count, nm = 1024;
+	int ch;
 
-	if (!fp) {
-		ASSERT(!"xfread fp is null");
-		return 0;
-	}
+	origptr = *lineptr;
+	mallptr = NULL;
+	count = 0;
 
-	content = (char*)xmalloc(bufsize);
-
-	while ((ch = getc(fp)) != EOF) {
-		if (n == bufsize - 1) {	 /* -1 to reserver space for lastly '\0' */
-			if (n > SIZE_T_MAX /2) {
-				/* file too large */
-				xfree(content);
+	while ((ch = getc(fp)) != EOF)
+	{
+		if (origptr && count < *n - 1)	// -1 to reserve space for '\0'
+			origptr[count++] = ch;
+		else if (origptr && !mallptr)	// count == n - 1
+		{
+			if (*n > SIZE_T_MAX / 2) {
 				return 0;
-			} else {
-				/* use a larger buffer */
-				bufsize <<= 1;
-				content = (char*)xrealloc(content, bufsize);
 			}
+
+			nm = *n<<1;
+			mallptr = (char*)xmalloc(nm);
+			memcpy(mallptr, origptr, count);
+			mallptr[count++] = ch;
+		}
+		else if (mallptr)
+		{
+			if (count >= nm - 1)
+			{
+				if (nm > SIZE_T_MAX / 2) {
+					xfree(mallptr);
+					return 0;
+				}
+				nm <<=1;
+				mallptr = (char*)xrealloc(mallptr, nm);
+			}
+			mallptr[count++] = ch;
+		}
+		else
+		{
+			mallptr = (char*)xmalloc(nm);
+			mallptr[count++] = ch;
 		}
 
-		content[n++] = ch;
-
-		if (ch == separator || 
-			--max_count == 0)
+		//遇到分隔符或达到最多可以读取的字节数
+		if (ch == separator || --max_bytes == 0)
 			break;
 	}
-	
-	content[n] = '\0';
 
-	*outbuf = content;
-	*outlen = n;
+	//结束符
+	if (mallptr)
+		mallptr[count] = '\0';
+	else if (origptr && *n > 0)
+		origptr[count] = '\0';
+
+	//设置输出
+	if (mallptr)
+		*lineptr = mallptr;
+	*n = count;
+
+	return count;
+}
+
+size_t get_line(FILE *fp, char **lineptr, size_t *n)
+{
+	return xfread(fp, '\n', 0, lineptr, n);
+}
+
+/* 从文件中读取每个分隔符块进行操作 */
+int	foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
+{
+	char buf[1024], *block;
+	size_t len, nblock;
+	int ret;
+
+	block = buf;
+	len = sizeof(buf);
+	nblock = 0;
+
+	while (xfread(fp, delim, 0, &block, &len) > 0)
+	{
+		ret = (*func)(block, len, nblock, arg);
+
+		if (block != buf)
+			xfree(block);
+
+		if (!ret)
+			return 0;
+
+		block = buf;
+		len = sizeof(buf);
+		nblock++;
+	}
 
 	return 1;
 }
 
-/* 将文件读入内存 */
-/* 如果文件不存在或大于1GB，将返回NULL */
-/* 如果max_size大于零，则仅当文件大小小于指定值时才加载 */
-/* 如果文件的长度为0，则content为NULL，且length等于0 */
-/* 如果读入内存成功，缓冲区将以'\0'结尾 */
+/* 从文件流中读入每一行并进行操作 */
+int	foreach_line(FILE* fp, foreach_line_cb func, void *arg)
+{
+	return foreach_block(fp, func, '\n', arg);
+}
+
+/* 将文件内容读取到内存中 */
 struct file_mem* read_file_mem(const char* file, size_t max_size)
 {
 	struct file_mem *fm;
@@ -2651,7 +2701,6 @@ void free_file_mem(struct file_mem *fm)
 }
 
 /* 将内存中的数据写入文件 */
-/* 参数append:如果文件已存在，是否追加数据到文件（否则清空源文件内容） */
 int write_mem_file(const char* file, const void *data, size_t len)
 {
 	FILE *fp;
@@ -2692,124 +2741,6 @@ int write_mem_file_safe(const char *file, const void *data, size_t len)
 	}
 
 	return 1;
-}
-
-/* 
- * 从文件中读入以任意分隔符为结尾的一块数据
- * 如果分隔符是'\n'，即是从文件中读取一行(如下的get_line函数)
- * 【参数】：如果*lineptr不为NULL,且读入数据的长度小于*n,则入读行存放于原缓冲区中；
- * 否则将动态申请一块内存用于存放读入内容；如果*lineptr为NULL，则总是动态分配内存；
- * 【注意】：传入的缓冲区如果不够大将不会被释放(不同于GLIBC的getline)，这就意味着
- * *lineptr必须是数组或者alloca的内存。这样可以减少动态申请/释放内存的次数。
- * 返回值：返回成功读入的字节数，包括分隔符，但不包括结尾的'\0'。如果返回值为0，可能是
- *        文件为空或文件太大。
- */
-size_t get_delim(char **lineptr, size_t *n, int delim, FILE *fp)
-{
-	char *origptr, *mallptr;
-	size_t count, nm = 1024;
-	int ch;
-
-	origptr = *lineptr;
-	mallptr = NULL;
-	count = 0;
-
-	while ((ch = getc(fp)) != EOF)
-	{
-		if (origptr && count < *n - 1)	// -1 to reserve space for '\0'
-			origptr[count++] = ch;
-		else if (origptr && !mallptr)	// count == n - 1
-		{
-			if (*n > SIZE_T_MAX / 2) {
-				return 0;
-			}
-
-			nm = *n<<1;
-			mallptr = (char*)xmalloc(nm);
-			memcpy(mallptr, origptr, count);
-			mallptr[count++] = ch;
-		}
-		else if (mallptr)
-		{
-			if (count >= nm - 1)
-			{
-				if (nm > SIZE_T_MAX / 2) {
-					xfree(mallptr);
-					return 0;
-				}
-				nm <<=1;
-				mallptr = (char*)xrealloc(mallptr, nm);
-			}
-			mallptr[count++] = ch;
-		}
-		else
-		{
-			mallptr = (char*)xmalloc(nm);
-			mallptr[count++] = ch;
-		}
-
-		//分隔符
-		if (ch == delim)
-			break;
-	}
-
-	//结束符
-	if (mallptr)
-		mallptr[count] = '\0';
-	else if (origptr && *n > 0)
-		origptr[count] = '\0';
-
-	//设置输出
-	if (mallptr)
-		*lineptr = mallptr;
-	*n = count;
-
-	return count;
-}
-
-/*
- * 从文件中读入一行
- * 类似于GLIBC的getline函数，C++也实现了全局的getline
- * 下面的foreach_line函数很好地诠释了如何使用此函数
- */
-size_t get_line(char **lineptr, size_t *n, FILE *fp)
-{
-	return get_delim(lineptr, n, '\n', fp);
-}
-
-/* 从文件中读取每个分隔符块进行操作 */
-int	foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
-{
-	char buf[1024], *block;
-	size_t len, nblock;
-	int ret;
-
-	block = buf;
-	len = sizeof(buf);
-	nblock = 0;
-
-	while (get_delim(&block, &len, delim, fp) > 0)
-	{
-		ret = (*func)(block, len, nblock, arg);
-
-		if (block != buf)
-			xfree(block);
-
-		if (!ret)
-			return 0;
-
-		block = buf;
-		len = sizeof(buf);
-		nblock++;
-	}
-
-	return 1;
-}
-
-/* 从文件流中读入每一行并进行操作 */
-int	foreach_line(FILE* fp, foreach_line_cb func, void *arg)
-{
-	return foreach_block(fp, func, '\n', arg);
 }
 
 /* 获取文件系统的使用状态 */
@@ -6608,28 +6539,6 @@ ATON(int64_t, i64, "%" PRId64)
 ATON(uint64_t, u64, "%" PRIu64)
 
 #undef ATON
-
-/* 将指针转换成十六进制的字符串 */
-int ptr_to_str(void *ptr, char* buf, int len)
-{
-	if (snprintf(buf, len, "%p", ptr) < 0)
-		return 0;
-
-	return 1;
-}
-
-/* 将代表指针的十六进制的字符串转换为指针值 */
-void* str_to_ptr(const char *str)
-{
-	void *ptr;
-
-	if (strlen(str) / 2 != sizeof(ptr))
-		return NULL;
-
-	sscanf(str, "%p", &ptr);
-
-	return ptr;
-}
 
 /* 获取可用的CPU数目 */
 int number_of_processors()

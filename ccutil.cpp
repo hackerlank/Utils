@@ -1034,25 +1034,6 @@ std::string HexDump(const void *buf, int len)
 	return s;
 }
 
-// 将指针转换成十六进制的字符串
-std::string PtrToStr(void *ptr)
-{
-	char buf[10];
-	std::string s;
-
-	memset(buf, 0, 10);
-	sprintf(buf, "%p", ptr);
-	s = buf;
-
-	return s;
-}
-
-// 将代表指针的十六进制的字符串转换为指针值
-void* StrToPtr(std::string str)
-{
-	return str_to_ptr(str.c_str());
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 ScopedWalkDir::ScopedWalkDir(const std::string& dir)

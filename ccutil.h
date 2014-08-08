@@ -245,9 +245,6 @@ double			StrToDouble(const std::string &s);
 //调试相关
 std::string		HexDump(const void *buf, int len);								//返回一块缓冲区的16进行描述字符串
 
-std::string		PtrToStr(void *ptr);											//将指针转换成十六进制的字符串
-void*			StrToPtr(const std::string &str);								//将代表指针的十六进制的字符串转换为指针值
-
 //////////////////////////////////////////////////////////////////////////
 //封装类
 
