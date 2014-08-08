@@ -473,7 +473,9 @@ void		file_size_readable(int64_t size, char *outbuf, int outlen);				/* 获取�
 
 int64_t		get_file_disk_usage(const char *absolute_path);							/* 获取文件或目录实际占用磁盘空间的大小 */
 int			get_file_block_size(const char *absolute_path);							/* 获取文件或目录所在文件系统磁盘区块的大小 */
-int64_t		compute_file_disk_usage(int64_t real_size, int block_size);				/* 根据文件实际大小和分区块大小获取实际占用磁盘空间 */
+
+#define		CALC_DISK_USAGE(real_size, block_size) \
+			(((real_size) + (block_size)) & (~((block_size) - 1)))					/* 根据文件实际大小和分区块大小计算实际占用的磁盘空间 */
 
 FILE*		xfopen(const char* file, const char* mode);								/* 打开文件 */
 int			xfread(FILE* fp, int separator, size_t max_count,							

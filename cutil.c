@@ -1010,9 +1010,8 @@ size_t _path_valid(const char* path, int absolute)
 	return len;
 }
 
-/* 保证目录路径以分隔符结尾，返回新路径的长度 */
-/* path和outubf可以相同，表示对某一路径缓冲区进行操作 */
-/* 失败返回0 */
+/* 保证目录路径以分隔符结尾，返回新路径的长度，失败返回0 */
+/* path和outbuf可以相同，表示对某一路径缓冲区进行操作 */
 static
 size_t _end_with_slash(const char* path, char* outbuf, size_t outlen) 
 {
@@ -1427,7 +1426,7 @@ int unique_file(const char* path, char *buf, size_t len)
 }
 
 /* 获取可用的目录路径 */
-/* 返回的路径名不以路径分隔符结尾 */
+/* 返回的路径名是否以分隔符结尾与原路径相同 */
 int unique_dir(const char* path, char *buf, size_t len)
 {
 	int has_slash, i;
@@ -1459,11 +1458,11 @@ int unique_dir(const char* path, char *buf, size_t len)
 
 		xstrlcpy(buf, path, len);
 		sprintf(buf + plen, " (%d)", i);
-		if (has_slash)
-		{
+		if (has_slash) {
 			buf[explen-2] = PATH_SEP_CHAR;
 			buf[explen-1] = '\0';
-		}	
+		}
+
 		if (!path_file_exists(buf))
 			return 1;
 	}
@@ -2125,10 +2124,10 @@ int copy_directories(const char *src, const char *dst,
 	/* 检查规则1 */
 #if defined OS_WIN
 	if (!strcasecmp(sdir, ddir))
-		goto copy_dirs_error;
+		return 0;
 #else
 	if (!strcmp(sdir, ddir))
-		goto copy_dirs_error;
+		return 0;
 #endif
 
 	/* 检查规则2 */
@@ -2139,14 +2138,14 @@ int copy_directories(const char *src, const char *dst,
 #endif
 
 	if (p == ddir)
-		goto copy_dirs_error;
+		return 0;
 
 	/* 合成目标目录 */
 	{
 		char dirname[MAX_PATH];
 		const char* fn = path_find_file_name(sdir);
 		if (!fn)
-			goto copy_dirs_error;
+			return 0;
 
 		strcpy(dirname, fn);
 
@@ -2156,30 +2155,17 @@ int copy_directories(const char *src, const char *dst,
 #endif
 		memcpy(target_dir, ddir, dlen + 1);
 		if (!dirname || xstrlcat(target_dir, dirname, MAX_PATH) >= MAX_PATH)
-			goto copy_dirs_error;
+			return 0;
 	}
 
-	/* 检查规则3 */
-	if (
-#ifdef OS_WIN
-		!strcasecmp(sdir, target_dir)
-#else
-		!strcmp(sdir, target_dir)
-#endif
-		)
-		goto copy_dirs_error;
-
-	/* 如果目标目录下已经存在此目录或文件 */
+	/* 如果目标目录下已经存在此目录，说明违反了规则3 */
+	/* 如果已经存在同名文件，则无法创建目录 */
 	if (path_file_exists(target_dir) || 
 		!create_directory(target_dir))
-		goto copy_dirs_error;
+		return 0;
 
 	/* 递归复制 */
 	return _copy_directories(sdir, sdir, target_dir, func, arg);
-
-copy_dirs_error:
-
-	return 0;
 }
 
 /* 
@@ -2190,32 +2176,32 @@ copy_dirs_error:
 int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int regular_only, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
-	char buf[MAX_PATH+1];
+	char buf[MAX_PATH];
 
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
-				continue;
-			else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-				if (walk_entry_is_dir(ctx)){				//目录
-					if (recursively){
-						if (!foreach_file(buf, func, recursively, regular_only, arg))
-							WALK_END_RETURN_0;
-					}
-				} else {										//文件
-					if (!regular_only || walk_entry_is_regular(ctx)){
-						if (!(*func)(buf, arg))
-							WALK_END_RETURN_0;
-					}
-				}
-			} else
-				WALK_END_RETURN_0;
-		}while(walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (!ctx)
 		return 0;
+
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
+			if (walk_entry_is_dir(ctx)){				//目录
+				if (recursively){
+					if (!foreach_file(buf, func, recursively, regular_only, arg))
+						WALK_END_RETURN_0;
+				}
+			} else {									//文件
+				if (!regular_only || walk_entry_is_regular(ctx)) {
+					if (!(*func)(buf, arg))
+						WALK_END_RETURN_0;
+				}
+			}
+		} else
+			WALK_END_RETURN_0;
+	} while (walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 
 	return 1;
 }
@@ -2227,25 +2213,25 @@ int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int
 int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
-	char buf[MAX_PATH+1];
+	char buf[MAX_PATH];
 
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
-				continue;
-			else if (walk_entry_is_dir(ctx)) {				//目录
-				if (walk_entry_path(ctx, buf, MAX_PATH)) {
-					if (!(*func)(buf, arg))
-						WALK_END_RETURN_0;	
-				} else
-					WALK_END_RETURN_0;
-			}
-		} while (walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (ctx)
 		return 0;
+
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else if (walk_entry_is_dir(ctx)) {				//目录
+			if (walk_entry_path(ctx, buf, MAX_PATH)) {
+				if (!(*func)(buf, arg))
+					WALK_END_RETURN_0;	
+			} else
+				WALK_END_RETURN_0;
+		}
+	} while (walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 
 	return 1;
 }
@@ -2387,29 +2373,35 @@ int64_t file_size(const char* path)
 #ifdef OS_WIN
 	HANDLE handle;
 	LARGE_INTEGER li;
-#ifdef USE_UTF8_STR
-	wchar_t wpath[MAX_PATH];
+#else
+	struct stat st;
+#endif
+
 	if (!_path_valid(path, 0))
 		return -1;
-	if (!UTF82UNI(path, wpath, MAX_PATH))
-		return -1;
-	handle = CreateFileW(wpath, FILE_READ_EA, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+
+#ifdef OS_WIN
+#ifdef USE_UTF8_STR
+	{
+		wchar_t wpath[MAX_PATH];
+		if (!UTF82UNI(path, wpath, MAX_PATH))
+			return -1;
+		handle = CreateFileW(wpath, FILE_READ_EA, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+	}
 #else /* MBCS */
 	handle = CreateFileA(path, FILE_READ_EA, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
 #endif
 	if (handle == INVALID_HANDLE_VALUE)
 		return -1;
-	if (!GetFileSizeEx(handle, &li))
-	{
+
+	if (!GetFileSizeEx(handle, &li)) {
 		CloseHandle(handle);
 		return -1;
 	}
+
 	CloseHandle(handle);
 	return li.QuadPart;
-#else /* POSIX */
-	struct stat st;
-	if (!_path_valid(path, 0))
-		return -1;
+#else
 	if (stat(path, &st))
 		return -1;
 
@@ -2475,12 +2467,6 @@ int64_t get_file_disk_usage(const char *path)
 
 	return st.st_blocks * 512;
 #endif
-}
-
-/* 根据文件实际大小和分区块大小获取实际占用磁盘空间 */
-int64_t compute_file_disk_usage(int64_t real_size, int block_size)
-{
-	return (real_size + block_size) & (~(block_size - 1));
 }
 
 /* 获取可读性强的文件大小 */ 
