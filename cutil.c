@@ -1814,12 +1814,7 @@ int create_directory(const char *dir)
 #endif
 }
 
-/*
- * 递归创建目录
- * 注意：1、路径名必须是绝对路径名
- * 2、如果路径名以"\"结尾，那最后的部分创建为目录
- * 注：linux下dir必须为UTF-8编码
- */
+/* 创建多级目录 */
 int create_directories(const char* dir)
 {
 	char *pb, *p, *pe;
