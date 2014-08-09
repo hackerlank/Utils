@@ -3891,19 +3891,19 @@ int read_file_bom(FILE *fp, char *outbuf, size_t outlen)
 		if (len == 1) {
 			continue;
 		} else if (len == 2) {
-			if (!strncmp(UTF16LE_BOM, buf, len))
+			if (!memcmp(UTF16LE_BOM, buf, len))
 				utf16le = 1;
-			else if (!strncmp(UTF16BE_BOM, buf, len))
+			else if (!memcmp(UTF16BE_BOM, buf, len))
 				utf16be = 1;
 		} else if (len == 3) {
-			if (!strncmp(UTF8_BOM, buf, len))
+			if (!memcmp(UTF8_BOM, buf, len))
 				FOUND_FILE_BOM("UTF-8")
 		} else if (len == 4) {
-			if (!strncmp(UTF32LE_BOM, buf, len))
+			if (!memcmp(UTF32LE_BOM, buf, len))
 				FOUND_FILE_BOM("UTF-32LE")
-			else if (!strncmp(UTF32BE_BOM, buf, len))
+			else if (!memcmp(UTF32BE_BOM, buf, len))
 				FOUND_FILE_BOM("UTF-32BE")
-			else if (!strncmp(GB18030_BOM, buf, len))
+			else if (!memcmp(GB18030_BOM, buf, len))
 				FOUND_FILE_BOM("GB18030")
 			else {
 				if (utf16le) {
