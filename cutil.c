@@ -339,7 +339,7 @@ void set_default_crash_handler()
 #endif /* OS_WIN */
 }
 
-#endif
+#endif /* #ifdef USE_CRASH_HANDLER */
 
 /************************************************************************/
 /*                         Memory 内存管理                               */
@@ -975,7 +975,7 @@ size_t hash_pjw (const char *x, size_t tablesize)
 /* 判断路径名是否有效 */
 /* 若路径有效，返回路径名字符串的长度；否则返回0 */
 static inline 
-size_t path_valid(const char* path, int absolute)
+size_t _path_valid(const char* path, int absolute)
 {
 	size_t len;
 
@@ -989,7 +989,7 @@ size_t path_valid(const char* path, int absolute)
 
 #ifdef OS_WIN
 		if (xisalpha(path[0]) && !(path[1] == ':' && path[2] == '\\') &&		/* 本地磁盘 */
-			!(path[0] == '\\' && path[1] == '\\'))		/* 网络共享 */
+			!(path[0] == '\\' && path[1] == '\\'))		/* UNC 网络共享 */
 			return 0;
 #else
 		if (path[0] != '/')
@@ -1000,12 +1000,35 @@ size_t path_valid(const char* path, int absolute)
 	return len;
 }
 
+/* 保证目录路径以分隔符结尾，返回新路径的长度，失败返回0 */
+/* path和outbuf可以相同，表示对某一路径缓冲区进行操作 */
+static
+size_t _end_with_slash(const char* path, char* outbuf, size_t outlen) 
+{
+	size_t len = _path_valid(path, 0);
+	if (!len || outlen <= len)
+		return 0;
+
+	if (path != outbuf)
+		memcpy(outbuf, path, len + 1);
+
+	if (path[len - 1] != PATH_SEP_CHAR) {
+		if (len + 1 == outlen)
+			return 0;
+
+		outbuf[len] = PATH_SEP_CHAR;
+		outbuf[++len] = '\0';
+	}
+
+	return len;
+}
+
 size_t strnlen(register const char *s, register size_t maxlen)
 {
+
 	const char *end= (const char *)memchr(s, '\0', maxlen);
 	return end ? (size_t) (end - s) : maxlen;
 }
-
 /* 判断path所指的路径是否是绝对路径 */
 int	is_absolute_path(const char* path)
 {
@@ -1014,7 +1037,7 @@ int	is_absolute_path(const char* path)
 
 #ifdef OS_WIN
 	if ((xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') ||	/* 本地磁盘 */
-		(path[0] == '\\' && path[1] == '\\'))						/* 网络共享 */
+		(path[0] == '\\' && path[1] == '\\'))						/* UNC 网络共享 */
 		return 1;
 #else
 	if (path[0] == '/')
@@ -1108,6 +1131,7 @@ const char* path_find_extension(const char* path)
 }
 
 /* 返回路径所指目录/文件的上级目录路径(包含最后的路径分隔符) */
+/* path和outbuf可以相同，表示在某一路径缓冲区中进行操作 */
 /* 例1: C:\a.txt -> C:\ */
 /* 例2: /usr/include/ -> /usr/ */
 /* 返回值: 成功返回1，错误返回0并且outbuf为"" */
@@ -1116,12 +1140,12 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 {
 	size_t plen, nlen;
 
-	if (!path)
+	plen = _path_valid(path, 0);
+	if (!plen)
 		return 0;
 
-	plen = strlen(path);
-
-	memset(outbuf, 0, outlen);
+	if (outbuf != path)
+		memset(outbuf, 0, outlen);
 
 #if (defined OS_WIN) && (!defined USE_UTF8_STR)
 	{
@@ -1150,9 +1174,8 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 	}
 #else //UTF-8
 	{
-		const char* p;
+		const char* p = path + plen - 1;
 
-		p = path + plen - 1;
 		while (*p == PATH_SEP_CHAR && p != path)
 			--p;
 		
@@ -1165,7 +1188,11 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 		nlen = p - path + 1 + 1;
 		if (outlen < nlen)
 			return 0;
-		xstrlcpy(outbuf, path, nlen);
+
+		if (outbuf == path)
+			outbuf[nlen-1] = '\0';
+		else
+			xstrlcpy(outbuf, path, nlen);
 	
 		return 1;
 	}
@@ -1175,7 +1202,7 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 /* 路径所指文件/目录是否存在 */
 int path_file_exists(const char* path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1202,7 +1229,7 @@ int path_file_exists(const char* path)
 /* 路径是否是有效目录 */
 int path_is_directory(const char* path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1230,7 +1257,7 @@ int path_is_directory(const char* path)
 /* 路径是否是文件（存在且不是目录） */
 int path_is_file(const char* path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1360,7 +1387,7 @@ int unique_file(const char* path, char *buf, size_t len)
 	size_t plen, elen;
 	int i;
 
-	plen = path_valid(path, 0);
+	plen = _path_valid(path, 0);
 	if (!plen)
 		return 0;
 
@@ -1395,12 +1422,12 @@ int unique_file(const char* path, char *buf, size_t len)
 }
 
 /* 获取可用的目录路径 */
-/* 返回的路径名不以路径分隔符结尾 */
+/* 返回的路径名是否以分隔符结尾与原路径相同 */
 int unique_dir(const char* path, char *buf, size_t len)
 {
 	int has_slash, i;
 
-	size_t plen = path_valid(path, 0); 
+	size_t plen = _path_valid(path, 0); 
 	if (!plen)
 		return 0;
 
@@ -1427,11 +1454,11 @@ int unique_dir(const char* path, char *buf, size_t len)
 
 		xstrlcpy(buf, path, len);
 		sprintf(buf + plen, " (%d)", i);
-		if (has_slash)
-		{
+		if (has_slash) {
 			buf[explen-2] = PATH_SEP_CHAR;
 			buf[explen-1] = '\0';
-		}	
+		}
+
 		if (!path_file_exists(buf))
 			return 1;
 	}
@@ -1488,8 +1515,7 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
 	for (p = q = path; *p; p++) {
 		if (PATH_CHAR_ILLEGAL(*p, platform) && 
 			(!reserve_separator || *p != PATH_SEP_CHAR)) {
-			if (*q != ' ')
-				*q = ' ';
+			*q = ' ';
 			if (q == path || *(q-1) != ' ')
 				q++;
 		} else {
@@ -1569,30 +1595,19 @@ struct walk_dir_context {
 struct walk_dir_context* walk_dir_begin(const char *dir)
 {
 	struct walk_dir_context* ctx = NULL;
-	const char* p;
-	size_t len;
 
 #ifdef OS_WIN
 	char buf[MAX_PATH + 3];   /* strlen("*.*") */
 #endif
 
-	len = path_valid(dir, 0);
-	if (!len)
-		return NULL;
-
 	ctx = XCALLOC(struct walk_dir_context);
-	strcpy(ctx->basedir, dir);
-
-	p = dir + len - 1;
-	if (*p != PATH_SEP_CHAR) {
-		if (len + 1 == MAX_PATH)
-			return NULL;
-
-		ctx->basedir[len] = PATH_SEP_CHAR;
+	if (!_end_with_slash(dir, ctx->basedir, sizeof(ctx->basedir))) {
+		xfree(ctx);
+		return NULL;
 	}
 
 #ifdef OS_WIN
-	snprintf(buf, MAX_PATH, "%s*.*", ctx->basedir);
+	xsnprintf(buf, sizeof(buf), "%s*.*", ctx->basedir);
 #ifdef USE_UTF8_STR
 	{
 		wchar_t wbuf[MAX_PATH];
@@ -1775,7 +1790,7 @@ void walk_dir_end(struct walk_dir_context *ctx)
  */
 int create_directory(const char *dir)
 {
-	if (!path_valid(dir, 0))
+	if (!_path_valid(dir, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -1791,97 +1806,89 @@ int create_directory(const char *dir)
 	return CreateDirectoryA(dir, NULL);
 #endif
 #else //Linux
-	return mkdir(dir, 0755) == 0;
+	return mkdir(dir, 0700) == 0;
 #endif
 }
 
-/*
- * 递归创建目录
- * 注意：1、路径名必须是绝对路径名
- * 2、如果路径名以"\"结尾，那最后的部分创建为目录
- * 注：linux下dir必须为UTF-8编码
- */
+/* 创建多级目录 */
 int create_directories(const char* dir)
 {
-#ifdef OS_WIN
-	wchar_t wdir[MAX_PATH];
-	wchar_t *pb, *p, *pe;
+	char *pb, *p, *pe;
+	char u8dir[MAX_PATH];
+	size_t len;
 
-	size_t len = path_valid(dir, 1);
-	if (!len)
-		return 0;
-	else if (len == MIN_PATH)			/* "C:\", "/" */
-		return 1;
-
-#ifdef USE_UTF8_STR
-	if (!UTF82UNI(dir, wdir, MAX_PATH))
-		return 0;
-#else
-	if (!MBCS2UNI(dir, wdir, MAX_PATH))
-		return 0;
+#if (defined OS_WIN) && (!defined USE_UTF8_STR)
+	char wbuf[MAX_PATH];
 #endif
 
-	pb = wdir;
-	pe = wdir + len;
+	len = _path_valid(dir, 1);
+	if (!len)
+		return 0;
 
-	p = pb + MIN_PATH;
-	while((p = wcschr(p, PATH_SEP_WCHAR)))
+	if (is_root_path(dir))
+		return 1;
+
+	/* 如果在Windows下使用多字节字符集，首先转为UTF-8字符集 */
+#if (defined OS_WIN) && (!defined USE_UTF8_STR)
 	{
-		*p = L'\0';
+	wchar_t wbuf[MAX_PATH];
+	if (!MBCS2UNI(dir, wbuf, MAX_PATH) ||
+		!UNI2UTF8(wbuf, u8dir, MAX_PATH))
+		return 0;
+	}
+	len = strlen(u8dir);
+#else
+	memcpy(u8dir, dir, len + 1);
+#endif
 
-		if (PathFileExistsW(pb))
-		{
-			if (!PathIsDirectoryW(pb))
-				return 0;
-		}
-		else if (!CreateDirectoryW(pb, NULL))
+	pb = u8dir;
+	pe = u8dir + len;
+
+	/* 定位到路径的第一个有效文件[夹] */
+#ifdef OS_WIN
+	/* UNC路径要忽略主机名 */
+	if (*pb == PATH_SEP_CHAR) {		  /* \\192.168.1.6\shared\  */
+		p = strchr(pb + 2, PATH_SEP_CHAR);
+		if (!p)
 			return 0;
+		++p;
+	} else
+		p = pb + MIN_PATH;				/* "a\b\c\d.txt */
+#else
+	p = pb + MIN_PATH;					/* "a/b/c/d.txt */
+#endif
 
-		*p = PATH_SEP_WCHAR;
+	/* 逐级创建文件夹 */
+	while((p = strchr(p, PATH_SEP_CHAR)))
+	{
+		*p = '\0';
 
+		/* 如果在Windows下使用多字节字符集，
+		 * path_is_directory 等系列函数参数也应为多字节字符串，不能直接使用 */
+#if (defined OS_WIN) && (!defined USE_UTF8_STR)
+		if (!MBCS2UNI(pb, wbuf, MAX_PATH))
+			return 0;
+		if (!PathIsDirectoryW(wbuf) && !CreateDirectoryW(wbuf))
+			return 0;
+#else
+		if (!path_is_directory(pb) && !create_directory(pb))
+			return 0;
+#endif
+
+		*p = PATH_SEP_CHAR;
+
+		/* 路径最后以"/"结尾 */
 		if (++p >= pe)
 			break;
 	}
 
 	return 1;
-
-#else //Linux
-	char *pb, *p, *pe;
-	char buf[MAX_PATH+1];
-
-	size_t len = path_valid(dir, 1);
-	if (!len)
-		return 0;
-	else if (len == MIN_PATH)			/* "C:\", "/" */
-		return 1;
-
-	strcpy(buf, dir);
-
-	pb = buf;							/* path begin */
-	pe = buf + len;						/* path end */
-
-	p = pb + MIN_PATH;							/* "a\b\c\d.txt */
-	while((p = strchr(p, PATH_SEP_CHAR)))
-	{
-		*p = '\0';
-
-		if (path_is_file(pb) || (!path_is_directory(pb) && !create_directory(pb)))
-			return 0;
-
-		*p = PATH_SEP_CHAR;
-
-		if (++p >= pe)
-			break;								/* 以"/"结尾 */
-	}
-
-	return 1;
-#endif
 }
 
 /* 删除一个空目录 */
 int delete_directory(const char *dir)
 {	
-	if (!path_valid(dir, 0))
+	if (!_path_valid(dir, 0))
 		return 0;
 	
 #ifdef OS_WIN
@@ -1901,40 +1908,40 @@ int delete_directory(const char *dir)
 #endif
 }
 
-#define TRAV_RETURN_0 do{	\
+#define WALK_END_RETURN_0 do{	\
 	walk_dir_end(ctx);		\
 	return 0;				\
-	}while(0)
+}while(0)
 
 /* 递归删除目录下的内容 */
-static int _delete_directories(const char *dir, delete_dir_cb func, void *arg)
+int delete_directories(const char *dir, delete_dir_cb func, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
 	char buf[MAX_PATH];
 	int succ;
 
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx)|| walk_entry_is_dotdot(ctx))
-				continue;
-			else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-				if (!walk_entry_is_dir(ctx)) {		//文件
-					succ = delete_file(buf);
-					if ((func && !func(buf, 0, succ, arg)))
-						TRAV_RETURN_0;
-				} else {							//目录
-					succ = _delete_directories(buf, func, arg);
-					if ((func && !func(buf, 1, succ, arg)))
-						TRAV_RETURN_0;
-				}
-			} else
-				TRAV_RETURN_0;
-		}while(walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (!ctx)
 		return 0;
+
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
+			if (!walk_entry_is_dir(ctx)) {		//文件
+				succ = delete_file(buf);
+				if ((func && !func(buf, 0, succ, arg)))
+					WALK_END_RETURN_0;
+			} else {							//目录
+				succ = delete_directories(buf, func, arg);
+				if ((func && !func(buf, 1, succ, arg)))
+					WALK_END_RETURN_0;
+			}
+		} else
+			WALK_END_RETURN_0;
+	} while(walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 
 	if (!delete_directory(dir))
 		return 0;
@@ -1942,35 +1949,23 @@ static int _delete_directories(const char *dir, delete_dir_cb func, void *arg)
 	return 1;
 }
 
-int delete_directories(const char *dir, delete_dir_cb func, void *arg)
-{
-	if (!path_valid(dir, 0))
-		return 0;
-
-	return _delete_directories(dir, func, arg);
-}
-
 /* 判断目录是否是空目录 */
 int is_empty_dir(const char* dir)
 {
 	struct walk_dir_context* ctx = NULL;
-
-	if (!path_is_directory(dir))
-		return 0;
-
+	
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
-				continue;
-			else 
-				TRAV_RETURN_0;
-		} while (walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (!ctx)
 		return 0;
 
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else 
+			WALK_END_RETURN_0;
+	} while (walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 	return 1;
 }
 
@@ -1992,7 +1987,7 @@ static int _delete_empty_directories(const char* dir)
 				} else								//文件
 					empty = 0;
 			} else
-				TRAV_RETURN_0;
+				WALK_END_RETURN_0;
 		} while(walk_dir_next(ctx));
 
 		walk_dir_end(ctx);
@@ -2009,7 +2004,7 @@ static int _delete_empty_directories(const char* dir)
  */
 int delete_empty_directories(const char* dir)
 {
-	if (!path_valid(dir, 0))
+	if (!_path_valid(dir, 0))
 		return 0;
 
 	/* 仅当所有子目录均不包含文件时返回1 */
@@ -2050,7 +2045,7 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 			size_t	partlen = strlen(partial);		//相对路径长度
 
 			if (dstlen + partlen + 1 > sizeof(dpath))
-				TRAV_RETURN_0;
+				WALK_END_RETURN_0;
 
 			snprintf(dpath, sizeof(dpath), "%s%s", dstdir, partial);
 
@@ -2058,20 +2053,20 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 				//拷贝此文件
 				succ = copy_file(spath, dpath, 1);
 				if (func && !func(spath, dpath, 0, succ, arg))
-					TRAV_RETURN_0;
+					WALK_END_RETURN_0;
 			} else {							    //目录
 				//创建新目录
 				succ = create_directory(dpath);
 				if (func && !func(spath, dpath, 2, succ, arg))
-					TRAV_RETURN_0;
+					WALK_END_RETURN_0;
 
 				//递归拷贝目录
 				succ = _copy_directories(spath, srcdir, dstdir, func, arg);
 				if (func && !func(spath, dpath, 1, succ, arg))
-					TRAV_RETURN_0;
+					WALK_END_RETURN_0;
 			}
 		} else
-			TRAV_RETURN_0;
+			WALK_END_RETURN_0;
 
 	} while (walk_dir_next(ctx));
 
@@ -2081,6 +2076,7 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 }
 
 /* 递归复制目录(将源目录复制到目标目录下)
+ * 如果目标目录不存在将被创建
  * 如将/a目录复制到/b目录下，则形成的目录是/b/a/
 
  * 注意1（失败情况）：
@@ -2103,40 +2099,26 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 int copy_directories(const char *src, const char *dst, 
 					copy_dir_cb func, void *arg)
 {
-	char sdir[MAX_PATH+1], ddir[MAX_PATH+1];
-	char dbuf[MAX_PATH+1], lastdir[256];	/* Linux支持的最长文件名/目录名为255 */
+	char sdir[MAX_PATH], ddir[MAX_PATH];
+	char target_dir[MAX_PATH];
 	char *p;
-	int ret;	
 
-	size_t slen = path_valid(src, 0);
-	size_t dlen = path_valid(dst, 0);
-
+	/* 确保目录以分隔符结尾 */
+	size_t slen = _end_with_slash(src, sdir, sizeof(sdir));
+	size_t dlen = _end_with_slash(dst, ddir, sizeof(ddir));
 	if (!slen || !dlen)
 		return 0;
 
-	if (!path_is_directory(src) || !path_is_directory(dst))
+	if (!path_is_directory(sdir) || !create_directories(ddir))
 		return 0;
-
-	/* 确保目录以分隔符结尾 */
-	strcpy(sdir, src);
-	if (sdir[slen-1] != PATH_SEP_CHAR) {
-		sdir[slen++] = PATH_SEP_CHAR;
-		sdir[slen] = '\0';
-	}
-
-	strcpy(ddir, dst);
-	if (ddir[dlen-1] != PATH_SEP_CHAR) {
-		ddir[dlen++] = PATH_SEP_CHAR;
-		ddir[dlen] = '\0';
-	}
 
 	/* 检查规则1 */
 #if defined OS_WIN
 	if (!strcasecmp(sdir, ddir))
-		goto copy_dirs_error;
+		return 0;
 #else
 	if (!strcmp(sdir, ddir))
-		goto copy_dirs_error;
+		return 0;
 #endif
 
 	/* 检查规则2 */
@@ -2147,68 +2129,34 @@ int copy_directories(const char *src, const char *dst,
 #endif
 
 	if (p == ddir)
-		goto copy_dirs_error;
+		return 0;
 
-	/* 检查规则3 */
-#ifdef OS_WIN
-	p = strcasestr(sdir, ddir);
-#else
-	p = strstr(sdir, ddir);
-#endif
-
-	if (p == sdir)
+	/* 合成目标目录 */
 	{
-		char *q = sdir + dlen;
-		char *end = sdir + slen;
-		int slashes = 0;
+		char dirname[MAX_PATH];
+		const char* fn = path_find_file_name(sdir);
+		if (!fn)
+			return 0;
 
-		for (;q < end; q++)
-			if (*q == PATH_SEP_CHAR)
-				slashes++;
+		strcpy(dirname, fn);
 
-		if (slashes == 1)
-			goto copy_dirs_error;
+#ifdef OS_WIN
+		if (strlen(fn) == MIN_PATH)		/* 源目录是根驱动器的情况 */
+			xsnprintf(dirname, MAX_PATH, "%c_DRIVE", fn[0]);
+#endif
+		memcpy(target_dir, ddir, dlen + 1);
+		if (!dirname || xstrlcat(target_dir, dirname, MAX_PATH) >= MAX_PATH)
+			return 0;
 	}
 
-	/* 在目标目录下创建同名文件夹，需要找出源目录的最后一级目录名 */
-	/* path_find_file_name返回值以/结尾,还要注意源目录是C:\的情况 */
-	p = (char*)path_find_file_name(sdir);
-	if (!p)
-		goto copy_dirs_error;
-
-	memset(lastdir, 0, sizeof(lastdir));
-#ifdef OS_WIN
-	if (strlen(p) == MIN_PATH)	/* C:\ */
-	{
-		lastdir[0] = p[0];
-		strcpy(lastdir+1, "_DRIVE\\");
-	}
-	else
-		xstrlcpy(lastdir, p, sizeof(lastdir));
-#else
-	ASSERT(strlen(p) != MIN_PATH);
-	xstrlcpy(lastdir, p, sizeof(lastdir));
-#endif
-
-	memset(dbuf, 0, sizeof(dbuf));
-	strcpy(dbuf, ddir);
-	xstrlcat(dbuf, lastdir, sizeof(dbuf));
-
-	/* 如果目标目录下已经存在此目录或文件 */
-	dbuf[strlen(dbuf)-1] = '\0';
-	if (path_file_exists(dbuf)
-	   ||!create_directory(dbuf))
-		goto copy_dirs_error;
+	/* 如果目标目录下已经存在此目录，说明违反了规则3 */
+	/* 如果已经存在同名文件，则无法创建目录 */
+	if (path_file_exists(target_dir) || 
+		!create_directory(target_dir))
+		return 0;
 
 	/* 递归复制 */
-	dbuf[strlen(dbuf)] = PATH_SEP_CHAR;
-	ret = _copy_directories(sdir, sdir, dbuf, func, arg);
-
-	return ret;
-
-copy_dirs_error:
-
-	return 0;
+	return _copy_directories(sdir, sdir, target_dir, func, arg);
 }
 
 /* 
@@ -2219,32 +2167,32 @@ copy_dirs_error:
 int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int regular_only, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
-	char buf[MAX_PATH+1];
+	char buf[MAX_PATH];
 
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
-				continue;
-			else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-				if (walk_entry_is_dir(ctx)){				//目录
-					if (recursively){
-						if (!foreach_file(buf, func, recursively, regular_only, arg))
-							TRAV_RETURN_0;
-					}
-				} else {										//文件
-					if (!regular_only || walk_entry_is_regular(ctx)){
-						if (!(*func)(buf, arg))
-							TRAV_RETURN_0;
-					}
-				}
-			} else
-				TRAV_RETURN_0;
-		}while(walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (!ctx)
 		return 0;
+
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
+			if (walk_entry_is_dir(ctx)){				//目录
+				if (recursively){
+					if (!foreach_file(buf, func, recursively, regular_only, arg))
+						WALK_END_RETURN_0;
+				}
+			} else {									//文件
+				if (!regular_only || walk_entry_is_regular(ctx)) {
+					if (!(*func)(buf, arg))
+						WALK_END_RETURN_0;
+				}
+			}
+		} else
+			WALK_END_RETURN_0;
+	} while (walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 
 	return 1;
 }
@@ -2256,25 +2204,25 @@ int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int
 int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
-	char buf[MAX_PATH+1];
+	char buf[MAX_PATH];
 
 	ctx = walk_dir_begin(dir);
-	if (ctx) {
-		do {
-			if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
-				continue;
-			else if (walk_entry_is_dir(ctx)) {				//目录
-				if (walk_entry_path(ctx, buf, MAX_PATH)) {
-					if (!(*func)(buf, arg))
-						TRAV_RETURN_0;	
-				} else
-					TRAV_RETURN_0;
-			}
-		} while (walk_dir_next(ctx));
-
-		walk_dir_end(ctx);
-	} else
+	if (ctx)
 		return 0;
+
+	do {
+		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
+			continue;
+		else if (walk_entry_is_dir(ctx)) {				//目录
+			if (walk_entry_path(ctx, buf, MAX_PATH)) {
+				if (!(*func)(buf, arg))
+					WALK_END_RETURN_0;	
+			} else
+				WALK_END_RETURN_0;
+		}
+	} while (walk_dir_next(ctx));
+
+	walk_dir_end(ctx);
 
 	return 1;
 }
@@ -2282,7 +2230,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 /* 删除文件 */
 int delete_file(const char *path)
 {
-	if (!path_valid(path, 0))
+	if (!_path_valid(path, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -2302,60 +2250,10 @@ int delete_file(const char *path)
 #endif
 }
 
-/* 删除文件及向上的空目录直到指定目录
- * 删除文件，并查看文件所在的目录是否是空目录，如果是空目录且不是top_dir，继续删除此目录
- * 依次向上搜寻，遇到非空目录或已达到top_dir为止
- * path和top_dir必须同时是绝对路径或者相对路径，top_dir是否以路径分隔符结尾无影响
- * 注：在任何情况下，已经确保不会删除根目录(/或C:\)，否则将是一场灾难！
- */
-int	delete_file_empty_updir(const char* path, const char* top_dir)
-{
-	char pbuf[MAX_PATH], *p;
-	size_t top_len;
-
-	/* path必须是top_dir目录下的文件 */
-	if (!path_valid(path, 0) 
-		|| !path_valid(top_dir, 0) 
-		|| strstr(path, top_dir) != path)
-		return 0;
-
-	/* 删除指定文件
-	 * 如果文件删除失败，或者路径参数有无，或者文件正在使用，或者...
-	 * 所以继续删除目录也很有可能会失败，因此直接返回失败值
-	 */
-	if (!delete_file(path))
-		return 0;
-
-	/* 复制路径到缓冲区 */
-	xstrlcpy(pbuf, path, MAX_PATH);
-
-	/* 终止目录的路径长度，包括结尾的路径分隔符 */
-	top_len = strlen(top_dir);
-	if (top_dir[top_len-1] != PATH_SEP_CHAR)
-		top_len++;
-
-	/* 逐级删除上层空目录 */
-	while((p = strrchr(pbuf, PATH_SEP_CHAR)))
-	{
-		*(p+1) = '\0';
-		if (is_root_path(pbuf)					//Oops! 不要删除根文件系统！
-			|| (size_t)(p - pbuf) < top_len		//到达顶层目录
-			|| !is_empty_dir(pbuf))				//遇到非空目录
-			return 1;
-
-		if (!delete_directory(pbuf))
-			return 0;
-
-		*p = '\0';
-	}
-
-	return 1;
-}
-
 /* 复制文件 */
 int copy_file(const char *exists, const char *newfile, int overwritten)
 {
-	if (!path_valid(exists, 0) || !path_valid(newfile, 0))
+	if (!_path_valid(exists, 0) || !_path_valid(newfile, 0))
 		return 0;
 
 #ifdef OS_WIN
@@ -2417,7 +2315,7 @@ int copy_file(const char *exists, const char *newfile, int overwritten)
  */
 int move_file(const char* exists, const char* newfile, int overwritten)
 {
-	if (!path_valid(exists, 0) || !path_valid(newfile, 0))
+	if (!_path_valid(exists, 0) || !_path_valid(newfile, 0))
 		return 0;
 
 	if (!path_is_file(exists) || path_is_directory(newfile))
@@ -2461,34 +2359,40 @@ int move_file(const char* exists, const char* newfile, int overwritten)
 }
 
 /* 获取文件长度 */
-int64_t file_size(const char* path)
+int file_size(const char* path)
 {
 #ifdef OS_WIN
 	HANDLE handle;
-	DWORD length;
+	DWORD size;
+#else
+	struct stat st;
+#endif
+
+	if (!_path_valid(path, 0))
+		return -1;
+
+#ifdef OS_WIN
 #ifdef USE_UTF8_STR
-	wchar_t wpath[MAX_PATH];
-	if (!path_valid(path, 0))
-		return -1;
-	if (!UTF82UNI(path, wpath, MAX_PATH))
-		return -1;
-	handle = CreateFileW(wpath, FILE_READ_EA, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+	{
+		wchar_t wpath[MAX_PATH];
+		if (!UTF82UNI(path, wpath, MAX_PATH))
+			return -1;
+		handle = CreateFileW(wpath, FILE_READ_EA, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+	}
 #else /* MBCS */
 	handle = CreateFileA(path, FILE_READ_EA, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
 #endif
 	if (handle == INVALID_HANDLE_VALUE)
 		return -1;
-	if (!GetFileSize(handle, &length))
-	{
+
+	if (!GetFileSize(handle, &size)) {
 		CloseHandle(handle);
 		return -1;
 	}
+
 	CloseHandle(handle);
-	return length;
-#else /* POSIX */
-	struct stat st;
-	if (!path_valid(path, 0))
-		return -1;
+	return size;
+#else
 	if (stat(path, &st))
 		return -1;
 
@@ -2507,7 +2411,7 @@ int get_file_block_size(const char *path)
 		char drive[4];
 
 		/* 检查是否是绝对路径 */
-		if (!path_valid(path, 1))
+		if (!_path_valid(path, 1))
 			return 0;
 
 		strncpy(drive, path, 3);
@@ -2546,7 +2450,7 @@ int64_t get_file_disk_usage(const char *path)
 	if (fsize <= 0)
 		return 0;
 
-	return (fsize + blocksize) & (~(blocksize - 1));
+	return CALC_DISK_USAGE(fsize, blocksize);
 #else
 	struct stat st;
 	if (stat(path, &st))
@@ -2554,12 +2458,6 @@ int64_t get_file_disk_usage(const char *path)
 
 	return st.st_blocks * 512;
 #endif
-}
-
-/* 根据文件实际大小和分区块大小获取实际占用磁盘空间 */
-int64_t compute_file_disk_usage(int64_t real_size, int block_size)
-{
-	return (real_size + block_size) & (~(block_size - 1));
 }
 
 /* 获取可读性强的文件大小 */ 
@@ -2630,61 +2528,111 @@ void xfclose(FILE* fp)
 	fclose(fp);
 }
 
-/* 读取文件
- * 读取文件直到：
- * 1、separator>=0 ? 遇到separator为止；
- * 2、maxcount>=0 ? 最多maxcount个字节为止
- * 3、文件末尾。
- * 返回值：1代表成功0代表失败，如果成功读取到的内容将存放于*outbuf中且长度为*outlen
- * 如果是遇到分隔符而结束，返回的内容将包含分隔符；任何情况下均以'\0'结尾；
- */
-int xfread(FILE* fp, int separator, size_t max_count,
-			char** outbuf, size_t* outlen)
+size_t xfread(FILE *fp, int separator, size_t max_bytes, 
+				char **lineptr, size_t *n)
 {
-    char *content;
-	size_t n = 0, bufsize = 1024;
-    int ch;
+	char *origptr, *mallptr;
+	size_t count, nm = 1024;
+	int ch;
 
-	if (!fp) {
-		ASSERT(!"xfread fp is null");
-		return 0;
-	}
+	origptr = *lineptr;
+	mallptr = NULL;
+	count = 0;
 
-	content = (char*)xmalloc(bufsize);
-
-	while ((ch = getc(fp)) != EOF) {
-		if (n == bufsize - 1) {	 /* -1 to reserver space for lastly '\0' */
-			if (n > SIZE_T_MAX /2) {
-				/* file too large */
-				xfree(content);
+	while ((ch = getc(fp)) != EOF)
+	{
+		if (origptr && count < *n - 1)	// -1 to reserve space for '\0'
+			origptr[count++] = ch;
+		else if (origptr && !mallptr)	// count == n - 1
+		{
+			if (*n > SIZE_T_MAX / 2) {
 				return 0;
-			} else {
-				/* use a larger buffer */
-				bufsize <<= 1;
-				content = (char*)xrealloc(content, bufsize);
 			}
+
+			nm = *n<<1;
+			mallptr = (char*)xmalloc(nm);
+			memcpy(mallptr, origptr, count);
+			mallptr[count++] = ch;
+		}
+		else if (mallptr)
+		{
+			if (count >= nm - 1)
+			{
+				if (nm > SIZE_T_MAX / 2) {
+					xfree(mallptr);
+					return 0;
+				}
+				nm <<=1;
+				mallptr = (char*)xrealloc(mallptr, nm);
+			}
+			mallptr[count++] = ch;
+		}
+		else
+		{
+			mallptr = (char*)xmalloc(nm);
+			mallptr[count++] = ch;
 		}
 
-		content[n++] = ch;
-
-		if (ch == separator || 
-			--max_count == 0)
+		//遇到分隔符或达到最多可以读取的字节数
+		if (ch == separator || --max_bytes == 0)
 			break;
 	}
-	
-	content[n] = '\0';
 
-	*outbuf = content;
-	*outlen = n;
+	//结束符
+	if (mallptr)
+		mallptr[count] = '\0';
+	else if (origptr && *n > 0)
+		origptr[count] = '\0';
+
+	//设置输出
+	if (mallptr)
+		*lineptr = mallptr;
+	*n = count;
+
+	return count;
+}
+
+size_t get_line(FILE *fp, char **lineptr, size_t *n)
+{
+	return xfread(fp, '\n', 0, lineptr, n);
+}
+
+/* 从文件中读取每个分隔符块进行操作 */
+int	foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
+{
+	char buf[1024], *block;
+	size_t len, nblock;
+	int ret;
+
+	block = buf;
+	len = sizeof(buf);
+	nblock = 0;
+
+	while (xfread(fp, delim, 0, &block, &len) > 0)
+	{
+		ret = (*func)(block, len, nblock, arg);
+
+		if (block != buf)
+			xfree(block);
+
+		if (!ret)
+			return 0;
+
+		block = buf;
+		len = sizeof(buf);
+		nblock++;
+	}
 
 	return 1;
 }
 
-/* 将文件读入内存 */
-/* 如果文件不存在或大于1GB，将返回NULL */
-/* 如果max_size大于零，则仅当文件大小小于指定值时才加载 */
-/* 如果文件的长度为0，则content为NULL，且length等于0 */
-/* 如果读入内存成功，缓冲区将以'\0'结尾 */
+/* 从文件流中读入每一行并进行操作 */
+int	foreach_line(FILE* fp, foreach_line_cb func, void *arg)
+{
+	return foreach_block(fp, func, '\n', arg);
+}
+
+/* 将文件内容读取到内存中 */
 struct file_mem* read_file_mem(const char* file, size_t max_size)
 {
 	struct file_mem *fm;
@@ -2692,7 +2640,7 @@ struct file_mem* read_file_mem(const char* file, size_t max_size)
 	int64_t length;
 	size_t readed;
 
-	if (!path_valid(file, 0))
+	if (!_path_valid(file, 0))
 		return NULL;
 
 	/* 获取文件大小 */
@@ -2744,7 +2692,6 @@ void free_file_mem(struct file_mem *fm)
 }
 
 /* 将内存中的数据写入文件 */
-/* 参数append:如果文件已存在，是否追加数据到文件（否则清空源文件内容） */
 int write_mem_file(const char* file, const void *data, size_t len)
 {
 	FILE *fp;
@@ -2787,129 +2734,11 @@ int write_mem_file_safe(const char *file, const void *data, size_t len)
 	return 1;
 }
 
-/* 
- * 从文件中读入以任意分隔符为结尾的一块数据
- * 如果分隔符是'\n'，即是从文件中读取一行(如下的get_line函数)
- * 【参数】：如果*lineptr不为NULL,且读入数据的长度小于*n,则入读行存放于原缓冲区中；
- * 否则将动态申请一块内存用于存放读入内容；如果*lineptr为NULL，则总是动态分配内存；
- * 【注意】：传入的缓冲区如果不够大将不会被释放(不同于GLIBC的getline)，这就意味着
- * *lineptr必须是数组或者alloca的内存。这样可以减少动态申请/释放内存的次数。
- * 返回值：返回成功读入的字节数，包括分隔符，但不包括结尾的'\0'。如果返回值为0，可能是
- *        文件为空或文件太大。
- */
-size_t get_delim(char **lineptr, size_t *n, int delim, FILE *fp)
-{
-	char *origptr, *mallptr;
-	size_t count, nm = 1024;
-	int ch;
-
-	origptr = *lineptr;
-	mallptr = NULL;
-	count = 0;
-
-	while ((ch = getc(fp)) != EOF)
-	{
-		if (origptr && count < *n - 1)	// -1 to reserve space for '\0'
-			origptr[count++] = ch;
-		else if (origptr && !mallptr)	// count == n - 1
-		{
-			if (*n > SIZE_T_MAX / 2) {
-				return 0;
-			}
-
-			nm = *n<<1;
-			mallptr = (char*)xmalloc(nm);
-			memcpy(mallptr, origptr, count);
-			mallptr[count++] = ch;
-		}
-		else if (mallptr)
-		{
-			if (count >= nm - 1)
-			{
-				if (nm > SIZE_T_MAX / 2) {
-					xfree(mallptr);
-					return 0;
-				}
-				nm <<=1;
-				mallptr = (char*)xrealloc(mallptr, nm);
-			}
-			mallptr[count++] = ch;
-		}
-		else
-		{
-			mallptr = (char*)xmalloc(nm);
-			mallptr[count++] = ch;
-		}
-
-		//分隔符
-		if (ch == delim)
-			break;
-	}
-
-	//结束符
-	if (mallptr)
-		mallptr[count] = '\0';
-	else if (origptr && *n > 0)
-		origptr[count] = '\0';
-
-	//设置输出
-	if (mallptr)
-		*lineptr = mallptr;
-	*n = count;
-
-	return count;
-}
-
-/*
- * 从文件中读入一行
- * 类似于GLIBC的getline函数，C++也实现了全局的getline
- * 下面的foreach_line函数很好地诠释了如何使用此函数
- */
-size_t get_line(char **lineptr, size_t *n, FILE *fp)
-{
-	return get_delim(lineptr, n, '\n', fp);
-}
-
-/* 从文件中读取每个分隔符块进行操作 */
-int	foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
-{
-	char buf[1024], *block;
-	size_t len, nblock;
-	int ret;
-
-	block = buf;
-	len = sizeof(buf);
-	nblock = 0;
-
-	while (get_delim(&block, &len, delim, fp) > 0)
-	{
-		ret = (*func)(block, len, nblock, arg);
-
-		if (block != buf)
-			xfree(block);
-
-		if (!ret)
-			return 0;
-
-		block = buf;
-		len = sizeof(buf);
-		nblock++;
-	}
-
-	return 1;
-}
-
-/* 从文件流中读入每一行并进行操作 */
-int	foreach_line(FILE* fp, foreach_line_cb func, void *arg)
-{
-	return foreach_block(fp, func, '\n', arg);
-}
-
 /* 获取文件系统的使用状态 */
 /* 参数path必须是绝对路径 */
 int get_fs_usage(const char* path, struct fs_usage *fsp)
 {
-	if (!path_valid(path, 1) || !fsp)
+	if (!_path_valid(path, 1) || !fsp)
 		return 0;
 
 #ifdef OS_WIN
@@ -3067,7 +2896,6 @@ const char* get_execute_dir()
 const char* get_current_dir()
 {
 	static char path[MAX_PATH];
-	size_t len;
 
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
@@ -3084,13 +2912,7 @@ const char* get_current_dir()
 		path[0] = '\0';
 #endif /* OS_WIN */
 
-	len = strlen(path);
-	if (len > 0 && len < MAX_PATH + 1)
-	{
-		if (path[len-1] != PATH_SEP_CHAR)
-			path[len] = PATH_SEP_CHAR;
-	}
-	else
+	if (!_end_with_slash(path, path, sizeof(path)))
 		path[0] = '\0';
 
 	return path;
@@ -3138,27 +2960,15 @@ static int GetShellSpecialFolder(int key, char* path) {
 const char*get_home_dir()
 {
 	static char path[MAX_PATH];
-	const char* val;
-	size_t len;
 
-	val = get_env("HOME");
-	if ((len = path_valid(val, 1))) {
-		xstrlcpy(path, val, MAX_PATH);
-		goto success;
-	}
+	if (_end_with_slash(get_env("HOME"), path, MAX_PATH))
+		return path;
 
 #ifdef OS_WIN
 	{
 		wchar_t wpath[MAX_PATH];
-		wchar_t* last_slash;
 		if (!SHGetSpecialFolderPathW(NULL, wpath, CSIDL_DESKTOP, 0))
 			goto failed;
-
-		last_slash = wcsrchr(wpath, '\\');
-		if (!last_slash || (len = last_slash - wpath) <= MIN_PATH - 1)
-			goto failed;
-
-		wpath[++len] = '\0';
 
 #ifdef USE_UTF8_STR
 		if (!UNI2UTF8(wpath, path, MAX_PATH))
@@ -3167,20 +2977,21 @@ const char*get_home_dir()
 #endif /* USE_UTF8_STR */
 			goto failed;
 
+		if (!path_find_directory(path, path, MAX_PATH))
+			goto failed;
+
 		return path;
 	}
 
 failed:
-    path[0] = '\0';
-    return path;
-
-#endif /* OS_WIN */
-
-success:
-	if (path[len-1] != PATH_SEP_CHAR)
-		path[len] = PATH_SEP_CHAR;
-
+	path[0] = '\0';
 	return path;
+
+#else
+	/* 一般POSIX系统都会设置HOME环境变量 */
+	path[0] = '\0';
+	return path;
+#endif /* OS_WIN */
 }
 
 /* 获取程序的缓存文件目录 */
@@ -3231,15 +3042,15 @@ const char *get_temp_dir()
 		if (!GetTempPathA(MAX_PATH, path))
 			path[0] = '\0';
 #endif /* USE_UTF8_STR */
-		len = strlen(path);
-		if (path[len-1] != PATH_SEP_CHAR)
-			path[len++] = PATH_SEP_CHAR;
+		len = _end_with_slash(path, path, MAX_PATH);
+		if (!len)
+			path[0] = '\0';
 #else /* OS_POSIX */
 		strcpy(path, "/tmp/");
 		len = 5;
 #endif /* OS_WIN */
 
-		if (len + strlen(g_product_name) < MAX_PATH - 2)
+		if (len > 0 && (len + strlen(g_product_name) < MAX_PATH - 2))
 		{
 			strcpy(path + len, g_product_name);
 			strcat(path, PATH_SEP_STR);
@@ -3249,8 +3060,6 @@ const char *get_temp_dir()
 				!create_directory(path))
 				path[0] = '\0';
 		}
-		else
-			path[0] = '\0';
 
 		init = 1;
 	}
@@ -3258,30 +3067,42 @@ const char *get_temp_dir()
 	return path;
 }
 
-/* 获取指定目录下可用的临时文件路径 */
-/* 如果指定的临时目录不存在，将创建此目录 */
-/* 如果prefix为NULL或为空字符串，将使用"temp"作为前缀 */
-/* 注1：输出缓冲区的长度应至少为MAX_PATH */
-/* 注2：此函数仅保证在调用时该临时文件不存在 */
+/* 
+ * 获取指定目录下可用的临时文件路径
+ *
+ * 如果指定的临时目录不存在，将创建此目录。
+ * 如果prefix为NULL或为空字符串，将使用g_product_name作为前缀 
+ *
+ * 注1：即使不以路径分隔符结尾，tmpdir的最后一部分将被视为目录名 
+ * 注2：输出缓冲区的长度应至少为MAX_PATH 
+ * 注3：此函数仅保证在调用时该临时文件不存在 
+ */
+
 int get_temp_file_under(const char* tmpdir, const char *prefix, 
 	char *outbuf, size_t outlen)
 {
-	const char *prefix_use = "temp";
+	char tempdir_use[MAX_PATH];
+	const char *prefix_use = g_product_name;
+	size_t dlen;
+
+	if (!outbuf || outlen < MAX_PATH)
+		return 0;
+
+	dlen = _end_with_slash(tmpdir, tempdir_use, MAX_PATH);
+	if (!dlen)
+		return 0;
+
+	if (!create_directories(tempdir_use))
+		return 0;
+
 	if (prefix && prefix[0])
 		prefix_use = prefix;
-
-	if (!tmpdir || !outbuf || outlen < MAX_PATH)
-		return 0;
-
-	if (path_is_file(tmpdir) 
-		||!create_directories(tmpdir))
-		return 0;
 
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	{
 		wchar_t wtmpdir[MAX_PATH], wtmpfile[MAX_PATH], wprefix[128];
-		if (!UTF82UNI(tmpdir, wtmpdir, MAX_PATH)
+		if (!UTF82UNI(tempdir_use, wtmpdir, MAX_PATH)
 			|| !UTF82UNI(prefix_use, wprefix, sizeof(wprefix))
 			|| !GetTempFileNameW(wtmpdir, wprefix, 0, wtmpfile)
 			|| !UNI2UTF8(wtmpfile, outbuf, outlen))
@@ -3289,18 +3110,19 @@ int get_temp_file_under(const char* tmpdir, const char *prefix,
 		return 1;
 	}
 #else /* MBCS */
-	if (!GetTempFileNameA(tmpdir, prefix_use, 0, tmpfile))
+	if (!GetTempFileNameA(tempdir_use, prefix_use, 0, tmpfile))
 		return 0;
 	return 1;
 #endif
 #else /* POSIX */
-	{
-		char *tempname = tempnam(tmpdir, prefix_use);
-		if (!tempname)
-			return 0;
-		xstrlcpy(outbuf, tempname, outlen);
-		free(tempname);
-	}
+	if (xstrlcpy(outbuf, tempdir_use, outlen) >= outlen ||
+		xstrlcat(outbuf, prefix_use, outlen) >= outlen ||
+		xstrlcat(outbuf, ".XXXXXXXX", outlen) >= outlen)
+		return 0;
+
+	if (!mktemp(outbuf))
+		return 0;
+
 	return 1;
 #endif
 }
@@ -3934,7 +3756,7 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 	FILE *fp;
 	struct file_charset_info* fci;
 
-	if (!path_valid(file, 0) || !outbuf)
+	if (!_path_valid(file, 0) || !outbuf)
 		return 0;
 
 	fp = xfopen(file, "rb");
@@ -4041,7 +3863,7 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 /*
  * @fname: 读取文件的BOM头
  * @param: fp: 刚打开的文件流
- * @outbuf: 返回BOM头所代表的字符集
+ * @outbuf: 返回读取到得BOM头
  * @return: 成功返回1，outbuf存放所代表的字符集
  *			否则返回0，并将文件流定位到原来的位置
  */
@@ -5650,24 +5472,41 @@ int thread_once(thread_once_t* once, thread_once_func func)
 /*							 Debugging  调试					            */
 /************************************************************************/
 
-#define ERRBUF_LEN	128
-
 /* 获取WIN32 API出错后的信息 */
 #ifdef OS_WIN
 const char* get_last_error_win32()
 {
-	static char errbuf[ERRBUF_LEN];
+	static char errbuf[128];
+	int flag = FORMAT_MESSAGE_ALLOCATE_BUFFER|
+		FORMAT_MESSAGE_IGNORE_INSERTS|
+		FORMAT_MESSAGE_FROM_SYSTEM;
 
-	LPSTR lpBuffer;
-	FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, GetLastError(), LANG_NEUTRAL, (LPSTR)&lpBuffer, 0, NULL);
+#ifdef USE_UTF8_STR
+	LPWSTR lpBuffer = NULL;
+	FormatMessageW(flag, NULL, GetLastError(), LANG_NEUTRAL, (LPWSTR)&lpBuffer, 0, NULL);
+	if (!lpBuffer)
+		goto not_found;
+
+	if (!UNI2UTF8(lpBuffer, errbuf, sizeof(errbuf)))
+		goto not_found;
+#else
+	LPSTR lpBuffer = NULL;
+	FormatMessageA(flag, NULL, GetLastError(), LANG_NEUTRAL, (LPSTR)&lpBuffer, 0, NULL);
+	if (!lpBuffer)
+		goto not_found;
+
+	if (xstrlcpy(errbuf, lpBuffer, sizeof(errbuf)) >= sizeof(errbuf))
+		goto not_found;	
+#endif
+
+	LocalFree(lpBuffer);
+	return errbuf;
+
+not_found:
+	xstrlcpy(errbuf, "No corresponding error message.", sizeof(errbuf));
 
 	if (lpBuffer)
-		xstrlcpy(errbuf, lpBuffer, ERRBUF_LEN);
-	else
-		xstrlcpy(errbuf, "No corresponding error message.", ERRBUF_LEN);
-
-	LocalFree (lpBuffer);
+		LocalFree(lpBuffer);
 	return errbuf;
 }
 #endif
@@ -6691,28 +6530,6 @@ ATON(int64_t, i64, "%" PRId64)
 ATON(uint64_t, u64, "%" PRIu64)
 
 #undef ATON
-
-/* 将指针转换成十六进制的字符串 */
-int ptr_to_str(void *ptr, char* buf, int len)
-{
-	if (snprintf(buf, len, "%p", ptr) < 0)
-		return 0;
-
-	return 1;
-}
-
-/* 将代表指针的十六进制的字符串转换为指针值 */
-void* str_to_ptr(const char *str)
-{
-	void *ptr;
-
-	if (strlen(str) / 2 != sizeof(ptr))
-		return NULL;
-
-	sscanf(str, "%p", &ptr);
-
-	return ptr;
-}
 
 /* 获取可用的CPU数目 */
 int number_of_processors()

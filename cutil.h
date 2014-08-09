@@ -1,37 +1,12 @@
 /* 
 * @file: cutil.h
 * @desc: ¿ÉÒÆÖ²ÏµÍ³Æ½Ì¨¼æÈİ²ã
-*		 Ö÷Òª»ùÓÚÏµÍ³API¼°±ê×¼C¿â£¬¸ßĞ§ÊµÓÃ
+*        Ö÷Òª»ùÓÚÏµÍ³API¼°±ê×¼C¿â£¬¸ßĞ§ÊµÓÃ
 * @auth: liwei (www.leewei.org)
 * @mail: ari.feng@qq.com
 * @date: 2012/04/22
 * @mdfy: 2013/12/01
 */
-
-/*
-* ¼æÈİÆ½Ì¨£º
-* slackware 13.1 32-bit + GCC 4.4.4 
-* ubuntu 12.04 64-bit + GCC 4.6.3 
-* WinXP 32-bit + VC 6.0
-* Win7 32/64-bit + VS2010
-* Qt Mingw g++
-* Qt arm-linux-androideabi-g++
-* Mac OS X + Xcode / QtCreator
-*/
-
-/*
- * ×¢Òâ£º
- * Ò»¡¢ÈôÊ¹ÓÃ±¾¿â£¬Ó¦ÔÚ³ÌĞòÆğÊ¼ºÍ½áÊøÎ»ÖÃ·Ö±ğµ÷ÓÃcutil_init()ºÍcutil_exit()º¯Êı£»
- * ¶ş¡¢Èç¹ûº¯ÊıµÄÖ´ĞĞ³É¹¦Óë·ñÒÔintĞÍµÄ·µ»ØÖµ±íÊ¾£¬ÄÇÃ´1±íÊ¾³É¹¦£¬0±íÊ¾Ê§°Ü£»
- * Èı¡¢¶ÔÓÚÎÄ¼şÏµÍ³¼°Ïà¹Øº¯Êı£º
- *		ÔÚWindowsÏÂ×Ö·û´®²ÎÊıÄ¬ÈÏÊ¹ÓÃÏµÍ³¶à×Ö½Ú±àÂë(ÈçGBK)£¬Èç¹ûºêUSE_UTF8_STR±»¶¨ÒåÔò¼Ù¶¨Ê¹ÓÃUTF-8±àÂë£»
- *		ÔÚLinuxÏÂÓ¦¸Ã×ÜÊÇÊ¹ÓÃUTF-8±àÂë£¬·ñÔòÄ³Ğ©º¯Êı(Èçcreate_directories)¿ÉÄÜĞĞÎªÒì³£¡£
- * ËÄ¡¢¶ÔÓÚĞèÒªÊä³ö»º³åÇø¼°³¤¶È²ÎÊıµÄº¯Êı(Èçfile_size_readable)£¬Ó¦Ê¹ÓÃÍÆ¼ö»º³åÇø´óĞ¡µÄºê£¨Èç FILE_SIZE_BUFSIZE£©¡£
- * Îå¡¢Èç¹ûº¯ÊıĞèÒª´«ÈëÒ»¸ö»º³åÇø£¬ÄÇÃ´ÆäºóÒ»°ã»áÓĞÒ»¸ö±íÊ¾»º³åÇø´óĞ¡µÄ²ÎÊı¡£
- * Áù¡¢ÔÚdebugÄ£Ê½ÏÂ£¬µ÷ÓÃ NOT_REACHED(), NOT_IMPLEMENTED,log_[d]printf(LOG_FATAL,...)¼°ASSERT/VERIFYÊ§°Ü ¾ù»áÊ¹µ±Ç°½ø³Ì¼ÇÂ¼¶ÑÕ»ĞÅÏ¢ºóÁ¢¼´ÍË³ö¡£
- * Æß¡¢Ê¹ÓÃ´óĞ´µÄASSERTºÍVERFITYºêÀ´ÆôÓÃ¶ÏÑÔ¶ÑÕ»¼ÇÂ¼¹¦ÄÜ£¨·ÇĞ¡Ğ´µÄassert£©¡£ASSERT½öÔÚµ÷ÊÔÄ£Ê½ÏÂÓĞĞ§£¬¶øVERIFYÔÚReleaseÄ£Ê½ÏÂÒ²ÉúĞ§£¬²¢ÇÒµ÷ÓÃÊ§°Ü»áÊ¹½ø³Ì±ÀÀ£¡£
- * °Ë¡¢·µ»ØÄ¿Â¼Â·¾¶µÄº¯Êı¶¼±£Ö¤ÒÔÂ·¾¶·Ö¸ô·û½áÎ²¡£
- */
 
 /*
  * °üÀ¨ÒÔÏÂÄ£¿é£º
@@ -106,29 +81,32 @@ const char* get_product_name();
 /*                         Data types Êı¾İÀàĞÍ                           */
 /************************************************************************/
 
-#include <limits.h>					/* INT_MAX, LONG_MAX, LLONG_MAX... */
+#include <limits.h>     /* INT_MAX, LONG_MAX, LLONG_MAX... */
 
 /* ÎŞ·ûºÅÀàĞÍ¶¨Òå */
 typedef unsigned char   byte;
 typedef unsigned short  ushort;
 typedef unsigned int    uint;
-typedef unsigned long   ulong;		/* Avoid using long/ulong */
+typedef unsigned long   ulong;  /* Avoid using long/ulong */
 
 /* ¹Ì¶¨¿í¶ÈÊı¾İÀàĞÍ¶¨Òå */
 #if defined(COMPILER_MSVC) && _MSC_VER <= MSVC6
-typedef __int64 int64_t;			/* ÔçÆÚVC±àÒëÆ÷²»Ö§³ÖC99±ê×¼<stdint.h> */
+/* ÔçÆÚVC±àÒëÆ÷²»Ö§³ÖC99±ê×¼<stdint.h> */
+typedef __int64 int64_t;
 typedef __int32 int32_t;
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 #define INT64_C(x) x##I64
 #define UINT64_C(x) x##UI64
 #elif defined(COMPILER_MSVC) && _MSC_VER <= MSVC10
-MSVC_PUSH_DISABLE_WARNING(4005)		/* VC2010¼°Ö®Ç°°æ±¾Í¬Ê±°üº¬<stdint.h>ºÍ<intsafe.h>»á²úÉúºêÖØ¶¨Òå¾¯¸æ */
+/* VC2010¼°Ö®Ç°°æ±¾Í¬Ê±°üº¬<stdint.h>ºÍ<intsafe.h>»á²úÉúºêÖØ¶¨Òå¾¯¸æ */
+MSVC_PUSH_DISABLE_WARNING(4005)
 #include <intsafe.h>
 #include <stdint.h>
 MSVC_POP_WARNING()
 #else
-#include <stdint.h>					/* GCC»òÕßVC2012ÒÔÉÏ°æ±¾¿ÉÒÔÖ±½Ó°üº¬<stdint.h> */
+/* GCC»òÕßVC2012ÒÔÉÏ°æ±¾¿ÉÒÔÖ±½Ó°üº¬<stdint.h> */
+#include <stdint.h>
 #endif
 
 /* 64Î»ÕûĞÎ³£Á¿¶¨Òåºê */
@@ -155,10 +133,12 @@ MSVC_POP_WARNING()
 #endif
 #endif
 
+#ifdef OS_WIN
 #if __WORDSIZE == 64
 typedef int64_t ssize_t;
 #else
 typedef int ssize_t;
+#endif
 #endif
 
 #ifndef OS_WIN
@@ -175,53 +155,34 @@ typedef int ssize_t;
 #if defined(OS_POSIX) || defined(__MINGW32__)
 #ifdef __cplusplus
 #ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS		/* Use C99 in C++ */
+#define __STDC_FORMAT_MACROS  /* Use C99 in C++ */
 #endif
 #endif
-#include <inttypes.h>				/* PRId64, PRIu64... */
-#define PRIlf		"Lf"			/* long double */
-#elif defined (OS_WIN)
-#define PRIu64		"I64u"			/* uint64_t */
-#define PRId64		"I64d"			/* int64_t */
-#define PRIlf		"llf"			/* long double */
-#endif
- 
-#ifndef PRIuS
-#ifdef OS_WIN
-#if __WORDSIZE == 64
-#define PRIuS		PRIu64			/* size_t is 64bit */
-#else
-#define PRIuS		"u"				/* size_t is 32bit */
+#include <inttypes.h>         /* PRId64, PRIu64... */
+#define PRIlf  "Lf"           /* long double */
+#elif defined (OS_WIN)     
+#define PRIu64  "I64u"        /* uint64_t */
+#define PRId64  "I64d"        /* int64_t */
+#define PRIlf  "llf"          /* long double */
+#endif      
+
+#ifndef PRIuS      
+#ifdef OS_WIN      
+#if __WORDSIZE == 64      
+#define PRIuS  PRIu64         /* size_t is 64bit */
+#else 
+#define PRIuS  "u"            /* size_t is 32bit */
 #endif
 #else /* POSIX */
 #define PRIuS       "zu"
 #endif
 #endif
 
-/* ¸½£º¸÷ÖÖÊı¾İÀàĞÍÔÚLinux/Windows¡¢32/64Î»±àÒëÆ÷ÏÂµÄ³¤¶È¼°printfÊä³ö¸ñÊ½£º
-________________________________________________________________________
-|ÀàĞÍ		|	Linux32	|	Linux64	|	Win32	|	Win64	|¸½×¢		|
-|_______________________________________________________________________|
-|char		|	1(c)	|	1(c)	|	1(c)	|	1(c)	|			|
-|short		|	2(hd)	|	2(hd)	|	2(hd)	|	2(hd)	|			|
-|int		|	4(d)	|	4(d)	|	4(d)	|	4(d)	|			|
-|long		|	4(ld)	|	8(ld)	|	4(ld)	|	4(ld)	|			|
-|long long	|	8(lld)	|	8(ld)	|	8(lld)	|	8(ld)	| C99		|
-|float		|	4(f)	|	4(f)	|	4(f)	|	4(f)	|			|
-|double		|	8(lf)	|	8(lf)	|	8(lf)	|	8(lf)	|			|
-|long double|	12(Lf)	|	16(Lf)	|	8(llf)	|	8(llf)	| C99		|
-|			|			|			|			|			|			|
-|void*		|	4(p)	|	8(p)	|	4(p)	|	8(p)	| Ö¸Õë		|
-|size_t		|	4		|	8		|	4		|	8		|			|
-|wchar_t	|	4		|	4		|	2		|	2		| ¿í×Ö·û	|
-|_______________________________________________________________________|
-*/
-
 /************************************************************************/
 /*                            Math ÊıÑ§                                  */
 /************************************************************************/
 
-#include "deps/min-max.h"		/* xmin, xmax */
+#include "deps/min-max.h"  /* xmin, xmax */
 
 /* Êı×éÔªËØ¸öÊı */
 #define countof(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -313,9 +274,12 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #endif
 
 /* ×Ö·û´®±È½Ïºê */
-#define STREQ(a, b) (*(a) == *(b) && strcmp((a), (b)) == 0)						/* Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´® */
+/* Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´® */
+#define STREQ(a, b) (*(a) == *(b) && strcmp((a), (b)) == 0)
+
+/* ²»Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´® */
 #define STRIEQ(a, b) \
-	(toupper(*(a)) == toupper(*(b)) && strcasecmp((a), (b)) == 0)				/* ²»Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´® */
+ (toupper(*(a)) == toupper(*(b)) && strcasecmp((a), (b)) == 0)
 
 /* 
  * °²È«µÄ×Ö·û´®¸ñÊ½»¯Êä³ö
@@ -326,78 +290,95 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FORMAT(3, 0) WUR;
 int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FORMAT(3, 4) WUR;
 
-/* ¸ñÊ½»¯Êä³öµ½ĞÂ·ÖÅäµÄ×Ö·û´® */
+/* ¸ñÊ½»¯Êä³öµ½ĞÂ·ÖÅäµÄ×Ö·û´®, ĞèÍâ²¿ÊÍ·Å */
 /* GLIBCÔÚ_GNU_SOURCEºê±»¶¨ÒåµÄÇé¿öÏÂÒÑµ¼³ö´Ëº¯Êı */
-int xasprintf (char** out, const char* format, ...) PRINTF_FORMAT(2, 3) WUR;	/* ĞèÍâ²¿ÊÍ·Å */
+int xasprintf (char** out, const char* format, ...) PRINTF_FORMAT(2, 3) WUR;
 
 /* BSD·ç¸ñµÄ×Ö·û´®¿½±´ºÍ¸½¼Óº¯Êı */
 /* ±È str[n]cpy ºÍ str[n]cat ¸ü¿ì¸ü°²È«£¬±È½Ï¼ûÒÔÏÂÁ´½Ó */
 /* http://www.gratisoft.us/todd/papers/strlcpy.html */
-size_t xstrlcpy(char* dst, const char* src, size_t dst_size);					/* °²È«µÄ×Ö·û´®¿½±´º¯Êı */
-size_t xstrlcat(char* dst, const char *src, size_t dst_size);					/* °²È«·½±ãµØ×Ö·û´®¸½¼Óº¯Êı */
+size_t xstrlcpy(char* dst, const char* src, size_t dst_size);
+size_t xstrlcat(char* dst, const char *src, size_t dst_size);
 
 /* ´óĞ¡Ğ´×ª»» */
-int lowercase_str (char *str);													/* ½«×Ö·û´®¸ÄÎªĞ¡Ğ´£¬ÈôÓĞ×Ö·û·¢Éú¸Ä±ä·µ»Ø1£¬·ñÔò·µ»Ø0 */
-int uppercase_str (char *str);													/* ½«×Ö·û´®¸ÄÎª´óĞ´£¬·µ»ØÖµÍ¬ÉÏ */
+/* ½«×Ö·û´®¸ÄÎª´ó/Ğ¡Ğ´£¬ÈôÓĞ×Ö·û·¢Éú¸Ä±ä·µ»Ø1£¬·ñÔò·µ»Ø0 */
+int uppercase_str (char *str);
+int lowercase_str (char *str);
 
-char *strdup_lower (const char *s);												/* »ñÈ¡Ò»¸ö×Ö·û´®µÄĞ¡Ğ´°æ¿½±´ */
-char *strdup_upper (const char *s);												/* »ñÈ¡Ò»¸ö×Ö·û´®µÄ´óĞ´°æ¿½±´ */
+/* »ñÈ¡Ò»¸ö×Ö·û´®µÄ´ó/Ğ¡Ğ´°æ¿½±´ */
+char *strdup_upper (const char *s); 
+char *strdup_lower (const char *s);
 
-char *substrdup (const char *beg, const char *end);								/* ·µ»Ø×Ö·û´®µÄÒ»¸ö×Ö´®£¬ÒÔ'\0'½áÎ²£¬ĞèÍâ²¿ÊÍ·Å */
+/* ·µ»Ø×Ö·û´®µÄÒ»¸ö×Ö´®£¬ÒÔ'\0'½áÎ²£¬ĞèÍâ²¿ÊÍ·Å */
+char *substrdup (const char *beg, const char *end); 
 
 /* ×Ö·û´®±È½Ï¡¢²éÕÒ²Ù×÷ */
-#ifndef __GLIBC__																/* GLIBCÊµÏÖµÄµ«ÆäËû¿âÎ´ÊµÏÖµÄÊµÓÃº¯Êı */
+/* GLIBCÊµÏÖµÄµ«ÆäËû¿âÎ´ÊµÏÖµÄÒ»Ğ©º¯Êı */
+#ifndef __GLIBC__
 
-char* strndup(const char* s, size_t n);											/* ÀàËÆstrdupµ«Ö»×î¶àÖ»¸´ÖÆn¸ö×Ö½Ú£¬×îºó¸½¼Ó'\0' */
-char* strsep(char **stringp, const char* delim);								/* ·Ö¸î×Ö·û´®£¬¸üºÃµÄstrtok */
+/* ÀàËÆstrdupµ«Ö»×î¶àÖ»¸´ÖÆn¸ö×Ö½Ú£¬×îºó¸½¼Ó'\0' */
+char* strndup(const char* s, size_t n);
+
+/* ·Ö¸î×Ö·û´®£¬¸üºÃµÄstrtok£¬µ«»á¸Ä±äÔ´×Ö·û´® */
+char* strsep(char **stringp, const char* delim);
 
 #ifndef __MINGW32__
 #if defined(COMPILER_MSVC)
-#define strcasecmp stricmp														/* Ê¹ÓÃMFCµÄstricmpÏµÁĞº¯Êı */
+/* Ê¹ÓÃMFCµÄstricmpÏµÁĞº¯Êı */
+#define strcasecmp stricmp
 #define strncasecmp strnicmp
 #else
-int strcasecmp (const char *s1, const char *s2);								/* ²»Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´® */
-int	strncasecmp (const char *s1, const char *s2, size_t n);						/* ²»Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´®£¬×î³¤±È½Ïn¸ö×Ö·û */
+/* ²»Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´® */
+int strcasecmp (const char *s1, const char *s2);
+
+/* ²»Çø·Ö´óĞ¡Ğ´±È½ÏÁ½¸ö×Ö·û´®£¬×î³¤±È½Ïn¸ö×Ö·û */
+int strncasecmp (const char *s1, const char *s2, size_t n);
 #endif
 #endif
 
-char* strnstr(const char *s, const char *find, size_t slen);					/* ÔÚ×Ö·û´®sµÄÇ°slen¸ö×Ö½ÚÖĞ²éÕÒfind */
-char* strcasestr(const char *s, const char *find);								/* ²»Çø·Ö´óĞ¡Ğ´ÔÚ×Ö·û´®sÖĞ²éÕÒ×Ö·û´®find */
+/* ÔÚ×Ö·û´®sµÄÇ°slen¸ö×Ö½ÚÖĞ²éÕÒfind */
+char* strnstr(const char *s, const char *find, size_t slen);
 
-void* memfrob(void *mem, size_t length);										/* ¼òµ¥¿ÉÄæµØ¼ÓÃÜÒ»¿éÄÚ´æ */
+/* ²»Çø·Ö´óĞ¡Ğ´ÔÚ×Ö·û´®sÖĞ²éÕÒ×Ö·û´®find */
+char* strcasestr(const char *s, const char *find);
+
+/* ¼òµ¥¿ÉÄæµØ¼ÓÃÜÒ»¿éÄÚ´æ */
+void* memfrob(void *mem, size_t length);
 
 #endif /* !__GLIBC__ */
 
-char *strncasestr(const char *s, const char *find, size_t slen);				/* ²»Çø·Ö´óĞ¡Ğ´ÔÚ×Ö·û´®sµÄÇ°slen¸ö×Ö½ÚÖĞÖĞ²éÕÒ×Ö·û´® */
+/* ²»Çø·Ö´óĞ¡Ğ´ÔÚ×Ö·û´®sµÄÇ°slen¸ö×Ö½ÚÖĞÖĞ²éÕÒ×Ö·û´® */
+char *strncasestr(const char *s, const char *find, size_t slen);
 
-size_t hash_pjw (const char *s, size_t tablesize);						        /* ×Ö·û´®hashÉ¢ÁĞËã·¨ */
+/* ×Ö·û´®hashÉ¢ÁĞËã·¨ */
+size_t hash_pjw (const char *s, size_t tablesize);
 
 /************************************************************************/
-/*                         Filesystem ÎÄ¼şÏµÍ³Ïà¹Ø	                    */
+/*                         Filesystem ÎÄ¼şÏµÍ³Ïà¹Ø                       */
 /************************************************************************/
 
 #ifdef OS_POSIX
 #include <dirent.h>
-#define MAX_PATH			1024	/* PATH_MAX is too large? */
+#define MAX_PATH   1024 /* PATH_MAX is too large? */
 #endif
 
-#define MAX_PATH_WIN		260
+#define MAX_PATH_WIN  260
 
 /* Â·¾¶Ïà¹Ø */
 #ifdef OS_WIN
-#define PATH_SEP_CHAR		'\\'
-#define PATH_SEP_WCHAR		L'\\'
-#define PATH_SEP_STR		"\\"
-#define PATH_SEP_WSTR		L"\\"
-#define LINE_END_STR		"\r\n"
-#define MIN_PATH			3		/* "C:\" */
+#define PATH_SEP_CHAR   '\\'
+#define PATH_SEP_WCHAR  L'\\'
+#define PATH_SEP_STR    "\\"
+#define PATH_SEP_WSTR   L"\\"
+#define LINE_END_STR    "\r\n"
+#define MIN_PATH        3          /* "C:\" */
 #else
-#define PATH_SEP_CHAR		'/'
-#define PATH_SEP_WCHAR		L'/'
-#define PATH_SEP_STR		"/"
-#define PATH_SEP_WSTR		L"/"
-#define LINE_END_STR		"\r"
-#define MIN_PATH			1		/* "/" */
+#define PATH_SEP_CHAR   '/'
+#define PATH_SEP_WCHAR  L'/'
+#define PATH_SEP_STR    "/"
+#define PATH_SEP_WSTR   L"/"
+#define LINE_END_STR    "\r"
+#define MIN_PATH        1         /* "/" */
 #endif
 
 /* fopen¶ÁĞ´´óÎÄ¼ş(>2GB) */
@@ -415,27 +396,44 @@ size_t hash_pjw (const char *s, size_t tablesize);						        /* ×Ö·û´®hashÉ¢Á
 #pragma message("Can not fseek/ftell large file (>2GB)")
 #endif
 
-int			is_root_path(const char* path);											/* ÅĞ¶ÏpathÊÇ·ñÊÇ¸ùÄ¿Â¼(/»òX:\)  */
-int			is_absolute_path(const char* path);										/* ÅĞ¶ÏpathËùÖ¸µÄÂ·¾¶ÊÇ·ñÊÇ¾ø¶ÔÂ·¾¶ */
+/************************* Â·¾¶²Ù×÷ *************************/
 
-int			absolute_path(const char* relpath, char* buf, size_t len) WUR;			/* »ñÈ¡ÎÄ¼ş/Ä¿Â¼Ïà¶ÔÓÚµ±Ç°¹¤×÷Ä¿Â¼µÄ¾ø¶ÔÂ·¾¶ */
-int			relative_path(const char* base_path, const char* full_path, char sep,
-							char* buf, size_t len) WUR;								/* »ñÈ¡full_pathÏà¶ÔÓÚbase_pathµÄÏà¶ÔÂ·¾¶ */
+/* ÅĞ¶ÏpathÊÇ·ñÊÇ¸ùÄ¿Â¼(/»òX:\)  */
+int is_root_path(const char* path);
 
-const char* path_find_file_name(const char* path);									/* ·µ»ØÂ·¾¶µÄÎÄ¼şÃû»ò×îµ×²ãÄ¿Â¼Ãû£¬Àı¼ûº¯Êı¶¨Òå£¬ÏÂÍ¬ */
-const char* path_find_extension(const char* path);									/* ·µ»ØÎÄ¼şµÄÀ©Õ¹Ãû£¬Ä¿Â¼·µ»ØNULL */
-int			path_find_directory(const char* path, char* buf, size_t len) WUR;		/* ·µ»ØÂ·¾¶ËùÖ¸Ä¿Â¼/ÎÄ¼şµÄÉÏ¼¶Ä¿Â¼Â·¾¶(Â·¾¶ÃûĞèÎªUTF-8±àÂë) */
+/* ÅĞ¶ÏpathËùÖ¸µÄÂ·¾¶ÊÇ·ñÊÇ¾ø¶ÔÂ·¾¶ */
+int is_absolute_path(const char* path);
 
-int			path_file_exists(const char* path);										/* Â·¾¶ËùÖ¸ÎÄ¼ş/Ä¿Â¼ÊÇ·ñ´æÔÚ */
-int			path_is_directory(const char* path);									/* Â·¾¶ÊÇ·ñÊÇÓĞĞ§Ä¿Â¼ */
-int			path_is_file(const char* path);											/* Â·¾¶ÊÇ·ñÊÇÓĞĞ§ÎÄ¼ş */
+/* »ñÈ¡ÎÄ¼ş/Ä¿Â¼Ïà¶ÔÓÚµ±Ç°¹¤×÷Ä¿Â¼µÄ¾ø¶ÔÂ·¾¶ */
+int absolute_path(const char* relpath, char* buf, size_t len) WUR;
 
-int			unique_file(const char* path, char *buf, size_t len) WUR;				/* »ñÈ¡µ±Ç°¿ÉÓÃµÄÎÄ¼şÂ·¾¶ */
-int			unique_dir(const char* path, char *buf, size_t len) WUR;				/* »ñÈ¡µ±Ç°¿ÉÓÃµÄÄ¿Â¼Â·¾¶ */
+/* »ñÈ¡full_pathÏà¶ÔÓÚbase_pathµÄÏà¶ÔÂ·¾¶ */
+int relative_path(const char* base_path, const char* full_path, char sep,
+     char* buf, size_t len) WUR;
+
+/* ·µ»ØÂ·¾¶µÄÎÄ¼şÃû»ò×îµ×²ãÄ¿Â¼Ãû£¬Àı¼ûº¯Êı¶¨Òå£¬ÏÂÍ¬ */
+const char* path_find_file_name(const char* path);
+
+/* ·µ»ØÎÄ¼şµÄÀ©Õ¹Ãû£¬Ä¿Â¼·µ»ØNULL */
+const char* path_find_extension(const char* path);
+
+/* ·µ»ØÂ·¾¶ËùÖ¸Ä¿Â¼/ÎÄ¼şµÄÉÏ¼¶Ä¿Â¼Â·¾¶(Â·¾¶ÃûĞèÎªUTF-8±àÂë) */
+int path_find_directory(const char* path, char* buf, size_t len) WUR;
+
+/* Â·¾¶ËùÖ¸ÎÄ¼ş/Ä¿Â¼ÊÇ·ñ´æÔÚ */
+int path_file_exists(const char* path);
+
+/* Â·¾¶ÊÇ·ñÊÇÓĞĞ§Ä¿Â¼/ÎÄ¼ş */
+int path_is_directory(const char* path);
+int path_is_file(const char* path);
+
+/* »ñÈ¡µ±Ç°¿ÉÓÃµÄÎÄ¼ş/Ä¿Â¼Â·¾¶ */
+int unique_file(const char* path, char *buf, size_t len) WUR;
+int unique_dir(const char* path, char *buf, size_t len) WUR;
 
 /* Â·¾¶ºÏ·¨»¯ */
-#define PATH_UNIX		1
-#define PATH_WINDOWS	2
+#define PATH_UNIX  1
+#define PATH_WINDOWS 2
 
 #ifdef OS_WIN
 #define PATH_PLATFORM PATH_WINDOWS
@@ -443,122 +441,225 @@ int			unique_dir(const char* path, char *buf, size_t len) WUR;				/* »ñÈ¡µ±Ç°¿ÉÓ
 #define PATH_PLATFORM PATH_UNIX
 #endif
 
-char*		path_escape(const char* path, int platform, int reserve_separator);		/* ½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª%HHµÄĞÎÊ½£¬ĞèÍâ²¿ÊÍ·Å */
-void		path_illegal_blankspace(char *path, int platform, int reserve_separator);	/* ½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª¿Õ¸ñ·û */
+/* ½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª%HHµÄĞÎÊ½£¬ĞèÍâ²¿ÊÍ·Å */
+char* path_escape(const char* path, int platform, int reserve_separator);
+
+/* ½«Â·¾¶ÖĞµÄ·Ç·¨×Ö·ûÌæ»»Îª¿Õ¸ñ·û */
+void path_illegal_blankspace(char *path, int platform, int reserve_separator);
+
+/************************* Ä¿Â¼²Ù×÷ *************************/
 
 /* ±éÀúÄ¿Â¼ */
 struct walk_dir_context;
 
-struct walk_dir_context* walk_dir_begin(const char* dir) WUR;						/* ¿ªÊ¼±éÀú */
-int			walk_dir_next(struct walk_dir_context *ctx) WUR;						/* »ñÈ¡Ò»Ïî */
-void		walk_dir_end(struct walk_dir_context *ctx);								/* ½áÊø±éÀú */
+/* ¿ªÊ¼±éÀúÄ¿Â¼²¢»ñÈ¡µÚÒ»Ïî */
+struct walk_dir_context* walk_dir_begin(const char* dir) WUR;
 
-const char*	walk_entry_name(struct walk_dir_context *ctx);							/* ÎÄ¼ş/Ä¿Â¼Ãû */
-int			walk_entry_path(struct walk_dir_context *ctx, char* buf, size_t len) WUR;	/* ÍêÕûÂ·¾¶Ãû */
+/* »ñÈ¡ÏÂÒ»ÏîÄ¿Â¼ÄÚÈİ */
+int walk_dir_next(struct walk_dir_context *ctx) WUR;
 
-int			walk_entry_is_dot(struct walk_dir_context *ctx) WUR;					/* ¸ÃÏîÊÇ.(µ±Ç°Ä¿Â¼) */
-int			walk_entry_is_dotdot(struct walk_dir_context *ctx) WUR;					/* ¸ÃÏîÊÇ..(ÉÏ¼¶Ä¿Â¼) */
-int			walk_entry_is_dir(struct walk_dir_context *ctx) WUR;					/* ¸ÃÏîÀàĞÍÊÇÄ¿Â¼ */
-int			walk_entry_is_file(struct walk_dir_context *ctx) WUR;					/* ¸ÃÏîÀàĞÍÊÇÎÄ¼ş */
-int			walk_entry_is_regular(struct walk_dir_context *ctx) WUR;				/* ¸ÃÏîÀàĞÍÊÇÆÕÍ¨ÎÄ¼ş */
+/* ½áÊø±éÀú */
+void walk_dir_end(struct walk_dir_context *ctx);
 
-/* Ä¿Â¼²Ù×÷ */
-int			create_directory(const char *dir) WUR;									/* ´´½¨µ¥²ãÄ¿Â¼£¨¸¸Ä¿Â¼±ØĞë´æÔÚ£©,³É¹¦·µ»Ø1 */
-int			create_directories(const char* dir) WUR;								/* µİ¹é´´½¨Ä¿Â¼½á¹¹*/
+/* »ñÈ¡±éÀúÏîµÄÃû³Æ/ÍêÕûÂ·¾¶ */
+const char* walk_entry_name(struct walk_dir_context *ctx);
+int walk_entry_path(struct walk_dir_context *ctx, char* buf, size_t len) WUR;
 
-int			delete_directory(const char* dir) WUR;									/* É¾³ıÒ»¸öÄ¿Â¼£¨±ØĞëÎª¿Õ£© */
+int walk_entry_is_dot(struct walk_dir_context *ctx) WUR;      /* ¸ÃÏîÊÇ.(µ±Ç°Ä¿Â¼) */
+int walk_entry_is_dotdot(struct walk_dir_context *ctx) WUR;   /* ¸ÃÏîÊÇ..(ÉÏ¼¶Ä¿Â¼) */
+int walk_entry_is_dir(struct walk_dir_context *ctx) WUR;      /* ¸ÃÏîÀàĞÍÊÇÄ¿Â¼ */
+int walk_entry_is_file(struct walk_dir_context *ctx) WUR;     /* ¸ÃÏîÀàĞÍÊÇÎÄ¼ş */
+int walk_entry_is_regular(struct walk_dir_context *ctx) WUR;  /* ¸ÃÏîÀàĞÍÊÇÆÕÍ¨ÎÄ¼ş */
 
-typedef	int	(*delete_dir_cb)(const char* path, int type, int succ, void *arg);		/* É¾³ıÕû¸öÄ¿Â¼»Øµ÷º¯Êı£¬type²ÎÊı0¡¢1·Ö±ğ±íÊ¾ÎÄ¼şºÍÄ¿Â¼ */
-int			delete_directories(const char* dir, delete_dir_cb func, void *arg) WUR;	/* É¾³ıÒ»¸öÄ¿Â¼¼°°üº¬µÄËùÓĞÄÚÈİ */
+/* ´´½¨µ¥²ãÄ¿Â¼£¨¸¸Ä¿Â¼±ØĞë´æÔÚ£©,³É¹¦·µ»Ø1 */
+int create_directory(const char *dir) WUR;
 
-int			is_empty_dir(const char* dir);											/* ÅĞ¶ÏÄ¿Â¼ÊÇ·ñÊÇ¿ÕÄ¿Â¼ */
-int			delete_empty_directories(const char* dir) WUR;							/* É¾³ıÒ»¸öÄ¿Â¼ÏÂµÄËùÓĞ²»°üº¬ÎÄ¼şµÄÄ¿Â¼£¨²»É¾³ı²ÎÊıÄ¿Â¼±¾Éí£© */
+/*
+ * ´´½¨¶à¼¶Ä¿Â¼
+ * Â·¾¶Ãû±ØĞëÊÇ¾ø¶ÔÂ·¾¶Ãû
+ * Èç¹ûÂ·¾¶ÃûÒÔ"\"½áÎ²£¬ÄÇ×îºóµÄ²¿·Ö´´½¨ÎªÄ¿Â¼
+ * ×¢£ºlinuxÏÂdir±ØĞëÎªUTF-8±àÂë
+ */
+int create_directories(const char* dir) WUR;
 
-typedef int (*copy_dir_cb)(const char* src, const char *dst,						/* ¿½±´Õû¸öÄ¿Â¼»Øµ÷º¯Êı*/																					
-							int action, int succ, void *arg);						/* action²ÎÊı0¡¢1¡¢2·Ö±ğ±íÊ¾¿½±´ÎÄ¼ş¡¢¿½±´Ä¿Â¼ºÍ´´½¨Ä¿Â¼  */
-int			copy_directories(const char* srcdir, const char* dstdir,				/* ½«srcÄ¿Â¼¿½±´µ½dstÄ¿Â¼ÏÂ£¨ÓÃ·¨¼°×¢Òâ¼ûcopy_directories£© */
-							copy_dir_cb func, void *arg) WUR;
+/* É¾³ıÒ»¸ö¿ÕÄ¿Â¼ */
+int delete_directory(const char* dir) WUR;
 
-typedef		int (*foreach_file_func_t)(const char* fpath, void *arg);				/* ÎÄ¼ş´¦Àíº¯Êı */
-typedef		foreach_file_func_t foreach_dir_func_t;									/* Ä¿Â¼´¦Àíº¯Êı */
+/* É¾³ıÕû¸öÄ¿Â¼»Øµ÷º¯Êı£¬type²ÎÊı0¡¢1·Ö±ğ±íÊ¾ÎÄ¼şºÍÄ¿Â¼ */
+typedef int (*delete_dir_cb)(const char* path, int type, int succ, void *arg);
 
-int			foreach_file(const char* dir, foreach_file_func_t func,					/* ²éÕÒ²¢´¦ÀíÄ¿Â¼ÏÂµÄÃ¿¸öÎÄ¼ş */
-						int recursively, int regular_only, void *arg) WUR;
-int			foreach_dir(const char* dir, foreach_dir_func_t func, void *arg) WUR;	/* ²éÕÒ²¢´¦ÀíÄ¿Â¼ÏÂµÄÃ¿¸öÄ¿Â¼(²»µİ¹é) */
+/* É¾³ıÒ»¸öÄ¿Â¼¼°°üº¬µÄËùÓĞÄÚÈİ */
+int  delete_directories(const char* dir, delete_dir_cb func, void *arg) WUR;
 
-/* ÎÄ¼ş²Ù×÷ */
-int			copy_file(const char* exists, const char* newfile, int overwritten) WUR;/* ¸´ÖÆÎÄ¼ş */
-int			move_file(const char* exists, const char* newfile, int overwritten) WUR;/* ÒÆ¶¯ÎÄ¼ş */
+/* ÅĞ¶ÏÄ¿Â¼ÊÇ·ñÊÇ¿ÕÄ¿Â¼ */
+int  is_empty_dir(const char* dir);
 
-int			delete_file(const char* path) WUR;										/* É¾³ıÎÄ¼ş */
-int			delete_file_empty_updir(const char* path, const char* top_dir) WUR;		/* É¾³ıÎÄ¼ş¼°ÏòÉÏµÄ¿ÕÄ¿Â¼Ö±µ½Ö¸¶¨Ä¿Â¼ */
+/* É¾³ıÒ»¸öÄ¿Â¼ÏÂµÄËùÓĞ²»°üº¬ÎÄ¼şµÄÄ¿Â¼£¨²»É¾³ı²ÎÊıÄ¿Â¼±¾Éí£© */
+int  delete_empty_directories(const char* dir) WUR;
 
-int64_t		file_size(const char* path);											/* »ñÈ¡Ö¸¶¨ÎÄ¼şµÄ³¤¶È£¬×î´ó8EB... */
-void		file_size_readable(int64_t size, char *outbuf, int outlen);				/* »ñÈ¡¿É¶ÁĞÔÇ¿µÄÎÄ¼ş´óĞ¡£¬Èç3.5GB£¬½¨Òéoutlen>64 */
+/* ¿½±´Õû¸öÄ¿Â¼»Øµ÷º¯Êı*/
+/* action²ÎÊı0¡¢1¡¢2·Ö±ğ±íÊ¾¿½±´ÎÄ¼ş¡¢¿½±´Ä¿Â¼ºÍ´´½¨Ä¿Â¼  */
+typedef int (*copy_dir_cb)(const char* src, const char *dst, 
+    int action, int succ, void *arg);
 
-int64_t		get_file_disk_usage(const char *absolute_path);							/* »ñÈ¡ÎÄ¼ş»òÄ¿Â¼Êµ¼ÊÕ¼ÓÃ´ÅÅÌ¿Õ¼äµÄ´óĞ¡ */
-int			get_file_block_size(const char *absolute_path);							/* »ñÈ¡ÎÄ¼ş»òÄ¿Â¼ËùÔÚÎÄ¼şÏµÍ³´ÅÅÌÇø¿éµÄ´óĞ¡ */
-int64_t		compute_file_disk_usage(int64_t real_size, int block_size);				/* ¸ù¾İÎÄ¼şÊµ¼Ê´óĞ¡ºÍ·ÖÇø¿é´óĞ¡»ñÈ¡Êµ¼ÊÕ¼ÓÃ´ÅÅÌ¿Õ¼ä */
+/* ½«srcÄ¿Â¼¿½±´µ½dstÄ¿Â¼ÏÂ£¨ÓÃ·¨¼°×¢Òâ¼ûcopy_directories£© */
+int  copy_directories(const char* srcdir, const char* dstdir,
+       copy_dir_cb func, void *arg) WUR;
 
-FILE*		xfopen(const char* file, const char* mode);								/* ´ò¿ªÎÄ¼ş */
-int			xfread(FILE* fp, int separator, size_t max_count,							
-					char** outbuf, size_t* outlen) WUR;								/* ¶ÁÈ¡ÎÄ¼ş£¬ĞèÍâ²¿ÊÍ·Å */
-void		xfclose(FILE *fp);														/* ¹Ø±ÕÎÄ¼ş */
+/* ÎÄ¼ş´¦Àíº¯Êı */
+typedef int (*foreach_file_func_t)(const char* fpath, void *arg);
+
+/* Ä¿Â¼´¦Àíº¯Êı */
+typedef foreach_file_func_t foreach_dir_func_t;
+
+/* ²éÕÒ²¢´¦ÀíÄ¿Â¼ÏÂµÄÃ¿¸öÎÄ¼ş */
+int  foreach_file(const char* dir, foreach_file_func_t func,
+      int recursively, int regular_only, void *arg) WUR;
+
+/* ²éÕÒ²¢´¦ÀíÄ¿Â¼ÏÂµÄÃ¿¸öÄ¿Â¼(²»µİ¹é) */
+int  foreach_dir(const char* dir, foreach_dir_func_t func, void *arg) WUR;
+
+/************************* ÎÄ¼ş²Ù×÷ *************************/
+
+/* ¸´ÖÆÎÄ¼ş */
+int  copy_file(const char* exists, const char* newfile, int overwritten) WUR;
+
+/* ÒÆ¶¯ÎÄ¼ş */
+int  move_file(const char* exists, const char* newfile, int overwritten) WUR;
+
+/* É¾³ıÎÄ¼ş */
+int  delete_file(const char* path) WUR;
+
+/* »ñÈ¡Ö¸¶¨ÎÄ¼şµÄ³¤¶È£¬×î´ó8EB... */
+int file_size(const char* path);
+
+/* »ñÈ¡¿É¶ÁĞÔÇ¿µÄÎÄ¼ş´óĞ¡£¬Èç3.5GB£¬½¨Òéoutlen>64 */
+void file_size_readable(int64_t size, char *outbuf, int outlen);
+
+/* »ñÈ¡ÎÄ¼ş»òÄ¿Â¼Êµ¼ÊÕ¼ÓÃ´ÅÅÌ¿Õ¼äµÄ´óĞ¡ */
+int64_t get_file_disk_usage(const char *absolute_path);
+
+/* »ñÈ¡ÎÄ¼ş»òÄ¿Â¼ËùÔÚÎÄ¼şÏµÍ³´ÅÅÌÇø¿éµÄ´óĞ¡ */
+int  get_file_block_size(const char *absolute_path);
+
+/* ¸ù¾İÎÄ¼şÊµ¼Ê´óĞ¡ºÍ·ÖÇø¿é´óĞ¡¼ÆËãÊµ¼ÊÕ¼ÓÃµÄ´ÅÅÌ¿Õ¼ä */
+#define CALC_DISK_USAGE(real_size, block_size) \
+  (((real_size) + (block_size)) & (~((block_size) - 1))) 
+
+/* ´ò¿ªÎÄ¼ş£¬µİÔöÒÑ´ò¿ªµÄÎÄ¼ş¼ÆÊı */
+FILE* xfopen(const char* file, const char* mode);
+
+/* ¹Ø±ÕÎÄ¼ş£¬µİ¼õÎÄ¼ş¼ÆÊı */
+void xfclose(FILE *fp);
+
+/* 
+ * ´ÓÎÄ¼şÖĞ¶ÁÈ¡Êı¾İ
+ * Èç¹û¶ÁÈ¡¹ı³ÌÖĞ£ºÓöµ½Ö¸¶¨·Ö¸ô·û¡¢´ïµ½Ö¸¶¨×î¶à¶ÁÈ¡×Ö½ÚÊı»ò¶Áµ½ÎÄ¼şÄ©Î²Ôò½áÊø
+ * ¡¾²ÎÊı¡¿£ºÈç¹ûseparatorÎª-1£¬Ôò²»±È½Ï·Ö¸ô·û£»
+ * Èç¹ûmax_bytesÉèÖÃÎª0»ò-1£¬Ò²±íÊ¾²»ÏŞÖÆ¶ÁÈ¡µÄ×Ö½ÚÊı
+ * Èç¹û*lineptr²»ÎªNULL,ÇÒ¶ÁÈëÊı¾İµÄ³¤¶ÈĞ¡ÓÚ*n,ÔòÈë¶ÁĞĞ´æ·ÅÓÚÔ­»º³åÇøÖĞ£»
+ * ·ñÔò½«¶¯Ì¬ÉêÇëÒ»¿éÄÚ´æÓÃÓÚ´æ·Å¶ÁÈëÄÚÈİ£»Èç¹û*lineptrÎªNULL£¬Ôò×ÜÊÇ¶¯Ì¬·ÖÅäÄÚ´æ£»
+ * ¡¾×¢Òâ¡¿£º´«ÈëµÄ»º³åÇøÈç¹û²»¹»´ó½«²»»á±»ÊÍ·Å(²»Í¬ÓÚGLIBCµÄgetline)£¬Õâ¾ÍÒâÎ¶×Å
+ * *lineptr±ØĞëÊÇÊı×é»òÕßallocaµÄÄÚ´æ¡£ÕâÑù¿ÉÒÔ¼õÉÙ¶¯Ì¬ÉêÇë/ÊÍ·ÅÄÚ´æµÄ´ÎÊı¡£
+ * ·µ»ØÖµ£º·µ»Ø³É¹¦¶ÁÈëµÄ×Ö½ÚÊı£¬°üÀ¨·Ö¸ô·û£¬µ«²»°üÀ¨½áÎ²µÄ'\0'¡£ÎÄ¼şÎª¿Õ»ò¹ı´ó·µ»Ø0
+ */
+size_t xfread(FILE *fp, int separator, size_t max_bytes, 
+ char **lineptr, size_t *n) WUR;
+
+/*
+ * ´ÓÎÄ¼şÖĞ¶ÁÈëÒ»ĞĞ
+ * ÀàËÆÓÚGLIBCµÄgetlineº¯Êı£¬C++Ò²ÊµÏÖÁËÈ«¾ÖµÄgetline
+ * ÏÂÃæµÄforeach_lineº¯ÊıºÜºÃµØÚ¹ÊÍÁËÈçºÎÊ¹ÓÃ´Ëº¯Êı
+ */
+size_t get_line(FILE *fp, char **lineptr, size_t *n) WUR;
+
+/* ³É¹¦´¦Àí´Ë·Ö¸ô·û¿é·µ»Ø1£¬Èô·µ»Ø0½«ÖÕÖ¹ */
+typedef int (*foreach_block_cb)(char *line, size_t len, size_t nblock, void *arg);
+
+/* ³É¹¦´¦Àí´ËĞĞ·µ»Ø1£¬Èô·µ»Ø0½«²»ÔÙ´¦ÀíÒÔºóµÄĞĞ */
+typedef int (*foreach_line_cb)(char *line, size_t len, size_t nline, void *arg);
+
+/* ¶ÁÈ¡ÎÄ¼şÃ¿¸ö·Ö¸ô·û¿é½øĞĞ²Ù×÷£¬Èô³É¹¦´¦ÀíËùÓĞĞĞ·µ»Ø1 */
+int  foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg) WUR;
+
+/* ¶ÁÈ¡ÎÄ¼şµÄÃ¿Ò»ĞĞ½øĞĞ²Ù×÷£¬Èô³É¹¦´¦ÀíËùÓĞĞĞ·µ»Ø1 */
+int  foreach_line (FILE* fp, foreach_line_cb func, void *arg) WUR;
 
 /* ÎÄ¼şÄÚÈİĞÅÏ¢ */
 struct file_mem {
-	char*	content;																/* ÎÄ¼şÄÚÈİ */
-	size_t	length;																	/* ÎÄ¼ş³¤¶È */
+ char* content;               /* ÎÄ¼şÄÚÈİ */
+ size_t length;                /* ÎÄ¼ş³¤¶È */
 };
 
-/* ¶ÁÈëÕû¸öÎÄ¼ş */
-struct file_mem* read_file_mem(const char* file, size_t max_size);					/* ½«ÎÄ¼şÄÚÈİ¶ÁÈ¡µ½ÄÚ´æÖĞ */
-void	free_file_mem(struct file_mem *fm);											/* ÊÍ·Å¶ÁÈ¡µ½ÄÚ´æÖĞµÄÎÄ¼ş */
+/* ½«ÎÄ¼ş¶ÁÈëÄÚ´æ */
+/* Èç¹ûÎÄ¼ş²»´æÔÚ»ò´óÓÚ1GB£¬½«·µ»ØNULL */
+/* Èç¹ûmax_size´óÓÚÁã£¬Ôò½öµ±ÎÄ¼ş´óĞ¡Ğ¡ÓÚÖ¸¶¨ÖµÊ±²Å¼ÓÔØ */
+/* Èç¹ûÎÄ¼şµÄ³¤¶ÈÎª0£¬ÔòcontentÎªNULL£¬ÇÒlengthµÈÓÚ0 */
+/* Èç¹û¶ÁÈëÄÚ´æ³É¹¦£¬»º³åÇø½«ÒÔ'\0'½áÎ² */
+struct file_mem* read_file_mem(const char* file, size_t max_size);
+void free_file_mem(struct file_mem *fm);
 
 /* Ğ´ÈëÕû¸öÎÄ¼ş */
-int		write_mem_file(const char *file, const void *data, size_t len) WUR;			/* ½«ÄÚ´æÖĞµÄÊı¾İĞ´ÈëÎÄ¼ş */
-int		write_mem_file_safe(const char *file, const void *data, size_t len) WUR;	/* Í¬ÉÏ£¬±ÜÃâĞ´Èë´íÎó»ò²»ÍêÕûµ¼ÖÂÎÄ¼şËğ»µ */
+/* ½«ÄÚ´æÖĞµÄÊı¾İĞ´ÈëÎÄ¼ş */
+int  write_mem_file(const char *file, const void *data, size_t len) WUR;
+
+/* Í¬ÉÏ£¬±ÜÃâĞ´Èë´íÎó»ò²»ÍêÕûµ¼ÖÂÎÄ¼şËğ»µ */
+int  write_mem_file_safe(const char *file, const void *data, size_t len) WUR;
+
+/* ´´½¨Ò»¸ö¿ÕÎÄ¼ş */
 #define touch(file) write_mem_file(file, "", 0)
 
-size_t	get_delim(char **lineptr, size_t *n, int delim, FILE *fp);					/* ´ÓÎÄ¼şÖĞ¶ÁÈ¡ÒÔdelimÎª·Ö¸ô·ûµÄÒ»¿éÊı¾İ */
-size_t	get_line (char **lineptr, size_t *n, FILE *fp);								/* ´ÓÎÄ¼şÖĞ¶ÁÈ¡Ò»ĞĞ */
-
-typedef int (*foreach_block_cb)(char *line, size_t len, size_t nblock, void *arg);	/* ³É¹¦´¦Àí´Ë·Ö¸ô·û¿é·µ»Ø1£¬Èô·µ»Ø0½«ÖÕÖ¹ */
-typedef int (*foreach_line_cb)(char *line, size_t len, size_t nline, void *arg);	/* ³É¹¦´¦Àí´ËĞĞ·µ»Ø1£¬Èô·µ»Ø0½«²»ÔÙ´¦ÀíÒÔºóµÄĞĞ */
-
-int		foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg) WUR;	/* ¶ÁÈ¡ÎÄ¼şÃ¿¸ö·Ö¸ô·û¿é½øĞĞ²Ù×÷£¬Èô³É¹¦´¦ÀíËùÓĞĞĞ·µ»Ø1 */
-int		foreach_line (FILE* fp, foreach_line_cb func, void *arg) WUR;				/* ¶ÁÈ¡ÎÄ¼şµÄÃ¿Ò»ĞĞ½øĞĞ²Ù×÷£¬Èô³É¹¦´¦ÀíËùÓĞĞĞ·µ»Ø1 */
+/************************* ÎÄ¼şÏµÍ³ *************************/
 
 /* ´ÅÅÌ¿Õ¼ä */
 struct fs_usage {
-	uint64_t fsu_total;																/* ×Ü¹²×Ö½ÚÊı */
-	uint64_t fsu_free;																/* ¿ÕÏĞ×Ö½ÚÊı£¨³¬¼¶ÓÃ»§£© */
-	uint64_t fsu_avail;																/* ¿ÉÓÃ×Ö½ÚÊı£¨Ò»°ãÓÃ»§£© */
-	uint64_t fsu_files;																/* ÎÄ¼ş½ÚµãÊı */
-	uint64_t fsu_ffree;																/* ¿ÉÓÃ½ÚµãÊı */
+ uint64_t fsu_total;                /* ×Ü¹²×Ö½ÚÊı */
+ uint64_t fsu_free;                /* ¿ÕÏĞ×Ö½ÚÊı£¨³¬¼¶ÓÃ»§£© */
+ uint64_t fsu_avail;                /* ¿ÉÓÃ×Ö½ÚÊı£¨Ò»°ãÓÃ»§£© */
+ uint64_t fsu_files;                /* ÎÄ¼ş½ÚµãÊı */
+ uint64_t fsu_ffree;                /* ¿ÉÓÃ½ÚµãÊı */
 };
 
-int	get_fs_usage(const char* absolute_path, struct fs_usage *fsp) WUR;				/* »ñÈ¡Â·¾¶ËùÔÚÎÄ¼şÏµÍ³µÄÊ¹ÓÃ×´Ì¬ */
+/* »ñÈ¡Â·¾¶ËùÔÚÎÄ¼şÏµÍ³µÄÊ¹ÓÃ×´Ì¬ */
+int get_fs_usage(const char* absolute_path, struct fs_usage *fsp) WUR;
 
-/* ³£ÓÃÄ¿Â¼/ÎÄ¼ş */
-const char* get_execute_path();														/* »ñÈ¡½ø³ÌÂ·¾¶Ãû(¼´argv[0]) */
-const char* get_execute_name();														/* »ñÈ¡½ø³ÌÎÄ¼şÃû */
-const char* get_execute_dir();														/* »ñÈ¡½ø³ÌÎÄ¼şËùÔÚÄ¿Â¼ */
+/************************* ³£ÓÃÂ·¾¶ *************************/
 
-const char* get_module_path();														/* »ñÈ¡µ±Ç°Ä£¿éÂ·¾¶ */
+/* »ñÈ¡½ø³ÌÂ·¾¶Ãû(¼´argv[0]) */
+const char* get_execute_path();
 
-const char* get_current_dir();														/* »ñÈ¡½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼ */
-int			set_current_dir(const char *dir) WUR;									/* ÉèÖÃ½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼ */
+/* »ñÈ¡½ø³ÌÎÄ¼şÃû */
+const char* get_execute_name();
 
-const char* get_home_dir();															/* »ñÈ¡µ±Ç°µÇÂ¼ÓÃ»§µÄÖ÷Ä¿Â¼ */
-const char* get_app_data_dir();														/* »ñÈ¡Ó¦ÓÃ³ÌĞòÊı¾İÄ¿Â¼£¨ÅäÖÃÎÄ¼ş£¬»º´æµÈ£© */
+/* »ñÈ¡½ø³ÌÎÄ¼şËùÔÚÄ¿Â¼ */
+const char* get_execute_dir();
 
-/* ÁÙÊ±Ä¿Â¼ / ÎÄ¼ş */
-const char* get_temp_dir();															/* »ñÈ¡Ó¦ÓÃ³ÌĞòµÄÁÙÊ±Ä¿Â¼ */
-int			get_temp_file_under(const char* dir, const char *prefix, 				/* ÔÚÖ¸¶¨Ä¿Â¼ÏÂ»ñÈ¡¿ÉÓÃµÄÁÙÊ±ÎÄ¼ş */
-	char *outbuf, size_t outlen) WUR;
-const char* get_temp_file(const char* prefix);										/* »ñÈ¡Ä¬ÈÏÁÙÊ±Ä¿Â¼ÏÂ¿ÉÓÃµÄÁÙÊ±ÎÄ¼ş£¨·ÇÏß³Ì°²È«£© */
+/* »ñÈ¡µ±Ç°Ä£¿éÂ·¾¶ */
+const char* get_module_path();
 
+/* »ñÈ¡½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼ */
+const char* get_current_dir();
+
+/* ÉèÖÃ½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼ */
+int set_current_dir(const char *dir) WUR;
+
+/* »ñÈ¡µ±Ç°µÇÂ¼ÓÃ»§µÄÖ÷Ä¿Â¼ */
+const char* get_home_dir();
+
+/* »ñÈ¡Ó¦ÓÃ³ÌĞòÊı¾İÄ¿Â¼£¨ÅäÖÃÎÄ¼ş£¬»º´æµÈ£© */
+const char* get_app_data_dir();
+
+/************************* ÁÙÊ±Ä¿Â¼/ÎÄ¼ş *************************/
+
+/* »ñÈ¡Ó¦ÓÃ³ÌĞòµÄÁÙÊ±Ä¿Â¼ */
+const char* get_temp_dir();
+
+/* ÔÚÖ¸¶¨Ä¿Â¼ÏÂ»ñÈ¡¿ÉÓÃµÄÁÙÊ±ÎÄ¼ş */
+int get_temp_file_under(const char* dir, const char *prefix,
+        char *outbuf, size_t outlen) WUR;
+
+/* »ñÈ¡Ä¬ÈÏÁÙÊ±Ä¿Â¼ÏÂ¿ÉÓÃµÄÁÙÊ±ÎÄ¼ş£¨·ÇÏß³Ì°²È«£© */
+const char* get_temp_file(const char* prefix);
 
 /************************************************************************/
 /*                         Time & Timer Ê±¼äºÍ¶¨Ê±Æ÷                     */
@@ -567,48 +668,61 @@ const char* get_temp_file(const char* prefix);										/* »ñÈ¡Ä¬ÈÏÁÙÊ±Ä¿Â¼ÏÂ¿ÉÓ
 #include <time.h>
 
 /* Ê±¼äÈÕÆÚ×Ö·û´® */
-const char* time_str (time_t);														/* ·µ»ØÒ»¸ö HH:MM:SS ÑùÊ½µÄÊ±¼ä×Ö·û´®£¬·ÇÏß³Ì°²È« */
-const char* date_str (time_t);														/* ·µ»ØÒ»¸ö YY-MM-DD ÑùÊ½µÄÈÕÆÚ×Ö·û´®£¬·ÇÏß³Ì°²È« */
-const char* datetime_str (time_t);													/* ·µ»ØÒ»¸ö YY-MM-DD HH:MM:SS ÑùÊ½µÄÊ±¼äÈÕÆÚ×Ö·û´®£¬·ÇÏß³Ì°²È« */
-const char* timestamp_str(time_t);													/* ·µ»ØÒ»¸ö YYMMDDHHMMSS ÑùÊ½µÄÊ±¼ä´Á×Ö·û´®£¬·ÇÏß³Ì°²È« */
+/* ·µ»Ø HH:MM:SS ÑùÊ½µÄÊ±¼ä×Ö·û´®£¬·ÇÏß³Ì°²È« */
+const char* time_str (time_t);
 
-#define TIME_UNIT_MAX	20
+/* ·µ»Ø YY-MM-DD ÑùÊ½µÄÈÕÆÚ×Ö·û´®£¬·ÇÏß³Ì°²È« */
+const char* date_str (time_t);
 
-void time_unit_localize(const char* year, const char* month, const char* day,		/* ÉèÖÃ±¾µØ»¯µÄÊ±¼äµ¥Î» */
-						const char* hour, const char* minute, const char* second,
-						int plural);
+/* ·µ»Ø YY-MM-DD HH:MM:SS ÑùÊ½µÄÊ±¼äÈÕÆÚ×Ö·û´®£¬·ÇÏß³Ì°²È« */
+const char* datetime_str (time_t);
 
-void time_span_readable(int64_t seconds, int accurate, char* outbuf, size_t outlen);/* ·µ»ØÒ»¸öÒ×¶ÁµÄÊ±¼ä²î(Èç2Ğ¡Ê±51·Ö13Ãë)£¬cutoff¾«È·µ½µÄÊ±¼äµ¥Î» */
+/* ·µ»Ø YYMMDDHHMMSS ÑùÊ½µÄÊ±¼ä´Á×Ö·û´®£¬·ÇÏß³Ì°²È« */
+const char* timestamp_str(time_t);
 
-#define TIME_BUFSIZE		64														/* Ê±¼ä×Ö·û´®»º³åÇø´óĞ¡ */
-#define TIME_SPAN_BUFSIZE	128														/* Ê±¼ä²î»º³åÇø´óĞ¡ */
+#define TIME_UNIT_MAX 20
 
-/* Ë¯Ãß */
-void	ssleep(int seconds);														/* Ë¯ÃßÖ¸¶¨ÃëÊı */
-void	msleep(int milliseconds);													/* Ë¯ÃßÖ¸¶¨ºÁÃëÊı */
+/* ÉèÖÃ±¾µØ»¯µÄÊ±¼äµ¥Î» */
+void time_unit_localize(const char* year, const char* month, const char* day,
+      const char* hour, const char* minute, const char* second,
+      int plural);
+
+/* ·µ»ØÒ»¸öÒ×¶ÁµÄÊ±¼ä²î(Èç2Ğ¡Ê±51·Ö13Ãë)£¬cutoff¾«È·µ½µÄÊ±¼äµ¥Î» */
+void time_span_readable(int64_t seconds, int accurate, char* outbuf, size_t outlen);
+
+#define TIME_BUFSIZE  64       /* Ê±¼ä×Ö·û´®»º³åÇø´óĞ¡ */
+#define TIME_SPAN_BUFSIZE 128  /* Ê±¼ä²î»º³åÇø´óĞ¡ */
+
+/* Ë¯ÃßÖ¸¶¨ÃëÊı */
+void ssleep(int seconds);
+
+/* Ë¯ÃßÖ¸¶¨ºÁÃëÊı */
+void msleep(int milliseconds);
+
+/************************* ¼ÆÊ±Æ÷ *************************/
 
 /* 
- * ¼ÆÊ±Æ÷ 
  * ¿ÉÓÃÓÚÊ±³¤¼ÆËã¼°´úÂëĞÔÄÜ·ÖÎö
  * ×î¸ß¾«È·µ½Î¢Ãë¼¶±ğ
  */
 typedef struct{
 #ifdef OS_WIN
-	LARGE_INTEGER start;
-	LARGE_INTEGER stop;
+ LARGE_INTEGER start;
+ LARGE_INTEGER stop;
 #else
-	struct timeval start;
-	struct timeval stop;
+ struct timeval start;
+ struct timeval stop;
 #endif
 } time_meter_t;
 
-void	time_meter_start(time_meter_t *timer);												/* ¿ªÊ¼¼ÆÊ± */
-void	time_meter_stop(time_meter_t *timer);												/* ½áÊø¼ÆÊ± */
+/* ¿ªÊ¼/½áÊø¼ÆÊ± */
+void time_meter_start(time_meter_t *timer);
+void time_meter_stop(time_meter_t *timer);
 
-/* ´Ó¼ÆÊ±Æ÷¿ªÊ¼µ½ÖÕÖ¹¾­ÀúµÄÊ±¼ä */
-double	time_meter_elapsed_us(time_meter_t *meter);											/* ¾­ÀúÊ±¼ä(Î¢Ãë) */
-double	time_meter_elapsed_ms(time_meter_t *meter);											/* ¾­ÀúÊ±¼ä(ºÁÃë) */
-double	time_meter_elapsed_s(time_meter_t *meter);											/* ¾­ÀúÊ±¼ä(Ãë) */
+/* ´Ó¼ÆÊ±Æ÷¿ªÊ¼µ½ÖÕÖ¹¾­ÀúµÄÊ±¼ä£¨Î¢Ãë¡¢ºÁÃë¡¢Ãë£© */
+double time_meter_elapsed_us(time_meter_t *meter);
+double time_meter_elapsed_ms(time_meter_t *meter);
+double time_meter_elapsed_s(time_meter_t *meter);
 
 /* ´Ó¼ÆÊ±Æ÷¿ªÊ¼µ½ÏÖÔÚ¾­ÀúµÄÊ±¼ä */
 double time_meter_elapsed_us_till_now(time_meter_t *meter);
@@ -616,77 +730,106 @@ double time_meter_elapsed_ms_till_now(time_meter_t *meter);
 double time_meter_elapsed_s_till_now(time_meter_t *meter);
 
 /************************************************************************/
-/*                         Charset ×Ö·û±àÂëÀàº¯Êı							 */
+/*                         Charset ×Ö·û±àÂëÀàº¯Êı                        */
 /************************************************************************/
 
-typedef unsigned int	UTF32;	/* at least 32 bits */
-typedef unsigned short	UTF16;	/* at least 16 bits */
-typedef unsigned char	UTF8;	/* typically 8 bits */
-typedef unsigned char	UTF7;	/* typically 8 bits */
-typedef unsigned char	Boolean; /* 0 or 1 */
+/************************* ±àÂë¼ì²â *************************/
 
-#define MAX_CHARSET	10																/* ×Ö·û¼¯Ãû×î´ó³¤¶È */
+#define MAX_CHARSET 10       /* ×Ö·û¼¯Ãû×î´ó³¤¶È */
 
 /* GB2312¼æÈİASCIIÂë£¬GBK¼æÈİGB2312±àÂë */
-int	is_ascii(const void* str, size_t size);											/* ×Ö·û´®ÊÇ´¿ASCII±àÂë */
-int is_utf8(const void* str, size_t size);											/* ×Ö·û´®ÊÇ·ñÊÇUTF-8±àÂë */
-int	is_gb2312(const void* str, size_t size);										/* ×Ö·û´®ÊÇ·ñÊÇGB2312±àÂë */
-int	is_gbk(const void* str, size_t size);											/* ×Ö·û´®ÊÇ·ñÊÇGBK±àÂë */
+int is_ascii(const void* str, size_t size);          /* ×Ö·û´®ÊÇ´¿ASCII±àÂë */
+int is_utf8(const void* str, size_t size);           /* ×Ö·û´®ÊÇ·ñÊÇUTF-8±àÂë */
+int is_gb2312(const void* str, size_t size);         /* ×Ö·û´®ÊÇ·ñÊÇGB2312±àÂë */
+int is_gbk(const void* str, size_t size);            /* ×Ö·û´®ÊÇ·ñÊÇGBK±àÂë */
 
+/* »ñÈ¡×Ö·û´®µÄ×Ö·û¼¯(ASCII,UTF-8,GB2312,GBK,GB18030) */
 int get_charset(const void* str, size_t size, 
-				char *outbuf, size_t outlen, int can_ascii) WUR;					/* »ñÈ¡×Ö·û´®µÄ×Ö·û¼¯(ASCII,UTF-8,GB2312,GBK,GB18030) */
-int get_file_charset(const char* file, char *outbuf, size_t outlen,					/* Ì½²âÎÄ¼şµÄ×Ö·û¼¯ */
-				double* probability, int max_line) WUR;
+    char *outbuf, size_t outlen, int can_ascii) WUR;
 
-int	read_file_bom(FILE *fp, char *outbuf, size_t outlen) WUR;						/* »ñÈ¡ÎÄ¼şµÄBOMÍ· */
-int write_file_bom(FILE *fp, const char* charset) WUR;								/* Ğ´Èë×Ö·û¼¯µÄBOMÍ· */
+/* Ì½²âÎÄ¼şµÄ×Ö·û¼¯ */
+int get_file_charset(const char* file, char *outbuf, size_t outlen,
+    double* probability, int max_line) WUR;
 
-int utf8_len(const char* u8);														/* »ñÈ¡UTF-8±àÂë×Ö·û´®µÄ×Ö·ûÊı (·Ç×Ö½ÚÊı)£¬·µ»Ø£­1±íÊ¾ÎŞĞ§UTF-8±àÂë */
-int utf8_trim(const char* u8, char* outbuf, size_t max_byte);						/* °´ÕÕ¸ø¶¨µÄ×î¶à×Ö½ÚÊı½ØÈ¡UTF-8×Ö·û´®£¬·µ»ØĞÂ×Ö·û´®µÄ³¤¶È, outbuf³¤¶È±ØĞë´óÓÚmax_byte */
-int utf8_abbr(const char* u8, char* outbuf, size_t max_byte,						/* ¼òĞ´UTF-8×Ö·û´®µ½Ö¸¶¨×î´ó³¤¶È£¬±£Áô×îÇ°ºÍ×îºóµÄ×Ö·û£¬ÖĞ¼äÓÃ...±íÊ¾Ê¡ÂÔ */
-			size_t last_reserved_words);											/* last_reserved_wordsÖ¸×îºóÓ¦±£Áô¶àÉÙ¸ö×Ö·û£¨×¢Òâ²»ÊÇ×Ö½Ú£© */
+/* »ñÈ¡ÎÄ¼şµÄBOMÍ· */
+int read_file_bom(FILE *fp, char *outbuf, size_t outlen) WUR;
 
-wchar_t* mbcs_to_wcs(const char* src);												/* ½«¶à×Ö½Ú×Ö·û´®×ª»»Îª¿í×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
-char*    wcs_to_mbcs(const wchar_t* src);											/* ½«¿í×Ö·û´®×ª»»Îª¶à×Ö½Ú×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
+/* Ğ´Èë×Ö·û¼¯µÄBOMÍ· */
+int write_file_bom(FILE *fp, const char* charset) WUR;
 
-UTF16* utf8_to_utf16(const UTF8* in, int strict);									/* ½«UTF-8±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-16LE×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
-UTF8* utf16_to_utf8(const UTF16* in, int strict);									/* ½«UTF-16LE×Ö·û´®×ª»»ÎªUTF-8±àÂëµÄ×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
+/************************* ±àÂë×ª»» *************************/
 
-UTF32* utf8_to_utf32(const UTF8* in,  int strict);									/* ½«UTF-8±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-32LE×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
-UTF8* utf32_to_utf8(const UTF32* in,  int strict);									/* ½«UTF-32LE×Ö·û´®×ª»»ÎªUTF-8±àÂëµÄ×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
+typedef unsigned int UTF32;      /* at least 32 bits */
+typedef unsigned short UTF16;    /* at least 16 bits */
+typedef unsigned char UTF8;      /* typically 8 bits */
+typedef unsigned char UTF7;      /* typically 8 bits */
+typedef unsigned char Boolean;   /* 0 or 1 */
 
-UTF32* utf16_to_utf32(const UTF16* in, int strict);									/* ½«UTF-16LE±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-32LE×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
-UTF16* utf32_to_utf16(const UTF32* in, int strict);									/* ½«UTF-32LE×Ö·û´®×ª»»ÎªUTF-16LE±àÂëµÄ×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
+/* ¶à×Ö½Ú×Ö·û´® <=> ¿í×Ö·û´®×ª»»£¬ĞèÍâ²¿ÊÍ·Å */
+wchar_t* mbcs_to_wcs(const char* src);
+char*    wcs_to_mbcs(const wchar_t* src);
 
-UTF7* utf8_to_utf7(const UTF8* in);                                     			/* ½«UTF-8±àÂë×Ö·û´®×ª»»ÎªUTF-7×Ö·û´®£¬ĞèÒªÍâ²¿ÊÍ·Å£¬strictÎŞÒâÒå */
-UTF8* utf7_to_utf8(const UTF7* in);             									/* ½«UTF-7±àÂë×Ö·û´®×ª»»ÎªUTF-8×Ö·û´®£¬ĞèÒªÍâ²¿ÊÍ·Å£¬strictÎŞÒâÒå */
+/* UTF-8×Ö·û´® <=> UTF-16LE×Ö·û´®×ª»»£¬ĞèÍâ²¿ÊÍ·Å */
+UTF16* utf8_to_utf16(const UTF8* in, int strict);
+UTF8*  utf16_to_utf8(const UTF16* in, int strict);
 
+/* UTF-8×Ö·û´® <=> UTF-32LE×Ö·û´®×ª»»£¬ĞèÍâ²¿ÊÍ·Å */
+UTF32* utf8_to_utf32(const UTF8* in,  int strict);
+UTF8*  utf32_to_utf8(const UTF32* in,  int strict);
+
+/* UTF-16LE×Ö·û´® <=> UTF-32LE×Ö·û´®×ª»»£¬ĞèÍâ²¿ÊÍ·Å */
+UTF32* utf16_to_utf32(const UTF16* in, int strict);      
+UTF16* utf32_to_utf16(const UTF32* in, int strict);
+
+/* UTF-8×Ö·û´® <=> UTF-7×Ö·û´®×ª»»£¬ĞèÒªÍâ²¿ÊÍ·Å */
+UTF7* utf8_to_utf7(const UTF8* in);
+UTF8* utf7_to_utf8(const UTF7* in);
+
+/* ¿í×Ö·û´®(wchar_t*) <=> UTF-8×Ö·û´®×ª»»£¬ĞèÍâ²¿ÊÍ·Å */
 #if defined(WCHAR_T_IS_UTF16)
-#define utf8_to_wcs(in, s) (wchar_t*)utf8_to_utf16((UTF8*)in, s)					/* ½«ÏµÍ³¿í×Ö·û´®(wchar_t*)×ª»»ÎªUTF-8±àÂëµÄ×Ö·û´®£¬ĞèÍâ²¿ÊÍ·Å */
-#define wcs_to_utf8(in, s) (char*)utf16_to_utf8((UTF16*)in, s)						/* ½«UTF-8±àÂëµÄ×Ö·û´®×ª»»ÎªÏµÍ³¿í×Ö·û´®(wchar_t*)£¬ĞèÍâ²¿ÊÍ·Å */
+#define utf8_to_wcs(in, s) (wchar_t*)utf8_to_utf16((UTF8*)in, s)
+#define wcs_to_utf8(in, s) (char*)utf16_to_utf8((UTF16*)in, s)
 #elif defined(WCHAR_T_IS_UTF32)
 #define utf8_to_wcs(in, s) (wchar_t*)utf8_to_utf32((UTF8*)in, s)
 #define wcs_to_utf8(in, s) (char*)utf32_to_utf8((UTF32*)in, s)
 #endif
 
-char* utf8_to_mbcs(const char* utf8, int strict);									/* ½«UTF-8±àÂëµÄ×Ö·û´®×ª»»ÎªÏµÍ³¶à×Ö½Ú±àÂë */
-char* mbcs_to_utf8(const char* mbcs, int strict);									/* ½«ÏµÍ³¶à×Ö½Ú±àÂëµÄ×Ö·û´®×ª»»ÎªUTF-8±àÂë */
-
-ssize_t utf16_len(const UTF16* u16);													/* »ñÈ¡UTF-16LE±àÂë×Ö·û´®µÄ×Ö·ûÊı (·Ç×Ö½ÚÊı) */
-ssize_t utf32_len(const UTF32* u32);													/* »ñÈ¡UTF-32LE±àÂë×Ö·û´®µÄ×Ö·ûÊı (·Ç×Ö½ÚÊı) */
-
-#ifndef OS_ANDROID
-const char* get_locale();															/* »ñÈ¡ÏµÍ³Ä¬ÈÏ×Ö·û¼¯(ÈçUTF-8£¬CP936) */
-#endif
-
-const char* get_language();															/* »ñÈ¡ÏµÍ³Ä¬ÈÏµÄÓïÑÔ£¨Èçzh_CN£¬en_US) */
+/* UTF-8×Ö·û´® <=> ÏµÍ³¶à×Ö½Ú×Ö·û´®×ª»»£¬ĞèÍâ²¿ÊÍ·Å */
+char* utf8_to_mbcs(const char* utf8, int strict);
+char* mbcs_to_utf8(const char* mbcs, int strict);
 
 #ifdef _LIBICONV_H
 
-int convert_to_charset(const char* from, const char* to,							/* ±àÂë×ª»»º¯Êı£¬³É¹¦·µ»Ø1£¬Ê§°Ü·µ»Ø0 */
-						 const char* inbuf, size_t inlen,
-						 char **outbuf, size_t *outlen, int strict) WUR;										//¿íËÉÄ£Ê½
+/* ±àÂë×ª»»º¯Êı£¬³É¹¦·µ»Ø1£¬Ê§°Ü·µ»Ø0 */
+int convert_to_charset(const char* from, const char* to,
+        const char* inbuf, size_t inlen,
+        char **outbuf, size_t *outlen, int strict) WUR;
 #endif
+
+/************************* ±àÂë²Ù×÷ *************************/
+
+/* »ñÈ¡UTF-8±àÂë×Ö·û´®µÄ×Ö·ûÊı (·Ç×Ö½ÚÊı)£¬·µ»Ø£­1±íÊ¾ÎŞĞ§UTF-8±àÂë */
+int utf8_len(const char* u8);
+
+/* °´ÕÕ¸ø¶¨µÄ×î¶à×Ö½ÚÊı½ØÈ¡UTF-8×Ö·û´®£¬·µ»ØĞÂ×Ö·û´®µÄ³¤¶È, outbuf³¤¶È±ØĞë´óÓÚmax_byte */
+int utf8_trim(const char* u8, char* outbuf, size_t max_byte);
+
+/* ¼òĞ´UTF-8×Ö·û´®µ½Ö¸¶¨×î´ó³¤¶È£¬±£Áô×îÇ°ºÍ×îºóµÄ×Ö·û£¬ÖĞ¼äÓÃ...±íÊ¾Ê¡ÂÔ */
+/* last_reserved_wordsÖ¸×îºóÓ¦±£Áô¶àÉÙ¸ö×Ö·û£¨×¢Òâ²»ÊÇ×Ö½Ú£© */
+int utf8_abbr(const char* u8, char* outbuf, size_t max_byte,
+    size_t last_reserved_words);
+
+/* »ñÈ¡UTF-16LE/32LE±àÂë×Ö·û´®µÄ×Ö·ûÊı (·Ç×Ö½ÚÊı) */
+ssize_t utf16_len(const UTF16* u16);
+ssize_t utf32_len(const UTF32* u32);
+
+/* »ñÈ¡ÏµÍ³Ä¬ÈÏ×Ö·û¼¯(ÈçUTF-8£¬CP936) */
+#ifndef OS_ANDROID
+const char* get_locale();
+#endif
+
+/* »ñÈ¡ÏµÍ³Ä¬ÈÏµÄÓïÑÔ£¨Èçzh_CN£¬en_US£©*/
+const char* get_language();
 
 /************************************************************************/
 /*                         Process  ¶à½ø³Ì                              */
@@ -700,21 +843,29 @@ typedef pid_t process_t;
 #define INVALID_PROCESS 0
 #endif
 
-process_t process_create(const char* cmd_with_param, int show);						/* ´´½¨ĞÂµÄ½ø³Ì */
-int	process_wait(process_t process, int milliseconds, int *exit_code) WUR;			/* µÈ´ı½ø³Ì½áÊø */
-int process_kill(process_t process, int exit_code, int wait) WUR;					/* É±ËÀ½ø³Ì */
+/* ´´½¨ĞÂµÄ½ø³Ì */
+process_t process_create(const char* cmd_with_param, int show);
+
+/* µÈ´ı½ø³Ì½áÊø */
+int process_wait(process_t process, int milliseconds, int *exit_code) WUR;
+
+/* É±ËÀ½ø³Ì */
+int process_kill(process_t process, int exit_code, int wait) WUR;
 
 /*
+ * Ö´ĞĞÒ»¸öÍâ²¿ÃüÁî£¬´ò¿ªÒ»¸öÎÄ¼ş£¬ÓÃä¯ÀÀÆ÷´ò¿ªÒ»¸öÍøÖ·µÈ
  * show: 0 ²»ÏÔÊ¾£¬1 ÏÔÊ¾£¬2 ×î´ó»¯ÏÔÊ¾
  * wait_timeout: 0 ²»µÈ´ı£¬INFINITE ÎŞÏŞµÈ´ı£¬ÆäËûÕıÊı µÈ´ıµÄºÁÃëÊı
  * ²ÎÊıÖĞÈô´øÓĞË«ÒıºÅÒªÊ¹ÓÃÁíÒ»¶ÔË«ÒıºÅÀ´×ªÒå£¬Èç \"\"\"quoted text\"\"\"" ´ú±í "quoted text"
  */
-int shell_execute(const char* cmd, const char* param, int show, int wait_timeout);	/* Ö´ĞĞÒ»¸öÍâ²¿ÃüÁî£¬´ò¿ªÒ»¸öÎÄ¼ş£¬ÓÃä¯ÀÀÆ÷´ò¿ªÒ»¸öÍøÖ·µÈ */
+int shell_execute(const char* cmd, const char* param, int show, int wait_timeout);
 
-char* popen_readall(const char* command);											/* ´´½¨²¢µÈ´ı¶ÁÈ¡×Ó½ø³ÌµÄËùÓĞÊä³ö£¬ĞèÊÖ¶¯ÊÍ·Å */
+/* ´´½¨²¢µÈ´ı¶ÁÈ¡×Ó½ø³ÌµÄËùÓĞÊä³ö£¬ĞèÊÖ¶¯ÊÍ·Å */
+char* popen_readall(const char* command);
 
+/* ´´½¨×Ó½ø³ÌºÍÁ¬½Ó¹ÜµÀ */
 #ifdef OS_WIN
-FILE* popen(const char *command, const char *mode);									/* ´´½¨×Ó½ø³ÌºÍÁ¬½Ó¹ÜµÀ */
+FILE* popen(const char *command, const char *mode);
 #define pclose _pclose
 
 #endif
@@ -723,10 +874,11 @@ FILE* popen(const char *command, const char *mode);									/* ´´½¨×Ó½ø³ÌºÍÁ¬½Ó¹
 /*                       Mutex & Sync Ïß³ÌÍ¬²½Óë»¥³â                    */
 /************************************************************************/
 
-/* Ô­×Ó±äÁ¿ */
+/************************* Ô­×Ó±äÁ¿ *************************/
+
 /* ËùÓĞ²Ù×÷¾ù·µ»Ø²Ù×÷Ö®ºóµÄÖµ */
 typedef struct {
-	volatile long counter;
+ volatile long counter;
 } atomic_t;
 
 long atomic_get(const atomic_t *v);
@@ -736,17 +888,21 @@ void atomic_sub(long i, atomic_t *v);
 void atomic_inc(atomic_t *v);
 void atomic_dec(atomic_t *v);
 
+/************************* ×ÔĞıËø *************************/
+
 /* ×ÔĞıËøÊµÏÖ, Ïß³ÌÔÚ»ñÈ¡²»µ½ËøÊ±»áÃ¦µÈ´ı */
 /* ÒòÎª²»»á±»ÄÚºËÇĞ»»×´Ì¬Òò¶ø¿ªÏú±È½ÏĞ¡ */
 typedef struct {
-	volatile long spin;
+ volatile long spin;
 }spin_lock_t;
 
-void spin_init(spin_lock_t* lock);													/* ³õÊ¼»¯ */
-void spin_lock(spin_lock_t* lock);													/* ¼ÓËø */
-void spin_unlock(spin_lock_t* lock);												/* ½âËø */
-int  spin_trylock(spin_lock_t* lock);												/* ³¢ÊÔ¼ÓËø */
-int  spin_is_lock(spin_lock_t* lock);												/* ÊÇ·ñÒÑ¼ÓËø */
+void spin_init(spin_lock_t* lock);             /* ³õÊ¼»¯ */
+void spin_lock(spin_lock_t* lock);             /* ¼ÓËø */
+void spin_unlock(spin_lock_t* lock);           /* ½âËø */
+int  spin_trylock(spin_lock_t* lock);          /* ³¢ÊÔ¼ÓËø */
+int  spin_is_lock(spin_lock_t* lock);          /* ÊÇ·ñÒÑ¼ÓËø */
+
+/************************* »¥³âËø *************************/
 
 /* »¥³âÁ¿Ïß³Ì¼ÓËø£¬µ±»ñÈ¡²»µ½ËøÊ±ÄÚºË»áµ÷¶ÈÆäËûÏß³ÌÔËĞĞ */
 /* Í¬Ò»¸öÏß³Ì¿ÉÒÔ¶à´Î»ñÈ¡Ëø£¨µİ¹éËø£©£¬µ«±ØĞëÊÍ·ÅÏàÍ¬µÄ´ÎÊı */
@@ -758,11 +914,13 @@ typedef CRITICAL_SECTION mutex_t;
 typedef pthread_mutex_t mutex_t;
 #endif
 
-void mutex_init(mutex_t *lock);														/* ³õÊ¼»¯»¥³âËø */
-void mutex_lock(mutex_t *lock);														/* ¼ÓËø»¥³âËø */
-void mutex_unlock(mutex_t *lock);													/* ½âËø»¥³âËø */
-int  mutex_trylock(mutex_t *lock);													/* ³¢ÊÔ¼ÓËø£¬³É¹¦·µ»Ø1 */
-void mutex_destroy(mutex_t* lock);													/* Ïú»Ù»¥³âËø */
+void mutex_init(mutex_t *lock);                /* ³õÊ¼»¯»¥³âËø */
+void mutex_lock(mutex_t *lock);                /* ¼ÓËø»¥³âËø */
+void mutex_unlock(mutex_t *lock);              /* ½âËø»¥³âËø */
+int  mutex_trylock(mutex_t *lock);             /* ³¢ÊÔ¼ÓËø£¬³É¹¦·µ»Ø1 */
+void mutex_destroy(mutex_t* lock);             /* Ïú»Ù»¥³âËø */
+
+/************************* ¶ÁĞ´Ëø *************************/
 
 #ifdef USE_READ_WRITE_LOCK
 
@@ -771,13 +929,13 @@ void mutex_destroy(mutex_t* lock);													/* Ïú»Ù»¥³âËø */
 /* Èç¹ûÓĞÏß³ÌÕıÔÚĞ´£¬ÄÇÃ´ËùÓĞÆäËûÏß³Ì¶¼²»ÄÜ¶ÁĞ´ */
 typedef struct {
 #ifdef OS_POSIX
-	pthread_rwlock_t rwlock;
+ pthread_rwlock_t rwlock;
 #elif WINVER >= WINVISTA
-	SRWLOCK	srwlock;
+ SRWLOCK srwlock;
 #else
-	mutex_t write_lock;
-	long reader_count;
-	HANDLE no_readers;
+ mutex_t write_lock;
+ long reader_count;
+ HANDLE no_readers;
 #endif
 } rwlock_t;
 
@@ -789,6 +947,8 @@ void rwlock_wrunlock(rwlock_t *rwlock);
 void rwlock_destroy(rwlock_t *rwlock);
 
 #endif
+
+/************************* Ìõ¼ş±äÁ¿ *************************/
 
 #ifdef USE_CONDITION_VARIABLE
 
@@ -804,12 +964,12 @@ typedef CONDITION_VARIABLE cond_t;
 /* not supported */
 #endif
 
-void cond_init(cond_t *cond);														/* ³õÊ¼»¯Ìõ¼ş±äÁ¿ */
-void cond_wait(cond_t *cond, mutex_t *mutex);										/* µÈ´ıÌõ¼ş±äÁ¿·¢Éú¸Ä±ä */
-int  cond_wait_time(cond_t *cond, mutex_t *mutex, int milliseconds);				/* ¿ÉÖ¸¶¨×î³¤µÈ´ıÊ±¼ä,³¬Ê±·µ»Ø0 */
-void cond_signal(cond_t *cond);														/* »½ĞÑµÈ´ı¶ÓÁĞÖĞµÄÒ»¸öÏß³Ì */
-void cond_signal_all(cond_t *cond);													/* »½ĞÑËùÓĞµÈ´ıÏß³Ì */
-void cond_destroy(cond_t *cond);													/* Ïú»ÙÌõ¼ş±äÁ¿ */
+void cond_init(cond_t *cond);                   /* ³õÊ¼»¯Ìõ¼ş±äÁ¿ */
+void cond_wait(cond_t *cond, mutex_t *mutex);   /* µÈ´ıÌõ¼ş±äÁ¿·¢Éú¸Ä±ä */
+int  cond_wait_time(cond_t *cond, mutex_t *mutex, int milliseconds);    /* ¿ÉÖ¸¶¨×î³¤µÈ´ıÊ±¼ä,³¬Ê±·µ»Ø0 */
+void cond_signal(cond_t *cond);                 /* »½ĞÑµÈ´ı¶ÓÁĞÖĞµÄÒ»¸öÏß³Ì */
+void cond_signal_all(cond_t *cond);             /* »½ĞÑËùÓĞµÈ´ıÏß³Ì */
+void cond_destroy(cond_t *cond);                /* Ïú»ÙÌõ¼ş±äÁ¿ */
 
 #endif
 
@@ -838,43 +998,51 @@ typedef void* thread_ret_t;
 
 typedef thread_ret_t (THREAD_CALLTYPE *thread_proc_t)(void*);
 
-int	 thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize) WUR;	/* ´´½¨Ïß³Ì */
-void thread_exit(size_t exit_code);													/* Ïß³ÌÄÚÍË³ö */
-int  thread_join(thread_t t, thread_ret_t *exit_code);								/* µÈ´ıÏß³Ì */
+/* ´´½¨Ïß³Ì */
+int  thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize) WUR;
 
-/* Ïß³Ì±¾µØ´æ´¢ */
-/* Thread locale storage */
+/* Ïß³ÌÄÚÍË³ö */
+void thread_exit(size_t exit_code);
+
+/* µÈ´ıÏß³Ì */
+int  thread_join(thread_t t, thread_ret_t *exit_code);
+
+/************************* Ïß³Ì±¾µØ´æ´¢ *************************/
+
 #ifdef OS_WIN
 typedef DWORD thread_tls_t;
 #else
 typedef pthread_key_t thread_tls_t;
 #endif
 
-int	 thread_tls_create(thread_tls_t *tls) WUR;										/* ´´½¨TLS¼ü */
-int  thread_tls_set(thread_tls_t tls, void *data) WUR;								/* ÉèÖÃTLSÖµ */								
-int  thread_tls_get(thread_tls_t tls, void **data) WUR;								/* »ñÈ¡TLSÖµ */
-int  thread_tls_free(thread_tls_t tls) WUR;											/* ÊÍ·ÅTLS */
+int  thread_tls_create(thread_tls_t *tls) WUR;          /* ´´½¨TLS¼ü */
+int  thread_tls_set(thread_tls_t tls, void *data) WUR;  /* ÉèÖÃTLSÖµ */        
+int  thread_tls_get(thread_tls_t tls, void **data) WUR; /* »ñÈ¡TLSÖµ */
+int  thread_tls_free(thread_tls_t tls) WUR;             /* ÊÍ·ÅTLS */
 
-/* Ïß³ÌÒ»´Î³õÊ¼»¯ */
-/* Thread once Initialize */
-typedef struct{
-	int inited;
-	mutex_t lock;
-}thread_once_t;
+/************************* Ïß³ÌÒ»´Î³õÊ¼»¯ *************************/
+
+typedef struct {
+  int inited;
+  mutex_t lock;
+} thread_once_t;
 
 typedef int (*thread_once_func)();
 
-void thread_once_init(thread_once_t* once);											/* ³õÊ¼»¯½á¹¹Ìå */
-int thread_once(thread_once_t* once, thread_once_func func);						/* Ö´ĞĞÏß³ÌÒ»´Î³õÊ¼»¯ */
+/* ³õÊ¼»¯½á¹¹Ìå */
+void thread_once_init(thread_once_t* once);
+
+/* Ö´ĞĞÏß³ÌÒ»´Î³õÊ¼»¯ */
+int thread_once(thread_once_t* once, thread_once_func func);
 
 /************************************************************************/
-/*							 Debugging  µ÷ÊÔ					            */
+/*                            Debugging  µ÷ÊÔ                           */
 /************************************************************************/
 
 /* ¶ÏÑÔ */
-#define ASSERTION(expr, name)	\
-	if (!(expr)) {fatal_exit(name" {%s %s %d} %s", \
-	path_find_file_name(__FILE__), __FUNCTION__, __LINE__, #expr);}
+#define ASSERTION(expr, name) \
+ if (!(expr)) {fatal_exit(name" {%s %s %d} %s", \
+ path_find_file_name(__FILE__), __FUNCTION__, __LINE__, #expr);}
 
 #undef ASSERT
 #undef VERIFY
@@ -891,28 +1059,34 @@ int thread_once(thread_once_t* once, thread_once_func func);						/* Ö´ĞĞÏß³ÌÒ»´
 /* Òì³£´¦Àí */
 #ifdef _DEBUG
 #define NOT_HANDLED(type) fatal_exit("%s {%s %s %d} %s", \
-		datetime_str(time(NULL)), path_find_file_name(__FILE__), __FUNCTION__, __LINE__, type)
+  datetime_str(time(NULL)), path_find_file_name(__FILE__), __FUNCTION__, __LINE__, type)
 #else
 #define NOT_HANDLED(type) 
 #endif
 
-#define NOT_REACHED()	  NOT_HANDLED("not reached")
+#define NOT_REACHED()   NOT_HANDLED("not reached")
 #define NOT_IMPLEMENTED() NOT_HANDLED("not implemented")
 
-void	fatal_exit(const char *fmt, ...) PRINTF_FORMAT(1,2);					/* Èí¼şÖÂÃüÍË³ö */
+/* Èí¼şÖÂÃüÍË³ö */
+void fatal_exit(const char *fmt, ...) PRINTF_FORMAT(1,2);
 
 /* ´íÎóĞÅÏ¢ */
+/* »ñÈ¡ÓÃWIN32 APIÊ§°ÜºóµÄ´íÎóĞÅÏ¢(GetLastError()) */
 #ifdef OS_WIN
-const char* get_last_error_win32();												/* »ñÈ¡ÓÃWIN32 APIÊ§°ÜºóµÄ´íÎóĞÅÏ¢(GetLastError()) */
+const char* get_last_error_win32();
 #endif
-const char* get_last_error_std();												/* »ñÈ¡C±ê×¼¿âº¯Êı´íÎóºóµÄ´íÎóĞÅÏ¢(errno) */
-const char*	get_last_error();													/* linuxÏÂÓÃstd°æ£¬windowsÏÂÓÃwinapi°æ */
 
-/* ÄÚ´æ²é¿´ */
-char*		hexdump(const void *data, size_t len);								/* ÒÔÊ®Áù½øÖÆµÄĞÎÊ½²é¿´»º³åÇøµÄÄÚÈİ£¬ĞèÊÖ¶¯ÊÍ·Å */
+ /* »ñÈ¡C±ê×¼¿âº¯Êı´íÎóºóµÄ´íÎóĞÅÏ¢(errno) */
+const char* get_last_error_std();
+
+ /* linuxÏÂÓÃstd°æ£¬windowsÏÂÓÃwinapi°æ */
+const char* get_last_error();
+
+/* ÒÔÊ®Áù½øÖÆµÄĞÎÊ½²é¿´»º³åÇøµÄÄÚÈİ£¬ĞèÊÖ¶¯ÊÍ·Å */
+char*  hexdump(const void *data, size_t len);
 
 /************************************************************************/
-/*                         	Logging ÈÕÖ¾ÏµÍ³    							*/
+/*                          Logging ÈÕÖ¾ÏµÍ³                            */
 /************************************************************************/
 
 /* 
@@ -921,37 +1095,49 @@ char*		hexdump(const void *data, size_t len);								/* ÒÔÊ®Áù½øÖÆµÄĞÎÊ½²é¿´»º³å
  * 2012/03/21 08:15:21 [ERROR] {main.c main 10} foo bar.
  */
 
-#define	MAX_LOGS		100														/* ÓÃ»§×î¶à¿É´ò¿ªÈÕÖ¾Êı */
-#define LOG_INVALID		-1														/* ÎŞĞ§µÄÈÕÖ¾ÃèÊö·û(³õÊ¼»¯¶¨Òå) */
-#define DEBUG_LOG		0														/* µ÷ÊÔÈÕÖ¾µÄID */
+#define MAX_LOGS  100        /* ÓÃ»§×î¶à¿É´ò¿ªÈÕÖ¾Êı */
+#define LOG_INVALID  -1      /* ÎŞĞ§µÄÈÕÖ¾ÃèÊö·û(³õÊ¼»¯¶¨Òå) */
+#define DEBUG_LOG  0         /* µ÷ÊÔÈÕÖ¾µÄID */
 
 /* ¼ÇÂ¼µÈ¼¶ */
 enum LogSeverity{
-		LOG_DEBUG = 0, 															/* µ÷ÊÔ */
-		LOG_INFO,																/* ĞÅÏ¢ */
-		LOG_NOTICE,																/* ×¢Òâ */
-		LOG_WARNING,															/* ¾¯¸æ */
-		LOG_ERROR,																/* ´íÎó */
-		LOG_CRIT,																/* ½ô¼± */
-		LOG_ALERT,																/* Î£¼± */
-		LOG_FATAL,																/* ÖÂÃü */
+  LOG_DEBUG = 0,             /* µ÷ÊÔ */
+  LOG_INFO,                  /* ĞÅÏ¢ */
+  LOG_NOTICE,                /* ×¢Òâ */
+  LOG_WARNING,               /* ¾¯¸æ */
+  LOG_ERROR,                 /* ´íÎó */
+  LOG_CRIT,                  /* ½ô¼± */
+  LOG_ALERT,                 /* Î£¼± */
+  LOG_FATAL,                 /* ÖÂÃü */
 };
 
-void	log_init();																/* ³õÊ¼»¯ÈÕÖ¾Ä£¿é */
-void	log_severity(int severity);												/* ÔÊĞí¼ÇÂ¼µÄ×îĞ¡ÑÏÖØµÈ¼¶ */
+/* ³õÊ¼»¯ÈÕÖ¾Ä£¿é */
+void log_init();
 
-int		log_open(const char *path, int append, int binary);						/* ´ò¿ªÓÃ»§ÈÕÖ¾ÎÄ¼ş */
+/* ÉèÖÃ¼ÇÂ¼µÄ×îµÍµÈ¼¶ */
+void log_severity(int severity);
 
-void	log_printf0(int id, const char *fmt, ...) PRINTF_FORMAT(2,3);			/* ¸ñÊ½»¯Êä³öµ½ÈÕÖ¾ */
-void	log_printf(int id, int severity, const char *, ...) PRINTF_FORMAT(3,4);	/* ¸½¼ÓÊ±¼äºÍµÇ¼ÇĞÅÏ¢ */
+/* ´ò¿ªÓÃ»§ÈÕÖ¾ÎÄ¼ş */
+int  log_open(const char *path, int append, int binary);
 
-void	log_flush(int log_id);													/* ½«ÈÕÖ¾»º³åÇøÊı¾İĞ´Èë´ÅÅÌ */
+/* ¸ñÊ½»¯Êä³öµ½ÈÕÖ¾ */
+void log_printf0(int id, const char *fmt, ...) PRINTF_FORMAT(2,3);
 
-void	log_close(int log_id);													/* ¹Ø±ÕÓÃ»§ÈÕÖ¾ÎÄ¼ş */
-void	log_close_all();														/* ¹Ø±ÕËùÓĞ´ò¿ªµÄÈÕÖ¾ÎÄ¼ş */
+/* Í¬ÉÏ£¬µ«Í¬Ê±¸½¼ÓÊ±¼äºÍµÇ¼ÇĞÅÏ¢ */
+void log_printf(int id, int severity, const char *, ...) PRINTF_FORMAT(3,4);
 
-void	set_debug_log_to_stderr(int enable);									/* µ÷ÊÔ×´Ì¬ÏÂµ÷ÊÔÈÕÖ¾ĞÅÏ¢Êä³öµ½stderr */
-int		is_debug_log_set_to_stderr();
+/* ½«ÈÕÖ¾»º³åÇøÊı¾İĞ´Èë´ÅÅÌ */
+void log_flush(int log_id);
+
+/* ¹Ø±ÕÓÃ»§ÈÕÖ¾ÎÄ¼ş */
+void log_close(int log_id);
+
+/* ¹Ø±ÕËùÓĞ´ò¿ªµÄÈÕÖ¾ÎÄ¼ş */
+void log_close_all();
+
+/* µ÷ÊÔ×´Ì¬ÏÂµ÷ÊÔÈÕÖ¾ĞÅÏ¢Êä³öµ½stderr */
+void set_debug_log_to_stderr(int enable);
+int  is_debug_log_set_to_stderr();
 
 /* ¼ÇÂ¼µ÷ÊÔÈÕÖ¾£¨¼ÇÂ¼ÎÄ¼şÃû¡¢º¯ÊıÃû¡¢ĞĞºÅ£© */
 /* ×¢£º²»ÄÜ¶Ôfmt²ÎÊıÊ¹ÓÃgettext¹ú¼Ê»¯ */
@@ -965,32 +1151,32 @@ int		is_debug_log_set_to_stderr();
 
 /* ÄÚ´æ²Ù×÷ÀàĞÍ */
 enum MEMRT_MTD_C{ 
-	MEMRT_MALLOC = 0, MEMRT_CALLOC, MEMRT_REALLOC, MEMRT_STRDUP, MEMRT_FREE, MEMRT_C_END,
+ MEMRT_MALLOC = 0, MEMRT_CALLOC, MEMRT_REALLOC, MEMRT_STRDUP, MEMRT_FREE, MEMRT_C_END,
 };
 
 /* ·µ»Ø´íÎóÖµ */
 enum MEMRT_ERR_C{
-	MEMRTE_OK,
-	MEMRTE_NOFREE,																/* ÄÚ´æÎ´±»ÊÍ·Å(Ğ¹Â¶) */
-	MEMRTE_UNALLOCFREE,															/* ÄÚ´æÎ´·ÖÅäÈ´±»ÊÍ·Å */
-	MEMRTE_MISRELIEF,															/* Ã»ÓĞÅä¶ÔÊ¹ÓÃmalloc/free */
-	MEMRTE_C_END,
+  MEMRTE_OK,
+  MEMRTE_NOFREE,              /* ÄÚ´æÎ´±»ÊÍ·Å(Ğ¹Â¶) */
+  MEMRTE_UNALLOCFREE,         /* ÄÚ´æÎ´·ÖÅäÈ´±»ÊÍ·Å */
+  MEMRTE_MISRELIEF,           /* Ã»ÓĞÅä¶ÔÊ¹ÓÃmalloc/free */
+  MEMRTE_C_END,
 };
 
 /* ´ú±íÒ»´ÎÄÚ´æ²Ù×÷ */
 struct MEMRT_OPERATE{
-	int		method;																/* ²Ù×÷ÀàĞÍ */
-	void*	address;															/* ²Ù×÷µØÖ· */
-	size_t	size;																/* ÄÚ´æ´óĞ¡ */
+  int  method;                /* ²Ù×÷ÀàĞÍ */
+  void* address;              /* ²Ù×÷µØÖ· */
+  size_t size;                /* ÄÚ´æ´óĞ¡ */
 
-	char*	file;																/* ÎÄ¼şÃû */
-	char*	func;																/* º¯ÊıÃû */
-	int		line;																/* ĞĞ  ºÅ */
+  char* file;                 /* ÎÄ¼şÃû */
+  char* func;                 /* º¯ÊıÃû */
+  int  line;                  /* ĞĞ  ºÅ */
 
-	char*	desc;																/* Èç±£´æÀàÃû */
-	void	(*msgfunc)(int error, struct MEMRT_OPERATE *rtp);
+  char* desc;                 /* Èç±£´æÀàÃû */
+  void (*msgfunc)(int error, struct MEMRT_OPERATE *rtp);
 
-	struct MEMRT_OPERATE *next;
+  struct MEMRT_OPERATE *next;
 };
 
 typedef void (*memrt_msg_callback)(int error, struct MEMRT_OPERATE *rtp);
@@ -1001,44 +1187,42 @@ extern int  memrt_check();
 
 /* ½ö¿âÊ¹ÓÃ */
 extern int  __memrt_alloc(int mtd, void* addr, size_t sz, const char* file, 
-	const char* func, int line, const char* desc, memrt_msg_callback pmsgfun);
+ const char* func, int line, const char* desc, memrt_msg_callback pmsgfun);
 extern int  __memrt_release(int mtd, void* addr, size_t sz, const char* file, 
-	const char* func, int line, const char*desc, memrt_msg_callback pmsgfun);
+ const char* func, int line, const char*desc, memrt_msg_callback pmsgfun);
 extern void __memrt_printf(const char *fmt, ...);
 extern int g_xalloc_count;
 #endif /* DBG_MEM_RT */
 
 /************************************************************************/
-/*						    Version °æ±¾¹ÜÀí		                        */
+/*                           Version °æ±¾¹ÜÀí                           */
 /************************************************************************/
 
-int	version_parse(const char* version, int *major, int *minor,			/* ·ÖÎöÒ»¸öÒÔµã·Ö¸ôµÄ°æ±¾×Ö·û´®£¬×Ö·û´®¸ñÊ½¼ûÊµÏÖ */
-				int *revision, int *build, char *suffix, size_t plen) WUR;
-int	version_compare(const char* v1, const char* v2) WUR;				/* ±È½Ïv1ºÍv2Á½¸ö°æ±¾ºÅ£¬v1±Èv2ĞÂ·µ»Ø1£¬ÏàµÈ·µ»Ø0 */
+ /* ·ÖÎöÒ»¸öÒÔµã·Ö¸ôµÄ°æ±¾×Ö·û´®£¬×Ö·û´®¸ñÊ½¼ûÊµÏÖ */
+int version_parse(const char* version, int *major, int *minor,
+    int *revision, int *build, char *suffix, size_t plen) WUR;
+
+/* ±È½Ïv1ºÍv2Á½¸ö°æ±¾ºÅ£¬v1±Èv2ĞÂ·µ»Ø1£¬ÏàµÈ·µ»Ø0 */
+int version_compare(const char* v1, const char* v2) WUR;
 
 /************************************************************************/
-/*                         Others ÆäËû		                            */
+/*                         Others ÆäËû                                  */
 /************************************************************************/
 
 /* ½ø³Ì»·¾³±äÁ¿ */
-int			set_env(const char* key, const char* val) WUR;						/* ÉèÖÃ»·¾³±äÁ¿ */
-int			unset_env(const char* key) WUR;										/* É¾³ı»·¾³±äÁ¿ */
-const char*	get_env(const char* key);											/* »ñÈ¡»·¾³±äÁ¿ */
+int set_env(const char* key, const char* val) WUR;   /* ÉèÖÃ»·¾³±äÁ¿ */
+int unset_env(const char* key) WUR;                  /* É¾³ı»·¾³±äÁ¿ */
+const char* get_env(const char* key);                /* »ñÈ¡»·¾³±äÁ¿ */
 
 /* ×Ö·û´®=>Êı×Ö */
-uint		atou(const char* str);												/* ×ª»»Îªuint */
-size_t		atos(const char* str);												/* ×ª»»Îªsize_t */
-int64_t		atoi64(const char* str);											/* ×ª»»Îªint64_t */
-uint64_t	atou64(const char* str);											/* ×ª»»Îªuint64_t */
+uint  atou(const char* str);                         /* ×ª»»Îªuint */
+size_t  atos(const char* str);                       /* ×ª»»Îªsize_t */
+int64_t  atoi64(const char* str);                    /* ×ª»»Îªint64_t */
+uint64_t atou64(const char* str);                    /* ×ª»»Îªuint64_t */
 
-/* Ö¸Õë<=>×Ö·û´® */
-int			ptr_to_str(void *ptr, char* buf, int len) WUR;						/* ½«Ö¸Õë×ª»»³ÉÊ®Áù½øÖÆµÄ×Ö·û´®£¬ĞèÊÖ¶¯ÊÍ·Å */
-void*		str_to_ptr(const char *str);										/* ½«´ú±íÖ¸ÕëµÄÊ®Áù½øÖÆµÄ×Ö·û´®×ª»»ÎªÖ¸ÕëÖµ */
-
-int			number_of_processors();												/* »ñÈ¡CPUºËĞÄÊıÄ¿ */
-
-int			num_bits(int64_t number);											/* ¼ÆËãÒ»¸öÕûÊıµÄ´òÓ¡Î»Êı */
-int			get_random();														/* »ñÈ¡»ùÓÚÊ±¼äµÄÎ±Ëæ»úÊı */
+int number_of_processors();                          /* »ñÈ¡CPUºËĞÄÊıÄ¿ */
+int num_bits(int64_t number);                        /* ¼ÆËãÒ»¸öÕûÊıµÄ´òÓ¡Î»Êı */
+int get_random();                                    /* »ñÈ¡»ùÓÚÊ±¼äµÄÎ±Ëæ»úÊı */
 
 #ifdef __cplusplus
 }
