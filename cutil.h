@@ -1141,7 +1141,7 @@ int  is_debug_log_set_to_stderr();
 
 /* 记录调试日志（记录文件名、函数名、行号） */
 /* 注：不能对fmt参数使用gettext国际化 */
-#define log_dprintf
+void log_dprintf(int severity, const char *, ...);
 
 /************************************************************************/
 /*              Memory Runtime Check 运行时内存检测                      */
