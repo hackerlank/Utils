@@ -3853,17 +3853,6 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 	return 0;
 }
 
-#define FOUND_FILE_BOM(s) {			\
-	cslen = strlen(s);				\
-	if (outlen < cslen + 1){		\
-	  fseek(fp, -1*len, SEEK_CUR);	\
-	  return 0;						\
-	}								\
-	strcpy(outbuf, s);				\
-	outbuf[cslen] = '\0';			\
-	return 1;						\
-	}
-
 /*
  * @fname: 读取文件的BOM头
  * @param: fp: 刚打开的文件流
@@ -3880,48 +3869,59 @@ int read_file_bom(FILE *fp, char *outbuf, size_t outlen)
 	if (!fp || !outbuf)
 		return 0;
 
-	while(!feof(fp)){
+#define FOUND_FILE_BOM(s) {			\
+	cslen = strlen(s);				\
+	if (outlen < cslen + 1){		\
+	fseek(fp, -1*len, SEEK_CUR);	\
+	return 0;						\
+	}								\
+	strcpy(outbuf, s);				\
+	outbuf[cslen] = '\0';			\
+	return 1;						\
+	}
+
+	while(!feof(fp)) {
 		fread((char*)buf + len, 1, 1, fp);
 		len++;
 
-		if (len == 2)
-		{
+		if (len == 1) {
+			continue;
+		} else if (len == 2) {
 			if (buf[0] == 255 && buf[1] == 254)										//FF FE
 				utf16le = 1;
 			else if (buf[0] == 254 && buf[1] == 255)								//FE FF
 				utf16be = 1;
-		}
-		else if (len == 3)
-		{
+		} else if (len == 3) {
 			if (buf[0] == 239 && buf[1] == 187 && buf[2] == 191)					//EF BB BF
 				FOUND_FILE_BOM("UTF-8")
-		}
-		else if (len == 4)
-		{
+		} else if (len == 4) {
 			if (buf[0] == 255 && buf[1] == 254 && buf[2] == 0 && buf[3] == 0)		//FF FE 00 00
 				FOUND_FILE_BOM("UTF-32LE")
 			else if (buf[0] == 0 && buf[1] == 0 && buf[2] == 254 && buf[3] == 255)	//00 00 FE FF
 				FOUND_FILE_BOM("UTF-32BE")
 			else if (buf[0] == 132 && buf[1] == 49 && buf[2] == 149 && buf[3] == 51)
 				FOUND_FILE_BOM("GB18030")
-			else
-				goto exit;
+			else {
+				if (utf16le) {
+					fseek(fp, (seek_off_t)-2, SEEK_CUR);
+					FOUND_FILE_BOM("UTF-16LE")
+				} else if (utf16be) {
+					fseek(fp, (seek_off_t)-2, SEEK_CUR);
+					FOUND_FILE_BOM("UTF-16BE")
+				} else
+					break;
+			}
+		} else {
+			NOT_REACHED();
+			break;
 		}
 	}
 
-exit:
-	if (utf16le)
-		FOUND_FILE_BOM("UTF-16LE")
-	else if (utf16be)
-		FOUND_FILE_BOM("UTF-16BE")
-	else
-	{
-		fseek(fp, (seek_off_t)-1*len, SEEK_CUR);
-		return 0;
-	}
-}
-
 #undef FOUND_FILE_BOM
+
+	fseek(fp, (seek_off_t)-1*len, SEEK_CUR);
+	return 0;
+}
 
 /* 常用编码的文件BOM头 */
 #define UTF8_BOM		"\xEF\xBB\xBF"
@@ -3930,12 +3930,6 @@ exit:
 #define UTF32LE_BOM		"\xFF\xFE\x00\x00"
 #define UTF32BE_BOM		"\x00\x00\xFE\xFF"
 #define GB18030_BOM		"\x84\x31\x95\x33"
-
-#define ELSEIF_FILE_BOM(c, b)				\
-	else if (!strcmp(charset, c)){			\
-		xstrlcpy((char*)bom, b, sizeof(bom));\
-		len = strlen(b);					\
-	}
 
 /*
  * 写入文件的BOM头
@@ -3951,6 +3945,12 @@ int write_file_bom(FILE *fp, const char* charset)
 	if (!fp || !charset)
 		return 0;
 
+#define ELSEIF_FILE_BOM(c, b)				\
+	else if (!strcmp(charset, c)){			\
+	   xstrlcpy((char*)bom, b, sizeof(bom));\
+	   len = strlen(b);					    \
+	}
+
 	if (0);
 	ELSEIF_FILE_BOM("UTF-8", UTF8_BOM)
 	ELSEIF_FILE_BOM("UTF-16LE", UTF16LE_BOM)
@@ -3959,15 +3959,14 @@ int write_file_bom(FILE *fp, const char* charset)
 	ELSEIF_FILE_BOM("UTF-32BE", UTF32BE_BOM)
 	ELSEIF_FILE_BOM("GB18030", GB18030_BOM)
 
+#undef ELSEIF_FILE_BOM
+
 	if (!len)
 		return 0;
 
 	/* 写入BOM头 */;
 	return fwrite(bom, len, 1, fp) == 1;
 }
-
-#undef ELSEIF_FILE_BOM
-
 
 /* 表示非ASCII字符的多字节串的第一个字节总是在0xC0到0xFD的范围里 */
 /* 多字节串的其余字节都在0x80到0xBF范围里 */
