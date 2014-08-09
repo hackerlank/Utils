@@ -3853,6 +3853,14 @@ int get_file_charset(const char* file, char *outbuf, size_t outlen,
 	return 0;
 }
 
+/* 常用编码的文件BOM头 */
+#define UTF8_BOM		"\xEF\xBB\xBF"
+#define UTF16LE_BOM		"\xFF\xFE"
+#define UTF16BE_BOM		"\xFE\xFF"
+#define UTF32LE_BOM		"\xFF\xFE\x00\x00"
+#define UTF32BE_BOM		"\x00\x00\xFE\xFF"
+#define GB18030_BOM		"\x84\x31\x95\x33"
+
 /*
  * @fname: 读取文件的BOM头
  * @param: fp: 刚打开的文件流
@@ -3887,19 +3895,19 @@ int read_file_bom(FILE *fp, char *outbuf, size_t outlen)
 		if (len == 1) {
 			continue;
 		} else if (len == 2) {
-			if (buf[0] == 255 && buf[1] == 254)										//FF FE
+			if (!memcmp(UTF16LE_BOM, buf, len))
 				utf16le = 1;
-			else if (buf[0] == 254 && buf[1] == 255)								//FE FF
+			else if (!memcmp(UTF16BE_BOM, buf, len))
 				utf16be = 1;
 		} else if (len == 3) {
-			if (buf[0] == 239 && buf[1] == 187 && buf[2] == 191)					//EF BB BF
+			if (!memcmp(UTF8_BOM, buf, len))
 				FOUND_FILE_BOM("UTF-8")
 		} else if (len == 4) {
-			if (buf[0] == 255 && buf[1] == 254 && buf[2] == 0 && buf[3] == 0)		//FF FE 00 00
+			if (!memcmp(UTF32LE_BOM, buf, len))
 				FOUND_FILE_BOM("UTF-32LE")
-			else if (buf[0] == 0 && buf[1] == 0 && buf[2] == 254 && buf[3] == 255)	//00 00 FE FF
+			else if (!memcmp(UTF32BE_BOM, buf, len))
 				FOUND_FILE_BOM("UTF-32BE")
-			else if (buf[0] == 132 && buf[1] == 49 && buf[2] == 149 && buf[3] == 51)
+			else if (!memcmp(GB18030_BOM, buf, len))
 				FOUND_FILE_BOM("GB18030")
 			else {
 				if (utf16le) {
@@ -3922,14 +3930,6 @@ int read_file_bom(FILE *fp, char *outbuf, size_t outlen)
 	fseek(fp, (seek_off_t)-1*len, SEEK_CUR);
 	return 0;
 }
-
-/* 常用编码的文件BOM头 */
-#define UTF8_BOM		"\xEF\xBB\xBF"
-#define UTF16LE_BOM		"\xFF\xFE"
-#define UTF16BE_BOM		"\xFE\xFF"
-#define UTF32LE_BOM		"\xFF\xFE\x00\x00"
-#define UTF32BE_BOM		"\x00\x00\xFE\xFF"
-#define GB18030_BOM		"\x84\x31\x95\x33"
 
 /*
  * 写入文件的BOM头
