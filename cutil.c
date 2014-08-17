@@ -998,8 +998,8 @@ size_t _path_valid(const char* path, int absolute)
 			return 0;
 
 #ifdef OS_WIN
-		if (xisalpha(path[0]) && !(path[1] == ':' && path[2] == '\\') &&		/* 本地磁盘 */
-			!(path[0] == '\\' && path[1] == '\\'))		/* UNC 网络共享 */
+		if (!(xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') && /* 本地磁盘 */
+			!(path[0] == '\\' && path[1] == '\\'))		                 /* UNC 网络共享 */
 			return 0;
 #else
 		if (path[0] != '/')
@@ -1036,19 +1036,7 @@ size_t _end_with_slash(const char* path, char* outbuf, size_t outlen)
 /* 判断path所指的路径是否是绝对路径 */
 int	is_absolute_path(const char* path)
 {
-	if (!path || strnlen(path, MIN_PATH) != MIN_PATH)
-		return 0;
-
-#ifdef OS_WIN
-	if ((xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') ||	/* 本地磁盘 */
-		(path[0] == '\\' && path[1] == '\\'))						/* UNC 网络共享 */
-		return 1;
-#else
-	if (path[0] == '/')
-		return 1;
-#endif
-
-	return 0;
+	return _path_valid(path, 1) != 0;
 }
 
 /* 判断路径是否是根路径 */
@@ -4860,31 +4848,15 @@ int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 char* popen_readall(const char* command)
 {
 	char *buf = NULL;
-	size_t bufsize = 1024;
-	size_t len, readed = 0;
+	size_t len = 0;
 
 	FILE* f = popen(command, "rb");
 	if (!f)
 		return NULL;
 
-	buf = (char*)xmalloc(bufsize);
-
-	while((len = fread(buf + readed, 1, bufsize - readed - 1, f))) {
-		readed += len;
-		if (readed == bufsize - 1) {
-			bufsize <<= 1;
-			buf = (char*)xrealloc(buf, bufsize);
-		}
-	}
-
-	if (feof(f))
-		buf[readed] = '\0';
-	else {
-		xfree(buf);
-		buf = NULL;
-	}
-
+	xfread(f, -1, 0, &buf, &len);
 	pclose(f);
+
 	return buf;
 }
 
