@@ -4856,9 +4856,12 @@ char* popen_readall(const char* command)
 	if (!f)
 		return NULL;
 
-	xfread(f, -1, 0, &buf, &len);
-	pclose(f);
+	if (!xfread(f, -1, 0, &buf, &len)) {
+	    pclose(f);
+		return NULL;
+	}
 
+	pclose(f);
 	return buf;
 }
 
