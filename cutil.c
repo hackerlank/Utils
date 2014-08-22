@@ -19,6 +19,8 @@
 #include <process.h> /* _beginthreadex.etc */
 
 #ifdef _MSC_VER
+#define inline _inline
+
 #pragma comment(lib, "dbghelp.lib") /* minidump */
 #pragma comment(lib, "shlwapi.lib") /* path, str.etc */
 #pragma comment(lib, "User32.lib") /* MessageBox.etc */

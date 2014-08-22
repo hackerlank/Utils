@@ -33,7 +33,7 @@
 #define UTILS_CUTIL_H
 
 /* 选项配置文件 */
-#include "utils_config.h"
+#include "../utils_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -206,10 +206,6 @@ typedef int ssize_t;
 /************************************************************************/
 /*                         Memory 内存管理                               */
 /************************************************************************/
-
-#if defined(COMPILER_MSVC) && _MSC_VER <= MSVC6
-#define __FUNCTION__ ""
-#endif
 
 /* 内存调试函数 */
 #ifdef DBG_MEM

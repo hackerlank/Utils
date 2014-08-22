@@ -31,7 +31,6 @@
 #define MSVC10    1600        /* VC 2010 */
 #define MSVC11    1700        /* VC 2012 */
 
-#define inline _inline
 #define restrict
 
 #pragma warning(disable: 4996)            /* The POSIX name for this item is deprecated */
