@@ -283,12 +283,12 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
  * 在大多数UNIX/Linux及高版本VC下，该函数返回欲写入的字符串长度，出错返回负值
  * 对于某些实现（如VC6），在缓冲区不够大的情况下也会返回-1，详见 xasprintf 
  */
-int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FORMAT(3, 0) WUR;
-int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FORMAT(3, 4) WUR;
+int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FMT(3, 0) WUR;
+int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 4) WUR;
 
 /* 格式化输出到新分配的字符串, 需外部释放 */
 /* GLIBC在_GNU_SOURCE宏被定义的情况下已导出此函数 */
-int xasprintf (char** out, const char* format, ...) PRINTF_FORMAT(2, 3) WUR;
+int xasprintf (char** out, const char* format, ...) PRINTF_FMT(2, 3) WUR;
 
 /* BSD风格的字符串拷贝和附加函数 */
 /* 比 str[n]cpy 和 str[n]cat 更快更安全，比较见以下链接 */
@@ -338,6 +338,9 @@ char* strnstr(const char *s, const char *find, size_t slen);
 /* 不区分大小写在字符串s中查找字符串find */
 char* strcasestr(const char *s, const char *find);
 
+/* 逆向查找内存缓冲区 */
+void* memrchr(const void* s, int c, size_t n);
+    
 /* 简单可逆地加密一块内存 */
 void* memfrob(void *mem, size_t length);
 
@@ -980,28 +983,28 @@ void cond_destroy(cond_t *cond);                /* 销毁条件变量 */
  */
 
 #ifdef OS_WIN
-typedef HANDLE thread_t;
-typedef unsigned thread_ret_t;
+typedef HANDLE uthread_t;
+typedef unsigned uthread_ret_t;
 #define THREAD_CALLTYPE __stdcall
 #define INVALID_THREAD NULL
 #else /* POSIX */
 #include <pthread.h>
-typedef pthread_t thread_t;
-typedef void* thread_ret_t;
+typedef pthread_t uthread_t;
+typedef void* uthread_ret_t;
 #define THREAD_CALLTYPE
 #define INVALID_THREAD 0
 #endif /* OS_WIN */
 
-typedef thread_ret_t (THREAD_CALLTYPE *thread_proc_t)(void*);
+typedef uthread_ret_t (THREAD_CALLTYPE *uthread_proc_t)(void*);
 
 /* 创建线程 */
-int  thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize) WUR;
+int  uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize) WUR;
 
 /* 线程内退出 */
-void thread_exit(size_t exit_code);
+void uthread_exit(size_t exit_code);
 
 /* 等待线程 */
-int  thread_join(thread_t t, thread_ret_t *exit_code);
+int  uthread_join(uthread_t t, uthread_ret_t *exit_code);
 
 /************************* 线程本地存储 *************************/
 
@@ -1064,7 +1067,7 @@ int thread_once(thread_once_t* once, thread_once_func func);
 #define NOT_IMPLEMENTED() NOT_HANDLED("not implemented")
 
 /* 软件致命退出 */
-void fatal_exit(const char *fmt, ...) PRINTF_FORMAT(1,2);
+void fatal_exit(const char *fmt, ...) PRINTF_FMT(1,2);
 
 /* 错误信息 */
 /* 获取用WIN32 API失败后的错误信息(GetLastError()) */
@@ -1117,10 +1120,10 @@ void log_severity(int severity);
 int  log_open(const char *path, int append, int binary);
 
 /* 格式化输出到日志 */
-void log_printf0(int id, const char *fmt, ...) PRINTF_FORMAT(2,3);
+void log_printf0(int id, const char *fmt, ...) PRINTF_FMT(2,3);
 
 /* 同上，但同时附加时间和登记信息 */
-void log_printf(int id, int severity, const char *, ...) PRINTF_FORMAT(3,4);
+void log_printf(int id, int severity, const char *, ...) PRINTF_FMT(3,4);
 
 /* 将日志缓冲区数据写入磁盘 */
 void log_flush(int log_id);

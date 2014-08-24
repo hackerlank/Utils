@@ -1090,19 +1090,19 @@ Thread::~Thread()
 	Join();
 }
 
-static thread_ret_t 
+static uthread_ret_t 
 THREAD_CALLTYPE thread_helper(void *arg)
 {
 #ifdef OS_WIN
-  return static_cast<thread_ret_t>(((Thread*)arg)->RunImpl());
+  return static_cast<uthread_ret_t>(((Thread*)arg)->RunImpl());
 #else
-  return reinterpret_cast<thread_ret_t>(((Thread*)arg)->RunImpl());
+  return reinterpret_cast<uthread_ret_t>(((Thread*)arg)->RunImpl());
 #endif
 }
 
 bool Thread::Run()
 {
-	return thread_create1(&thread_, thread_helper, this, 0) == 1;
+	return uthread_create(&thread_, thread_helper, this, 0) == 1;
 }
 
 void Thread::SetOnce(thread_once_t *once, thread_once_func once_func)
@@ -1116,7 +1116,7 @@ int Thread::Join()
 	int ret = -1;
 	if (thread_ != INVALID_THREAD)
 	{
-		ret = thread_join(thread_, NULL);
+		ret = uthread_join(thread_, NULL);
 		thread_ = INVALID_THREAD;
 	}
 

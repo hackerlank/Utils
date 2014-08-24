@@ -277,7 +277,7 @@ public:
 	ScopedFILE(const std::string& path, const std::string& mode) {
 		fp_ = xfopen(path.c_str(), mode.c_str());
 	}
-	virtual ~ScopedFILE() {if (fp_) xfclose(fp_);}
+	~ScopedFILE() {if (fp_) xfclose(fp_);}
 
 	FILE* get() {return fp_;}
 
@@ -346,7 +346,7 @@ protected:
 	int id_;
 
 private:
-	thread_t thread_;
+	uthread_t thread_;
 
 	thread_once_t* once_;
 	thread_once_func once_func_;

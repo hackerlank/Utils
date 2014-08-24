@@ -1,4 +1,4 @@
-﻿#include "cutil.h"
+#include "cutil.h"
 
 #include <locale.h>
 #include <wchar.h>
@@ -921,6 +921,16 @@ char *strcasestr(const char *s, const char *find)
 	return ((char *)s);
 }
 
+void* memrchr(const void* s, int c, size_t n)
+{
+    const unsigned char* p = (const unsigned char*)s;
+    for (p += n; n > 0; n--)
+        if (*--p == c)
+            return (void*)p;
+  
+    return NULL;
+}
+                    
 /* 通过简单地将每个字节与00101010异或来实现 */
 void* memfrob(void *mem, size_t length)
 {
@@ -4221,7 +4231,7 @@ UTF16* utf8_to_utf16(const UTF8* utf8, int strict)
 }
 
 /* 将UTF-16字符串转换为UTF-8编码的字符串，需外部释放 */
-/* 注：在UTF-8编码中每个字符一般最多占3个字节，但有有可能最多占6个字节 */
+/* 注：在UTF-8编码中每个字符一般最多占3个字节，但有可能最多占6个字节 */
 UTF8* utf16_to_utf8(const UTF16* src, int strict)
 {
 	ConversionResult cr;
@@ -4243,7 +4253,7 @@ UTF8* utf16_to_utf8(const UTF16* src, int strict)
 		{
 			if (uBeg < uEnd)
 			{
-				uBeg = '\0';
+				*uBeg = '\0';
 				return uBegOrig;
 			}
 
@@ -4304,7 +4314,7 @@ UTF8* utf32_to_utf8(const UTF32* src, int strict)
 		{
 			if (uBeg < uEnd)
 			{
-				uBeg = '\0';
+				*uBeg = '\0';
 				return uBegOrig;
 			}
 
@@ -4861,6 +4871,8 @@ char* popen_readall(const char* command)
 		return NULL;
 	}
 
+	IGNORE_RESULT(xfread(f, -1, 0, &buf, &len));
+
 	pclose(f);
 	return buf;
 }
@@ -5293,7 +5305,7 @@ void cond_destroy(cond_t *cond)
 
 /* 创建线程 */
 /* 如果stacksize为0则使用默认的堆栈大小 */
-int thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize)
+int uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
 {
 #ifdef OS_POSIX
 	pthread_attr_t attr, *pattr;
@@ -5329,7 +5341,7 @@ int thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize)
 }
 
 /* 退出线程 */
-void thread_exit(size_t exit_code)
+void uthread_exit(size_t exit_code)
 {
 #ifdef OS_POSIX
 	pthread_exit((void*)exit_code);
@@ -5340,7 +5352,7 @@ void thread_exit(size_t exit_code)
 }
 
 /* 等待线程 */
-int thread_join(thread_t t, thread_ret_t *exit_code)
+int uthread_join(uthread_t t, uthread_ret_t *exit_code)
 {
 #ifdef OS_POSIX
 	if (pthread_join(t, exit_code))

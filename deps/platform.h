@@ -120,7 +120,7 @@
 
 /* 处理被中断的系统调用 */
 #ifndef HANDLE_FAILURE
-#ifdef OS_POSIX
+#ifdef OS_LINUX
 #define HANDLE_FAILURE(x) ({ \
     typeof(x) eintr_wrapper_result; \
     do { \

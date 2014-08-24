@@ -93,17 +93,13 @@
 
 #endif  // COMPILER_MSVC
 
-#undef PRINTF_FORMAT
-#undef WPRINTF_FORMAT
-
 /* GCC Specific */
 #if defined(COMPILER_GCC)
 #define ALLOW_UNUSED        __attribute__((unused))                    /* int x ALLOW_UNUSED = ...; */
 #define DEPRECATED            __attribute__((deprecated))    
 #define ALWAYS_INLINE        __attribute__((always_inline))
-#define PRINTF_FORMAT(a, b) __attribute__((format(printf, a, b)))
+#define PRINTF_FMT(a, b) __attribute__((format(printf, a, b)))
 #define SCANF_FORMAT(a, b)    __attribute__((format(scanf, a, b)))
-#define WPRINTF_FORMAT(a, b)
 #define ATTR_PURE            __attribute__((pure))
 #define ATTR_CONST            __attribute__((__const__))
 #define LINK_ERROR(msg)        __attribute__((__error__(msg)))
@@ -116,9 +112,8 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
 #define ALLOW_UNUSED
 #define DEPRECATED
 #define ALWAYS_INLINE __forceinline
-#define PRINTF_FORMAT(a, b)
+#define PRINTF_FMT(a, b)
 #define SCANF_FORMAT(a, b)
-#define WPRINTF_FORMAT(a, b)
 #define ATTR_PURE            
 #define ATTR_CONST        
 #define LINK_ERROR(msg)        
