@@ -116,7 +116,7 @@ void cutil_init()
 #endif
 
 	/* 初始化软件名称 */
-	xstrlcpy(g_product_name, "AppUtils", sizeof(g_product_name));
+	xstrlcpy(g_product_name, "UtilsApp", sizeof(g_product_name));
 
 	/* 中断处理函数 */
 	ret = set_default_interrupt_handler();
@@ -1395,7 +1395,7 @@ int unique_file(const char* path, char *buf, size_t len)
 	if (!plen)
 		return 0;
 
-	//如果初始路径不存在，直接返回
+	// 如果初始路径不存在，直接返回
 	if (!path_file_exists(path))
 	{
 		if (xstrlcpy(buf, path, len) >= len)
@@ -2022,7 +2022,8 @@ int delete_empty_directories(const char* dir)
 	return 0;
 }
 
-/* 递归拷贝目录
+/* 
+ * 递归拷贝目录
  * curdir是指本次要遍历的目录，srcdir和dstdir是不变的，总是指向最初的目录，且必须都以路径分隔符结尾
  * 回调函数参数action：0表示拷贝文件，1表示拷贝目录，2表示创建目录
  */
@@ -2030,8 +2031,8 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 							copy_dir_cb func, void *arg)
 {
 	struct walk_dir_context* ctx = NULL;
-	char spath[MAX_PATH+1];				//遍历项路径
-	char dpath[MAX_PATH+1];				//拷贝到路径;
+	char spath[MAX_PATH+1];				// 遍历项路径
+	char dpath[MAX_PATH+1];				// 拷贝到路径;
 	size_t srclen = strlen(srcdir);
 	size_t dstlen = strlen(dstdir);
 	int succ;
@@ -2045,26 +2046,26 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
 		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
 			continue;
 		else if (likely(walk_entry_path(ctx, spath, MAX_PATH))) {
-			char *partial = spath + srclen;		    //文件相对于路径
-			size_t	partlen = strlen(partial);		//相对路径长度
+			char *partial = spath + srclen;		    // 文件相对于路径
+			size_t	partlen = strlen(partial);		// 相对路径长度
 
 			if (dstlen + partlen + 1 > sizeof(dpath))
 				WALK_END_RETURN_0;
 
 			snprintf(dpath, sizeof(dpath), "%s%s", dstdir, partial);
 
-			if (!walk_entry_is_dir(ctx)) {		    //文件
-				//拷贝此文件
+			if (!walk_entry_is_dir(ctx)) {		    // 文件
+				// 拷贝此文件
 				succ = copy_file(spath, dpath, 1);
 				if (func && !func(spath, dpath, 0, succ, arg))
 					WALK_END_RETURN_0;
-			} else {							    //目录
-				//创建新目录
+			} else {							    // 目录
+				// 创建新目录
 				succ = create_directory(dpath);
 				if (func && !func(spath, dpath, 2, succ, arg))
 					WALK_END_RETURN_0;
 
-				//递归拷贝目录
+				// 递归拷贝目录
 				succ = _copy_directories(spath, srcdir, dstdir, func, arg);
 				if (func && !func(spath, dpath, 1, succ, arg))
 					WALK_END_RETURN_0;
@@ -2181,12 +2182,12 @@ int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int
 		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
 			continue;
 		else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
-			if (walk_entry_is_dir(ctx)){				//目录
+			if (walk_entry_is_dir(ctx)){				// 目录
 				if (recursively){
 					if (!foreach_file(buf, func, recursively, regular_only, arg))
 						WALK_END_RETURN_0;
 				}
-			} else {									//文件
+			} else {									// 文件
 				if (!regular_only || walk_entry_is_regular(ctx)) {
 					if (!(*func)(buf, arg))
 						WALK_END_RETURN_0;
@@ -2217,7 +2218,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 	do {
 		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
 			continue;
-		else if (walk_entry_is_dir(ctx)) {				//目录
+		else if (walk_entry_is_dir(ctx)) {				// 目录
 			if (walk_entry_path(ctx, buf, MAX_PATH)) {
 				if (!(*func)(buf, arg))
 					WALK_END_RETURN_0;	
@@ -2577,18 +2578,18 @@ size_t xfread(FILE *fp, int separator, size_t max_bytes,
 			mallptr[count++] = ch;
 		}
 
-		//遇到分隔符或达到最多可以读取的字节数
+		// 遇到分隔符或达到最多可以读取的字节数
 		if (ch == separator || --max_bytes == 0)
 			break;
 	}
 
-	//结束符
+	// 结束符
 	if (mallptr)
 		mallptr[count] = '\0';
 	else if (origptr && *n > 0)
 		origptr[count] = '\0';
 
-	//设置输出
+	// 设置输出
 	if (mallptr)
 		*lineptr = mallptr;
 	*n = count;
@@ -3443,20 +3444,20 @@ int is_ascii(const void* pBuffer, size_t size)
 	return IsASCII;
 }
 
-//是否是UTF-8编码
+// 是否是UTF-8编码
 //
-//128个US-ASCII字符只需一个字节编码（Unicode范围由U+0000至U+007F）。
-//带有附加符号的拉丁文、希腊文、西里尔字母、亚美尼亚语、希伯来文、阿拉伯文、叙利亚文及它拿字母则需要二个字节编码。
-//其他基本多文种平面（BMP）中的字符（这包含了大部分常用字）使用三个字节编码。
-//其他极少使用的Unicode 辅助平面的字符使用四字节编码。
+// 128个US-ASCII字符只需一个字节编码（Unicode范围由U+0000至U+007F）。
+// 带有附加符号的拉丁文、希腊文、西里尔字母、亚美尼亚语、希伯来文、阿拉伯文、叙利亚文及它拿字母则需要二个字节编码。
+// 其他基本多文种平面（BMP）中的字符（这包含了大部分常用字）使用三个字节编码。
+// 其他极少使用的Unicode 辅助平面的字符使用四字节编码。
 //
-//UCS-4编码	与 UTF-8字节流 对应关系如下：
-//U+00000000 – U+0000007F [1] 0xxxxxxx 
-//U+00000080 – U+000007FF [2] 110xxxxx 10xxxxxx 
-//U+00000800 – U+0000FFFF [3] 1110xxxx 10xxxxxx 10xxxxxx
-//U+00010000 – U+001FFFFF [4] 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-//U+00200000 – U+03FFFFFF [5] 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-//U+04000000 – U+7FFFFFFF [6] 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+// UCS-4编码	与 UTF-8字节流 对应关系如下：
+// U+00000000 – U+0000007F [1] 0xxxxxxx 
+// U+00000080 – U+000007FF [2] 110xxxxx 10xxxxxx 
+// U+00000800 – U+0000FFFF [3] 1110xxxx 10xxxxxx 10xxxxxx
+// U+00010000 – U+001FFFFF [4] 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+// U+00200000 – U+03FFFFFF [5] 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+// U+04000000 – U+7FFFFFFF [6] 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
 int is_utf8(const void* pBuffer, size_t size)
 {
 	int IsUTF8 = 1;
@@ -3515,7 +3516,7 @@ int is_utf8(const void* pBuffer, size_t size)
 	return IsUTF8;
 }
 
-//是否是GB2312编码
+// 是否是GB2312编码
 int is_gb2312(const void* pBuffer, size_t size)
 {
 	int IsGB2312 = 1;
@@ -3524,19 +3525,19 @@ int is_gb2312(const void* pBuffer, size_t size)
 
 	while (start < end)
 	{
-		if (*start < 0x80)			//0x00~0x7F ASCII码
+		if (*start < 0x80)			// 0x00~0x7F ASCII码
 			start++;
-		else if (*start < 0xA1)		//0x80~0xA0 空码
+		else if (*start < 0xA1)		// 0x80~0xA0 空码
 		{
 			IsGB2312 = 0;
 			break;
 		}
-		else if (*start < 0xAA)		//0xA1~0xA9 字符部分
+		else if (*start < 0xAA)		// 0xA1~0xA9 字符部分
 		{
 			if (start >= end -1)
 				break;
 
-			//低字节范围 0xA1~0xFE
+			// 低字节范围 0xA1~0xFE
 			if (start[1] < 0xA1 || start[1] > 0xFE)
 			{
 				IsGB2312 = 0;
@@ -3545,17 +3546,17 @@ int is_gb2312(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xB0)		//0xAA~0xAF 空码
+		else if (*start < 0xB0)		// 0xAA~0xAF 空码
 		{
 			IsGB2312 = 0;
 			break;
 		}
-		else if (*start < 0xF8)		//0xB0~0xF7 是对GB2312汉字表的扩充
+		else if (*start < 0xF8)		// 0xB0~0xF7 是对GB2312汉字表的扩充
 		{
 			if (start >= end -1)
 				break;
 
-			//低字节范围 0xA1~0xFE(剔除0x7F)
+			// 低字节范围 0xA1~0xFE(剔除0x7F)
 			if (start[1] < 0xA1 || start[1] > 0xFE)
 			{
 				IsGB2312 = 0;
@@ -3564,7 +3565,7 @@ int is_gb2312(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else						//0xFF 空码
+		else						// 0xFF 空码
 		{
 			IsGB2312 = 0;
 			break;
@@ -3574,7 +3575,7 @@ int is_gb2312(const void* pBuffer, size_t size)
 	return IsGB2312;
 }
 
-//是否是GBK编码
+// 是否是GBK编码
 int is_gbk(const void* pBuffer, size_t size)
 {
 	int IsGBK = 1;
@@ -3583,19 +3584,19 @@ int is_gbk(const void* pBuffer, size_t size)
 
 	while (start < end)
 	{
-		if (*start < 0x80)			//0x00~0x7F ASCII码
+		if (*start < 0x80)			// 0x00~0x7F ASCII码
 			start++;
-		else if (*start < 0x81)		//0x80 空码
+		else if (*start < 0x81)		// 0x80 空码
 		{
 			IsGBK = 0;
 			break;
 		}
-		else if (*start < 0xA1)		//0x81~0xA0 字符表前的不常用汉字
+		else if (*start < 0xA1)		// 0x81~0xA0 字符表前的不常用汉字
 		{
 			if (start >= end -1)
 				break;
 
-			//低字节范围 0x40~0xFE (剔除0x7F)
+			// 低字节范围 0x40~0xFE (剔除0x7F)
 			if (start[1] < 0x40 || start[1] > 0xFE || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3604,23 +3605,23 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xAA)		//0xA1~0xA9 字符部分
+		else if (*start < 0xAA)		// 0xA1~0xA9 字符部分
 		{
 			if (start >= end -1)
 				break;
 
-			if (*start < 0xA8)		//0xA1~0xA7 和GB2312一样
+			if (*start < 0xA8)		// 0xA1~0xA7 和GB2312一样
 			{
-				//低字节范围 0xA1~0xFE
+				// 低字节范围 0xA1~0xFE
 				if (start[1] < 0xA1 || start[1] > 0xFE)
 				{
 					IsGBK = 0;
 					break;
 				}
 			}
-			else					//0xA8~0xA9 扩充了GB2312符号
+			else					// 0xA8~0xA9 扩充了GB2312符号
 			{
-				//低字节范围 0x40~0xEF(剔除0x7F) (不是很精确)
+				// 低字节范围 0x40~0xEF(剔除0x7F) (不是很精确)
 				if (start[1] < 0x40 || start[1] > 0xEF || start[1] == 0x7F)
 				{
 					IsGBK = 0;
@@ -3630,12 +3631,12 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xB0)		//0xAA~0xAF 是GB2312汉字表前新添加的生僻字
+		else if (*start < 0xB0)		// 0xAA~0xAF 是GB2312汉字表前新添加的生僻字
 		{
 			if (start >= end -1)
 				break;
 
-			//低字节范围 0x40~0xA0(剔除0x7F)
+			// 低字节范围 0x40~0xA0(剔除0x7F)
 			if (start[1] < 0x40 || start[1] > 0xA0 || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3644,12 +3645,12 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xF8)		//0xB0~0xF7 是对GB2312汉字表的扩充
+		else if (*start < 0xF8)		// 0xB0~0xF7 是对GB2312汉字表的扩充
 		{
 			if (start >= end -1)
 				break;
 
-			//低字节范围 0x40~0xFE(剔除0x7F)
+			// 低字节范围 0x40~0xFE(剔除0x7F)
 			if (start[1] < 0x40 || start[1] > 0xFE || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3658,12 +3659,12 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else if (*start < 0xFF)		//0xF8~0xFE 是GB2312汉字表后新添加的生僻字
+		else if (*start < 0xFF)		// 0xF8~0xFE 是GB2312汉字表后新添加的生僻字
 		{
 			if (start >= end -1)
 				break;
 
-			//低字节范围 0x40~0xA0(剔除0x7F)
+			// 低字节范围 0x40~0xA0(剔除0x7F)
 			if (start[1] < 0x40 || start[1] > 0xA0 || start[1] == 0x7F)
 			{
 				IsGBK = 0;
@@ -3672,7 +3673,7 @@ int is_gbk(const void* pBuffer, size_t size)
 
 			start += 2;
 		}
-		else						//0xFF 空码
+		else						// 0xFF 空码
 		{
 			IsGBK = 0;
 			break;
@@ -4103,7 +4104,7 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 		return 1;
 	}
 
-	//找到新字符串中"..."之前的字符数目
+	// 找到新字符串中"..."之前的字符数目
 	prefix_count = utf8_trim(utf8, NULL, left_room - ABBR_DOTS_LEN);
 	if (prefix_count == -1)
 		return 0;
@@ -4338,17 +4339,17 @@ UTF32* utf16_to_utf32(const UTF16* src, int strict)
 	const UTF16 *u16 = src;
 	size_t nLen = utf16_len(src);
 
-	u32 = (UTF32*)xcalloc((nLen+1), sizeof(UTF32));
+	u32 = (UTF32*)xcalloc((nLen + 1), sizeof(UTF32));
 	u32Orig = u32;
-	
-	cr = ConvertUTF16toUTF32(&u16, u16+nLen, &u32, u32+nLen,
+
+	cr = ConvertUTF16toUTF32(&u16, u16 + nLen, &u32, u32 + nLen,
 		strict ? strictConversion : lenientConversion);
 	if (cr == conversionOK)
 	{
 		*u32 = L'\0';
 		return u32Orig;
 	}
-	
+
 	xfree(u32Orig);
 	return NULL;
 }
@@ -4376,7 +4377,7 @@ UTF16* utf32_to_utf16(const UTF32* src, int strict)
 	return NULL;
 }
 
-/*将UTF-8编码字符串转换为UTF-7字符串，需要外部释放，strict无意义*/
+/* 将UTF-8编码字符串转换为UTF-7字符串，需要外部释放，strict无意义 */
 UTF7* utf8_to_utf7(const UTF8* src)
 {
 	ConversionResult cr;
@@ -4399,7 +4400,7 @@ UTF7* utf8_to_utf7(const UTF8* src)
 	return NULL;
 }
 
-/*将UTF-7编码字符串转换为UTF-8字符串，需要外部释放，strict无意义*/
+/* 将UTF-7编码字符串转换为UTF-8字符串，需要外部释放，strict无意义 */
 UTF8* utf7_to_utf8(const UTF7* src)
 {
 	ConversionResult cr;
@@ -4506,14 +4507,14 @@ const char *get_language()
 	//http://msdn.microsoft.com/en-us/library/ms912047(WinEmbedded.10).aspx
 	switch(lcid)
 	{
-	case 2052:	//中文（中国）
+	case 2052:	// 中文（中国）
 		strcpy(lang, "zh_CN");
 		break;
-	case 1028:	//中文（台湾)
-	case 3076:	//中文（香港)
+	case 1028:	// 中文（台湾)
+	case 3076:	// 中文（香港)
 		strcpy(lang, "zh_TW");
 		break;
-	case 1033:	//英语 (美国)
+	case 1033:	// 英语 (美国)
 		strcpy(lang, "en_US");
 		break;
 	default:
@@ -4609,19 +4610,19 @@ retry_convert:
 
 	dlen = iconv_convert(from, to, inbuf, inlen, tbuf, tlen, strict);
 
-	if ((dlen == (size_t)-1 && errno == E2BIG)			//转换失败，原因是输出缓冲区太小
-		|| (dlen != (size_t)-1 && tlen < dlen +1))		//转换成功，但无法容纳附加的'\0'
+	if ((dlen == (size_t)-1 && errno == E2BIG)			// 转换失败，原因是输出缓冲区太小
+		|| (dlen != (size_t)-1 && tlen < dlen +1))		// 转换成功，但无法容纳附加的'\0'
 	{
 		tlen += inlen;
 
 		if (tbuf == *outbuf)
-			tbuf = (char*)xmalloc(tlen);				//首次内部分配
+			tbuf = (char*)xmalloc(tlen);				// 首次内部分配
 		else
-			tbuf = (char*)xrealloc(tbuf, tlen);			//重新分配大小
+			tbuf = (char*)xrealloc(tbuf, tlen);			// 重新分配大小
 
 		goto retry_convert;
 	}
-	else if (dlen == (size_t)-1)	//EILSEQ, EINVAL
+	else if (dlen == (size_t)-1)	                        // EILSEQ, EINVAL
 	{
 		if (tbuf != *outbuf)
 			xfree(tbuf);
@@ -4631,7 +4632,7 @@ retry_convert:
 
 	tbuf[dlen] = '\0';
 
-	//设置输出参数
+	// 设置输出参数
 	*outlen = dlen;
 	
 	if (tbuf != *outbuf)
@@ -4804,7 +4805,7 @@ int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 	if (!TerminateProcess(process, exit_code))
 		return 0;
 
-	//等待进程完成异步IO操作
+	// 等待进程完成异步IO操作
 	if (wait)
 	{
 		if (WaitForSingleObject(process, 60 * 1000) != WAIT_OBJECT_0)
@@ -4817,7 +4818,7 @@ int process_kill(process_t process, int exit_code ALLOW_UNUSED, int wait)
 	if (kill(process, SIGTERM))
 		return 0;
 
-	//等待进程完成异步IO操作
+	// 等待进程完成异步IO操作
 	if (wait)
 	{
 		int tries = 60;
@@ -4977,11 +4978,11 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
 /*                         Sync 线程与同步                               */
 /************************************************************************/
 
-//sync_fetch_and_* 操作然后返回之前的值
-//sync_*_and_fetch 操作然后返回新的值
-//http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
-//InterlockedExchangeAdd 返回操作之前的值
-//InterlockedIncrement 返回操作之后的值
+// sync_fetch_and_* 操作然后返回之前的值
+// sync_*_and_fetch 操作然后返回新的值
+// http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+// InterlockedExchangeAdd 返回操作之前的值
+// InterlockedIncrement 返回操作之后的值
 
 /* 原子变量操作 */
 long atomic_get(const atomic_t *v)
@@ -5212,7 +5213,7 @@ void rwlock_destroy(rwlock_t *rwlock)
 #ifdef OS_POSIX
 	pthread_rwlock_destroy(&rwlock->rwlock);
 #elif WINVER >= WINVISTA
-	//Nothing to do here.
+	// Nothing to do here.
 #else
 	mutex_destroy(&rwlock->write_lock);
 	CloseHandle(rwlock->no_readers);
@@ -5231,7 +5232,7 @@ void cond_init(cond_t *cond)
 #elif WINVER >= WINVISTA
 	InitializeConditionVariable(cond);
 #else
-	//TODO: unsupported
+	// TODO: unsupported
 #endif
 }
 
@@ -5242,7 +5243,7 @@ void cond_wait(cond_t *cond, mutex_t *mutex)
 #elif WINVER >= WINVISTA
 	SleepConditionVariableCS(cond, mutex, INFINITE);
 #else
-	//TODO: unsupported
+	// TODO: unsupported
 #endif
 }
 
@@ -5252,8 +5253,8 @@ int cond_wait_time(cond_t *cond, mutex_t *mutex, int milliseconds)
 	struct timespec ts;
 	int seconds, ms;
 
-	seconds = milliseconds / 1000;	//秒数
-	ms = milliseconds % 1000;		//毫秒数(<1s)
+	seconds = milliseconds / 1000;	// 秒数
+	ms = milliseconds % 1000;		// 毫秒数(<1s)
 	ts.tv_sec = seconds;
 	ts.tv_nsec = ms * 1000 * 1000;
 	return !pthread_cond_timedwait(cond, mutex, &ts);
@@ -5805,7 +5806,7 @@ void fatal_exit(const char *fmt, ...)
 	va_list args;
 	char msg[1024];
 
-	//打印信息
+	// 打印信息
 	va_start(args, fmt);
 	IGNORE_RESULT(xvsnprintf(msg, sizeof(msg), fmt, args));
 	log_printf0(DEBUG_LOG, "%s\n", msg);
@@ -5834,7 +5835,7 @@ void fatal_exit(const char *fmt, ...)
 	exit(2);
 
 #else
-	//否则使软件崩溃以产生core dump文件
+	// 否则使软件崩溃以产生core dump文件
 	{
 	int *p = NULL;
 	*p = 0;
@@ -6014,7 +6015,7 @@ void log_printf0(int log_id, const char *fmt, ...)
 		return;
 	}
 
-	//正文信息
+	// 正文信息
 	va_start(args, fmt);
 	vfprintf(fp, fmt, args);
 	va_end(args);
@@ -6055,7 +6056,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 		return;
 	}
 
-	//时间信息
+	// 时间信息
 	t = time(NULL);
 	memset(tmbuf, 0, sizeof(tmbuf));
 	strftime(tmbuf, sizeof(tmbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
@@ -6065,13 +6066,13 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	if (log_id == DEBUG_LOG && debug_log_to_stderr)
 		fprintf(stderr, "%s ", tmbuf);
 
-	//等级信息
+	// 等级信息
 	fprintf(fp, "[%s] ", log_severity_names[level]);
 
 	if (log_id == DEBUG_LOG && debug_log_to_stderr)
 		fprintf(stderr, "[%s] ", log_severity_names[level]);
 
-	//正文信息
+	// 正文信息
 	va_start(args, fmt);
 	vfprintf(fp, fmt, args);
 	va_end(args);
@@ -6083,7 +6084,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
         va_end(argsd);
     }
 
-	//换行符
+	// 换行符
 	p = fmt + strlen(fmt) - 1;
 	if (*p != '\n') {
 		fputc('\n', fp);

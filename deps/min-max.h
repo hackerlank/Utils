@@ -15,7 +15,7 @@
 
 #include "compiler.h"
 
-#if defined(COMPILER_GCC) && !defined(OS_MACOSX)
+#if defined(OS_LINUX)
 #define xmin(x, y) ({                \
     typeof(x) _min1 = (x);            \
     typeof(y) _min2 = (y);            \

@@ -8,7 +8,7 @@
 namespace utils{
 
 //////////////////////////////////////////////////////////////////////////
-//字符串相关
+// 字符串相关
 
 template<typename STR, typename CH>
 STR &TrimLeftCharT(STR &s, CH ch)
@@ -290,7 +290,7 @@ std::wstring &StartWith(std::wstring &ws, const std::wstring &wm)
 	return StartWithStrT(ws, wm);
 }
 
-//转换字符串为全大/小写形式
+// 转换字符串为全大/小写形式
 std::string	&UpperCase(std::string &s)
 {
 	std::transform(s.begin(), s.end(), s.begin(), toupper);
@@ -315,7 +315,7 @@ std::wstring &LowerCase(std::wstring &ws)
 	return ws;
 }
 
-//见cutil的xasprintf函数
+// 见cutil的xasprintf函数
 std::string	FormatString(const char* format, ...)
 {
 	char stack_buf[512];
@@ -394,7 +394,7 @@ bool Split(const std::string &s, const std::string &sep, string_vec* vstr, bool 
 	return true;  
 }
 
-//转义HTML特殊字符
+// 转义HTML特殊字符
 std::string EscapeHTML(const std::string &str)
 {
 	std::string s = str;
@@ -409,33 +409,33 @@ std::string EscapeHTML(const std::string &str)
 }
 
 //////////////////////////////////////////////////////////////////////////
-//字符编码
+// 字符编码
 
-//字符串是纯ASCII编码
+// 字符串是纯ASCII编码
 bool IsASCII(const std::string &input)
 {
 	return is_ascii(input.c_str(), input.length()) == 1;
 }
 
-//字符串是否是UTF-8编码
+// 字符串是否是UTF-8编码
 bool IsUTF8(const std::string &input)
 {
 	return is_utf8(input.c_str(), input.length()) == 1;
 }
 
-//字符串是否是GB2312编码
+// 字符串是否是GB2312编码
 bool IsGB2312(const std::string &input)
 {
 	return is_gb2312(input.c_str(), input.length()) == 1;
 }
 
-//字符串是否是GBK编码的
+// 字符串是否是GBK编码的
 bool IsGBK(const std::string &input)
 {
 	return is_gbk(input.c_str(), input.length()) == 1;
 }
 
-//探测字符串的字符集(ASCII,UTF-8,GB2312,GBK,GB18030)
+// 探测字符串的字符集(ASCII,UTF-8,GB2312,GBK,GB18030)
 std::string GetCharset(const std::string &str, bool ascii)
 {
 	std::string s;
@@ -448,9 +448,9 @@ std::string GetCharset(const std::string &str, bool ascii)
 	return s;
 }
 
-//探测文件字符集
-//成功返回文件的字符集（如"UTF-8", "GBK")
-//失败返回空字符串
+// 探测文件字符集
+// 成功返回文件的字符集（如"UTF-8", "GBK")
+// 失败返回空字符串
 std::string GetFileCharset(const std::string &path, double &probability, int maxline)
 {
 	char buf[MAX_CHARSET];
@@ -461,13 +461,13 @@ std::string GetFileCharset(const std::string &path, double &probability, int max
 	return "";
 }
 
-//获取UTF-8字符串的字符数
+// 获取UTF-8字符串的字符数
 int UTF8Length(const std::string &utf8)
 {
 	return utf8_len(utf8.c_str());
 }
 
-//按照最大字节数截取UTF-8字符串
+// 按照最大字节数截取UTF-8字符串
 std::string UTF8Trim(const std::string &utf8, size_t max_bytes)
 {
 	int len = utf8_trim(utf8.c_str(), NULL, max_bytes);
@@ -475,8 +475,8 @@ std::string UTF8Trim(const std::string &utf8, size_t max_bytes)
 	return len < 0 ? std::string() : utf8.substr(0, len);
 }
 
-//缩略UTF8字符串
-//失败返回空字符串
+// 缩略UTF8字符串
+// 失败返回空字符串
 std::string& UTF8Abbr(std::string &utf8, size_t max_bytes, 
 	size_t last_reserved_words)
 {
@@ -493,7 +493,7 @@ std::string& UTF8Abbr(std::string &utf8, size_t max_bytes,
 	return utf8;
 }
 
-//将宽字符串转换为多字节字符串
+// 将宽字符串转换为多字节字符串
 std::string WstringTostring(const std::wstring& ws)
 {
 	std::string s;
@@ -508,7 +508,7 @@ std::string WstringTostring(const std::wstring& ws)
 	return s;
 }
 
-//将多字节字符串转换为宽字符串
+// 将多字节字符串转换为宽字符串
 std::wstring stringToWstring(const std::string& s)
 {
 	std::wstring ws;
@@ -523,7 +523,7 @@ std::wstring stringToWstring(const std::string& s)
 	return ws;
 }
 
-//宽字符串转换为UTF-8字符串
+// 宽字符串转换为UTF-8字符串
 std::string WstringToUTF8string(const std::wstring &ws, bool bStrict)
 {
 	std::string utf8;
@@ -538,7 +538,7 @@ std::string WstringToUTF8string(const std::wstring &ws, bool bStrict)
 	return utf8;
 }
 
-//UTF-8字符串转换为宽字符串
+// UTF-8字符串转换为宽字符串
 std::wstring UTF8stringToWstring(const std::string &s, bool bStrict)
 {
 	std::wstring ws;
@@ -553,13 +553,13 @@ std::wstring UTF8stringToWstring(const std::string &s, bool bStrict)
 	return ws;
 }
 
-//多字节字符串转换为UTF-8字符串
+// 多字节字符串转换为UTF-8字符串
 std::string stringToUTF8string(const std::string& s)
 {
 	return WstringToUTF8string(stringToWstring(s));
 }
 
-//UTF-8字符串转换为本地多字节字符串
+// UTF-8字符串转换为本地多字节字符串
 std::string UTF8stringTostring(const std::string& s)
 {
 	return WstringTostring(UTF8stringToWstring(s));
@@ -593,7 +593,7 @@ std::string	UTF8stringToUTF7string(const std::string &s8)
 
 #ifdef _LIBICONV_H
 
-//返回一个转换过编码之后的字符串
+// 返回一个转换过编码之后的字符串
 std::string ConvertToCharset(const std::string &from, const std::string &to, const std::string &input, bool strict)
 {
 	char buf[1024], *output;
@@ -618,27 +618,27 @@ std::string ConvertToCharset(const std::string &from, const std::string &to, con
 #endif /* _LIBICONV_H */
 
 //////////////////////////////////////////////////////////////////////////
-//文件系统
+// 文件系统
 
-//是否是绝对路径
+// 是否是绝对路径
 bool IsAbsolutePath(const std::string &path)
 {
 	return is_absolute_path(path.c_str()) == 1;
 }
 
-//是否是根路径（/或C:\）
+// 是否是根路径（/或C:\）
 bool IsRootPath(const std::string &path)
 {
 	return is_root_path(path.c_str()) == 1;
 }
 
-//返回路径的文件名或最底层目录名
+// 返回路径的文件名或最底层目录名
 std::string PathFindFileName(const std::string &path)	
 {
 	return path_find_file_name(path.c_str());
 }
 
-//返回文件的扩展名，目录返回NULL
+// 返回文件的扩展名，目录返回NULL
 std::string PathFindExtension(const std::string &path)
 {
 	return path_find_extension(path.c_str());
@@ -671,7 +671,7 @@ bool PathIsDirectory(const std::string &path)
 	return path_is_directory(path.c_str()) > 0;
 }
 
-//获取可用的文件路径
+// 获取可用的文件路径
 std::string& UniqueFile(std::string &path)
 {
 	char buf[MAX_PATH+1];
@@ -684,7 +684,7 @@ std::string& UniqueFile(std::string &path)
 	return path;
 }
 
-//获取可用的目录路径
+// 获取可用的目录路径
 std::string& UniqueDir(std::string &path)
 {
 	char buf[MAX_PATH+1];
@@ -697,7 +697,7 @@ std::string& UniqueDir(std::string &path)
 	return path;
 }
 
-//将路径中的非法字符替换为%HH的形式
+// 将路径中的非法字符替换为%HH的形式
 std::string PathEscape(const std::string &path, int platform, bool reserve_separator)
 {
 	std::string s;
@@ -711,8 +711,8 @@ std::string PathEscape(const std::string &path, int platform, bool reserve_separ
 	return s;
 }
 
-//将路径组成元素（目录名或文件名）合法化
-//注意必须是UTF-8编码！
+// 将路径组成元素（目录名或文件名）合法化
+// 注意必须是UTF-8编码！
 std::string& PathComponentLegalize(std::string &component, int platform, size_t max_length)
 {
 	if (component.empty())
@@ -726,7 +726,7 @@ std::string& PathComponentLegalize(std::string &component, int platform, size_t 
 	utils::TrimWS(component);
 
 	if (platform == PATH_WINDOWS) {
-		//Windows会忽略末尾的'.'和' '
+		// Windows会忽略末尾的'.'和' '
 		utils::TrimRight(component, " .");
 	}
 
@@ -736,8 +736,8 @@ std::string& PathComponentLegalize(std::string &component, int platform, size_t 
 	return component;
 }
 
-//合法化路径名
-//使用当前编译时平台的路径分隔符
+// 合法化路径名
+// 使用当前编译时平台的路径分隔符
 std::string& PathLegalize(std::string& path, int platform, size_t max_length)
 {
 	if (path.empty())
@@ -790,7 +790,7 @@ std::string	AbsolutePath(const std::string& relative)
 	return buf;
 }
 
-//构造相对路径
+// 构造相对路径
 std::string RelativePath(const std::string& src, const std::string& dst, char sep)
 {
 	char link[MAX_PATH+1];
@@ -872,7 +872,7 @@ bool WriteFile(const std::string& path, const std::string& content)
 	return write_mem_file(path.c_str(), content.data(), content.length()) == 1;
 }
 
-//获取可读性强的文件长度值，如3bytes, 10KB, 1.5MB, 3GB
+// 获取可读性强的文件长度值，如3bytes, 10KB, 1.5MB, 3GB
 std::string FileSizeReadable(int64_t size)
 {
 	std::string s;
@@ -885,9 +885,9 @@ std::string FileSizeReadable(int64_t size)
 }
 
 //////////////////////////////////////////////////////////////////////////
-//更多
+// 更多
 
-//获取日期时间字符串，如"2012-06-06 16:07:32"
+// 获取日期时间字符串，如"2012-06-06 16:07:32"
 std::string DateTimeStr(time_t t)
 {
 	std::string s;
@@ -896,13 +896,13 @@ std::string DateTimeStr(time_t t)
 	return s;
 }
 
-//获取当前时间字符串
+// 获取当前时间字符串
 std::string CurrentTime()
 {
 	return DateTimeStr(time(NULL));
 }
 
-//获取日期字符串，如"2012-06-06"
+// 获取日期字符串，如"2012-06-06"
 std::string DateStr(time_t t)
 {
 	std::string s;
@@ -912,7 +912,7 @@ std::string DateStr(time_t t)
 
 }
 
-//获取时间字符串，如"16:07:32"
+// 获取时间字符串，如"16:07:32"
 std::string TimeStr(time_t t)
 {
 	std::string s;
@@ -921,7 +921,7 @@ std::string TimeStr(time_t t)
 	return s;
 }
 
-//获取可读性强的时间差字符串
+// 获取可读性强的时间差字符串
 std::string TimeSpanReadable(int64_t seconds, int cutoff)
 {
 	char buf[TIME_SPAN_BUFSIZE];
@@ -941,25 +941,25 @@ std::string GetExecuteName()
 	return get_execute_name();
 }
 
-//获取进程起始目录（exe所在目录）
+// 获取进程起始目录（exe所在目录）
 std::string	GetExecuteDir()
 {
 	return get_execute_dir();
 }
 
-//获取进程当前工作目录
+// 获取进程当前工作目录
 std::string	GetCurrentDir()
 {
 	return get_current_dir();
 }
 
-//设置进程当前工作目录
+// 设置进程当前工作目录
 bool SetCurrentDir(const std::string &dir)
 {
 	return set_current_dir(dir.c_str()) == 1;
 }
 
-//获取当前用户的主目录
+// 获取当前用户的主目录
 std::string	GetHomeDir()
 {
 	return get_home_dir();
@@ -980,7 +980,7 @@ std::string GetTempFile(const std::string& prefix)
 	return get_temp_file(prefix.c_str());
 }
 
-//创建进程
+// 创建进程
 bool CreateProcess(const std::string& commandline, bool show, bool wait)
 {
 	process_t proc = process_create(commandline.c_str(), show ? 1 : 0);
@@ -1008,7 +1008,7 @@ bool CreateProcess(const std::string& commandline, bool show, bool wait)
 		return i;\
 	}
 
-//字符<=>串数字
+// 字符<=>串数字
 NUM_TO_STR(int, Int, "%d");
 NUM_TO_STR(uint, UInt, "%u");
 NUM_TO_STR(size_t, Size, "%" PRIuS);
@@ -1018,7 +1018,7 @@ NUM_TO_STR(double, Double, "%lf");
 
 #undef NUM_TO_STR
 
-//以十六进制的形式查看缓冲区的内容
+// 以十六进制的形式查看缓冲区的内容
 std::string HexDump(const void *buf, int len)
 {
 	std::string s;
@@ -1075,7 +1075,7 @@ std::string ScopedWalkDir::Path() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-//线程类
+// 线程类
 
 Thread::Thread(int id)
 	:id_(id),
@@ -1134,7 +1134,7 @@ bool Thread::Once()
 }; //namespace utils
 
 //////////////////////////////////////////////////////////////////////////
-//内存调试
+// 内存调试
 
 #if (defined DBG_MEM) && (!defined COMPILER_MSVC || _MSC_VER > MSVC6)
 
@@ -1203,7 +1203,7 @@ void* operator new[](size_t size, const char *file, const char *func, int line)
 	return(ptr);
 }
 
-//但是以下delete函数仅当对象构造函数抛出异常时才会调用
+// 但是以下delete函数仅当对象构造函数抛出异常时才会调用
 void operator delete(void* ptr, const char* file, const char* func, int line)
 {
 	log_dprintf(LOG_ERROR, "{%s %s %d} Thrown on initializing object at %p.\n", path_find_file_name(file), func, line, ptr);

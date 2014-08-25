@@ -613,7 +613,7 @@ int  write_mem_file_safe(const char *file, const void *data, size_t len) WUR;
 /* 磁盘空间 */
 struct fs_usage {
  uint64_t fsu_total;                /* 总共字节数 */
- uint64_t fsu_free;                /* 空闲字节数（超级用户） */
+ uint64_t fsu_free;                 /* 空闲字节数（超级用户） */
  uint64_t fsu_avail;                /* 可用字节数（一般用户） */
  uint64_t fsu_files;                /* 文件节点数 */
  uint64_t fsu_ffree;                /* 可用节点数 */
@@ -655,8 +655,8 @@ const char* get_temp_dir();
 
 /* 在指定目录下获取可用的临时文件 */
 int get_temp_file_under(const char* dir, const char *prefix,
-        char *outbuf, size_t outlen) WUR;
-
+                        char *outbuf, size_t outlen) WUR;
+ 
 /* 获取默认临时目录下可用的临时文件（非线程安全） */
 const char* get_temp_file(const char* prefix);
 
@@ -866,7 +866,6 @@ char* popen_readall(const char* command);
 #ifdef OS_WIN
 FILE* popen(const char *command, const char *mode);
 #define pclose _pclose
-
 #endif
 
 /************************************************************************/

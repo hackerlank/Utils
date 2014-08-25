@@ -23,13 +23,8 @@
 #endif  // defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 #elif defined(ANDROID)
 #define OS_ANDROID 1
-#elif defined(__native_client__)
-#define OS_NACL 1
 #elif defined(__linux__)
 #define OS_LINUX 1
-#if !defined(TOOLKIT_VIEWS)
-//#define TOOLKIT_GTK // Use TOOLKIT_GTK on linux if TOOLKIT_VIEWS isn't defined.
-#endif
 #elif defined(_WIN32)
 #define OS_WIN 1
 #define TOOLKIT_VIEWS 1
