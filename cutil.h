@@ -1039,7 +1039,7 @@ int thread_once(thread_once_t* once, thread_once_func func);
 
 /* 断言 */
 #define ASSERTION(expr, name) \
- if (!(expr)) {fatal_exit(name" {%s %s %d} %s", \
+ if (!(expr)) {debug_backtrace(0, name" {%s %s %d} %s", \
  path_find_file_name(__FILE__), __FUNCTION__, __LINE__, #expr);}
 
 #undef ASSERT
@@ -1056,7 +1056,7 @@ int thread_once(thread_once_t* once, thread_once_func func);
 
 /* 异常处理 */
 #ifdef _DEBUG
-#define NOT_HANDLED(type) fatal_exit("%s {%s %s %d} %s", \
+#define NOT_HANDLED(type) debug_backtrace(0, "%s {%s %s %d} %s", \
   datetime_str(time(NULL)), path_find_file_name(__FILE__), __FUNCTION__, __LINE__, type)
 #else
 #define NOT_HANDLED(type) 
@@ -1065,8 +1065,11 @@ int thread_once(thread_once_t* once, thread_once_func func);
 #define NOT_REACHED()   NOT_HANDLED("not reached")
 #define NOT_IMPLEMENTED() NOT_HANDLED("not implemented")
 
-/* 软件致命退出 */
-void fatal_exit(const char *fmt, ...) PRINTF_FMT(1,2);
+/* 
+ * 打印当前执行堆栈并开始调试 
+ * 如果fatal参数为真，将导致程序退出
+ */
+void debug_backtrace(int fatal, const char *fmt, ...) PRINTF_FMT(2, 3);
 
 /* 错误信息 */
 /* 获取用WIN32 API失败后的错误信息(GetLastError()) */

@@ -5800,8 +5800,7 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 
 #endif /* #ifdef USE_CRASH_HANDLER */
 
-/* 记录当前堆栈信息并立即退出 */
-void fatal_exit(const char *fmt, ...)
+void debug_backtrace(int fatal, const char *fmt, ...)
 {
 	va_list args;
 	char msg[1024];
@@ -5810,8 +5809,7 @@ void fatal_exit(const char *fmt, ...)
 	va_start(args, fmt);
 	IGNORE_RESULT(xvsnprintf(msg, sizeof(msg), fmt, args));
 	log_printf0(DEBUG_LOG, "%s\n", msg);
-	fprintf(stderr, "%s\n", msg);
-    va_end(args);
+	va_end(args);
 
 #ifdef _DEBUG
 	/* 调试模式下，直接打印调用堆栈 */
@@ -5823,24 +5821,31 @@ void fatal_exit(const char *fmt, ...)
 	StackBackTraceMsg(trace, count, msg, BackTraceLogging|BackTraceDialog);
 	}
 #else
-	stack_backtrace(BackTraceLogging|BackTraceStderr);
+	fprintf(stderr, "%s\n", msg);
+	stack_backtrace(BackTraceLogging | BackTraceStderr);
 #endif /* OS_WIN */
-
-	log_close_all();
 
 #ifdef COMPILER_MSVC
 	__debugbreak();
 #endif
 
-	exit(2);
-
-#else
-	// 否则使软件崩溃以产生core dump文件
-	{
-	int *p = NULL;
-	*p = 0;
-	}
 #endif /* _DEBUG */
+
+	if (fatal) {
+		log_close_all();
+#ifdef _DEBUG
+		// 前面已经显示过堆栈，正常退出即可
+		exit(2);
+#else
+		// 否则使软件崩溃以产生core dump文件
+		{
+			int *p = NULL;
+			*p = 0;
+		}
+#endif
+	} else {
+		log_flush(DEBUG_LOG);
+	}
 }
 
 /* 以十六进制的形式打印出一个缓冲区的内容 */
@@ -6100,7 +6105,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 
 	/* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
 	if (level == LOG_FATAL)
-		fatal_exit("logging level fatal");
+		debug_backtrace(1, "logging level fatal");
 }
 
 void log_flush(int log_id)
@@ -6167,7 +6172,7 @@ static inline
 struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *file, 
 		const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
-	/* 不要使用xmalloc，fatal_exit等，否则会造成死循环 */
+	/* 不要使用xmalloc，debug_backtrace等，否则会造成死循环 */
 	struct MEMRT_OPERATE *rtp = (struct MEMRT_OPERATE*)malloc(sizeof(struct MEMRT_OPERATE));
 	if (!rtp) 
 		abort();
