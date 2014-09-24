@@ -679,6 +679,14 @@ const char* datetime_str (time_t);
 /* 返回 YYMMDDHHMMSS 样式的时间戳字符串，非线程安全 */
 const char* timestamp_str(time_t);
 
+/* 
+ * 解析时间日期字符串
+ * 支持 ISO 标准格式，如 2014-09-24 12:59:30，2014/09/24 12:59:30
+ * 以及 __DATE__ __TIME__ 宏, 如 Sep 24 2014 12:59:30
+ * 成功返回自 1970/1/1 以来的秒数，失败返回0 
+ */
+time_t parse_datetime(const char* datetime_str);
+
 #define TIME_UNIT_MAX 20
 
 /* 设置本地化的时间单位 */

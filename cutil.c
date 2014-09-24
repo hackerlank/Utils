@@ -3186,6 +3186,50 @@ const char* timestamp_str(time_t t)
 	return fmttime(t, "%Y%m%d%H%M%S");
 }
 
+/* 解析时间日期字符串 */
+time_t parse_datetime(const char* datetime_str) {
+	static const char month_names[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+	int month, day, year, hour, minute, second;
+	struct tm t;
+	int rv;
+
+	if (!datetime_str || !datetime_str[0])
+		return 0;
+
+	if (xisdigit(datetime_str[0])) {
+		rv = sscanf(datetime_str, "%d-%d-%d %d:%d:%d",
+			&year, &month, &day, &hour, &minute, &second);
+		if (rv != 6) {
+			rv = sscanf(datetime_str, "%d/%d/%d %d:%d:%d",
+				&year, &month, &day, &hour, &minute, &second);
+			if (rv != 6)
+				return 0;
+		}
+	} else {
+		char s_month[5];
+		rv = sscanf(datetime_str, "%s %d %d %d:%d:%d",
+			s_month, &day, &year, &hour, &minute, &second);
+		if (rv != 6)
+			return 0;
+
+		month = (strcasestr(month_names, s_month) - month_names) / 3;
+		if (!month)
+			return 0;
+	}
+
+	memset(&t, 0, sizeof(t));
+	
+	t.tm_mon = month;
+	t.tm_mday = day;
+	t.tm_year = year - 1900;
+	t.tm_hour = hour;
+	t.tm_min = minute;
+	t.tm_sec = second;
+	t.tm_isdst = -1;
+
+	return mktime(&t);
+}
+
 struct time_units{
 	char year[TIME_UNIT_MAX];
 	char month[TIME_UNIT_MAX];
