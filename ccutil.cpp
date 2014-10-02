@@ -672,27 +672,23 @@ bool PathIsDirectory(const std::string &path)
 }
 
 // 获取可用的文件路径
-std::string& UniqueFile(std::string &path)
+std::string& UniqueFile(std::string &path, bool create_now)
 {
-	char buf[MAX_PATH+1];
+	char buf[MAX_PATH] = {0};
 
-	if (unique_file(path.c_str(), buf, sizeof(buf)))
+	if (unique_file(path.c_str(), buf, sizeof(buf), (create_now?1:0)))
 		path = buf;
-	else
-		path = "";
 
 	return path;
 }
 
 // 获取可用的目录路径
-std::string& UniqueDir(std::string &path)
+std::string& UniqueDir(std::string &path, bool create_now)
 {
-	char buf[MAX_PATH+1];
+	char buf[MAX_PATH] = {0};
 
-	if (unique_dir(path.c_str(), buf, sizeof(buf)))
+	if (unique_dir(path.c_str(), buf, sizeof(buf), (create_now ? 1 : 0)))
 		path = buf;
-	else
-		path = "";
 
 	return path;
 }

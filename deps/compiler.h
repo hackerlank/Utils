@@ -30,6 +30,7 @@
 #define MSVC9    1500        /* VC 2008 */
 #define MSVC10    1600        /* VC 2010 */
 #define MSVC11    1700        /* VC 2012 */
+#define MSVC12    1800       /* VC 2013 */
 
 #define restrict
 

@@ -427,8 +427,9 @@ int path_is_directory(const char* path);
 int path_is_file(const char* path);
 
 /* 获取当前可用的文件/目录路径 */
-int unique_file(const char* path, char *buf, size_t len) WUR;
-int unique_dir(const char* path, char *buf, size_t len) WUR;
+/* 如果create_now参数为真，将立即创建一个空的文件/目录 */
+int unique_file(const char* path, char *buf, size_t len, int create_now) WUR;
+int unique_dir(const char* path, char *buf, size_t len, int create_now) WUR;
 
 /* 路径合法化 */
 #define PATH_UNIX  1

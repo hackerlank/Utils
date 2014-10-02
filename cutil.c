@@ -1385,7 +1385,7 @@ int relative_path(const char* src, const char* dst, char sep, char* outbuf, size
 }
 
 /* 获取可用的文件路径 */
-int unique_file(const char* path, char *buf, size_t len)
+int unique_file(const char* path, char *buf, size_t len, int create_now)
 {
 	const char* ext;
 	size_t plen, elen;
@@ -1401,7 +1401,7 @@ int unique_file(const char* path, char *buf, size_t len)
 		if (xstrlcpy(buf, path, len) >= len)
 			return 0;
 
-		return 1;
+		goto succeed;
 	}
 
 	/* 获取文件扩展名 */
@@ -1418,16 +1418,22 @@ int unique_file(const char* path, char *buf, size_t len)
 		sprintf(buf + plen - elen, " (%d)%s", i, ext);
 
 		if (!path_file_exists(buf))
-			return 1;
+			goto succeed;
 	}
 
 	NOT_REACHED();
 	return 0;
+
+succeed:
+	if (create_now)
+		return create_directories(buf) && touch(buf);
+
+	return 1;
 }
 
 /* 获取可用的目录路径 */
 /* 返回的路径名是否以分隔符结尾与原路径相同 */
-int unique_dir(const char* path, char *buf, size_t len)
+int unique_dir(const char* path, char *buf, size_t len, int create_now)
 {
 	int has_slash, i;
 
@@ -1441,7 +1447,7 @@ int unique_dir(const char* path, char *buf, size_t len)
 		if (xstrlcpy(buf, path, len) >= len)
 			return 0;
 	
-		return 1;
+		goto succeed;
 	}
 
 	/* 直接路径后加" (N)"重试 */
@@ -1464,11 +1470,16 @@ int unique_dir(const char* path, char *buf, size_t len)
 		}
 
 		if (!path_file_exists(buf))
-			return 1;
+			goto succeed;
 	}
 
 	NOT_REACHED();
 	return 0;
+
+succeed:
+	if (create_now)
+		return create_directories(buf);
+	return 1;
 }
 
 #define U PATH_UNIX			/* Unix不可用： / and \0 */

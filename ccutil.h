@@ -156,9 +156,9 @@ bool			PathFileExists(const std::string &path);						// 路径所指文件/目�
 bool			PathIsFile(const std::string &path);							// 路径是否是文件
 bool			PathIsDirectory(const std::string &path);						// 路径是否是有效目录
 
-std::string&	UniqueFile(std::string &path);									// 获取可用的文件路径				
+std::string&	UniqueFile(std::string &path, bool create_now = false);			// 获取可用的文件路径				
 
-std::string&	UniqueDir(std::string &path);									// 获取可用的目录路径				
+std::string&	UniqueDir(std::string &path, bool create_now = false);			// 获取可用的目录路径				
 
 std::string		PathEscape(const std::string &path, 							// 将路径中的非法字符替换为%HH的形式
 	int platform = PATH_PLATFORM,
