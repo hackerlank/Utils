@@ -25,6 +25,7 @@
 #define OS_ANDROID 1
 #elif defined(__linux__)
 #define OS_LINUX 1
+#define _GNU_SOURCE
 #elif defined(_WIN32)
 #define OS_WIN 1
 #define TOOLKIT_VIEWS 1

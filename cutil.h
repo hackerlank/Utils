@@ -65,9 +65,6 @@ const char* get_product_name();
 
 /* 系统头文件 */
 #ifdef OS_POSIX
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include <unistd.h>
 #else
 #include <windows.h>
@@ -182,7 +179,11 @@ typedef int ssize_t;
 /*                            Math 数学                                  */
 /************************************************************************/
 
-#include "deps/min-max.h"  /* xmin, xmax */
+/* 最大值/最小值 */
+#define xmin(x, y) ((x) > (y) ? (y) : (x))
+#define xmax(x, y) ((x) > (y) ? (x) : (y))
+#define xmin3(x, y, z) xmin(xmin(x, y), z)
+#define xmax3(x, y, z) xmax(xmax(x, y), z)
 
 /* 数组元素个数 */
 #define countof(arr) (sizeof(arr) / sizeof((arr)[0]))
