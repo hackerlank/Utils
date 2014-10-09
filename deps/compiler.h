@@ -166,12 +166,14 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
  * Use like:
  *   virtual void foo() OVERRIDE;
  */
+#ifndef OVERRIDE
 #if defined(COMPILER_MSVC)
 #define OVERRIDE override
 #elif defined(__clang__)
 #define OVERRIDE override
 #else
 #define OVERRIDE
+#endif
 #endif
 
 /* 分支预测优化 */
