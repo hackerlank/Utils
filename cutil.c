@@ -218,7 +218,7 @@ void interrupt_signal_handler(int n ALLOW_UNUSED, siginfo_t *siginfo, void *act 
 }
 #endif
 
-/* 
+/*
  * 设置程序收到中断信号（如Ctrl^C）时的处理函数
  * 若未设置此处理函数，进程在收到此类信号的默认行为是终止进程
  * 注册后再收到中断消息将不会终止当前进程，除非在处理函数中显式退出（如调用exit)
@@ -235,8 +235,8 @@ int set_interrupt_handler(interrupt_handler_func handler)
 #else
 	struct sigaction act;
 	int error = 0;
-	sigemptyset(&act.sa_mask);     
-	act.sa_flags = SA_SIGINFO;      
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_SIGINFO;
 	act.sa_sigaction = interrupt_signal_handler;
 	error = sigaction(SIGINT, &act, NULL);	//Interrupt from keyboard
 	error += sigaction(SIGQUIT, &act, NULL); //Termination signal
@@ -258,25 +258,25 @@ static void default_interrupt_handler(int type)
 	switch(type) {
 	case CTRL_C_EVENT:
 		xstrlcpy(msg, "Ctrl-C pressed.", sizeof(msg));
-		Beep(750, 300); 
+		Beep(750, 300);
 		break;
-	case CTRL_BREAK_EVENT: 
-		Beep(900, 200); 
+	case CTRL_BREAK_EVENT:
+		Beep(900, 200);
 		xstrlcpy(msg, "Ctrl-Break pressed.", sizeof(msg));
 		break;
-	case CTRL_CLOSE_EVENT: 
-		Beep(600, 200); 
+	case CTRL_CLOSE_EVENT:
+		Beep(600, 200);
 		xstrlcpy(msg, "Console closed.", sizeof(msg));
 		break;
-	case CTRL_LOGOFF_EVENT: 
-		Beep(1000, 200); 
+	case CTRL_LOGOFF_EVENT:
+		Beep(1000, 200);
 		xstrlcpy(msg, "User logs off.", sizeof(msg));
 		break;
-	case CTRL_SHUTDOWN_EVENT: 
-		Beep(750, 500); 
+	case CTRL_SHUTDOWN_EVENT:
+		Beep(750, 500);
 		xstrlcpy(msg, "System shutdown.", sizeof(msg));
 		break;
-	default: 
+	default:
 		xstrlcpy(msg, "Unknown interrupt event", sizeof(msg));
 		break;
 	}
@@ -335,10 +335,10 @@ void set_default_crash_handler()
 	setrlimit(RLIMIT_CORE, &lmt);
 
 #ifdef _DEBUG
-	struct sigaction act;  
-	sigemptyset(&act.sa_mask);     
-	act.sa_flags = SA_SIGINFO;      
-	act.sa_sigaction = crash_signal_handler;  
+	struct sigaction act;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_SIGINFO;
+	act.sa_sigaction = crash_signal_handler;
 	sigaction(SIGSEGV, &act, NULL); //Invalid memory segment access
 	sigaction(SIGFPE, &act, NULL);  //Floating point error
 	sigaction(SIGABRT, &act, NULL);	//abort(), C++ exception.etc
@@ -536,7 +536,7 @@ char *strdup_lower (const char *s)
 char *strdup_upper (const char *s)
 {
 	char *copy, *p;
-	
+
 	copy = xstrdup (s);
 	for (p = copy; *p; p++)
 		*p = toupper (*p);
@@ -549,7 +549,7 @@ char *
 substrdup(const char *beg, const char *end)
 {
   char *res;
-  
+
   if (!beg || !end)
 	  return NULL;
 
@@ -567,7 +567,7 @@ int xvsnprintf(char* buffer, size_t size, const char* format, va_list args)
 {
 #ifdef OS_WIN
 #if _MSC_VER <= MSVC6
-	/* 该函数在缓冲区不够大的情况下也会返回-1 
+	/* 该函数在缓冲区不够大的情况下也会返回-1
 	 * 在VC6中，不会设置errno的值，
 	 * 在高版本VC中，会将errno置为ERANGE，调用失败则置为EINVAL */
 	int i = _vsnprintf(buffer, size, format, args);
@@ -595,15 +595,13 @@ int xsnprintf(char* buffer, size_t size, const char* format, ...)
 {
 	int result;
 	va_list arguments;
-	
+
 	va_start(arguments, format);
 	result = xvsnprintf(buffer, size, format, arguments);
 	va_end(arguments);
-	
+
 	return result;
 }
-
-#ifndef _GNU_SOURCE
 
 /* 可移植的asprintf */
 int xasprintf(char** out, const char *fmt, ...)
@@ -624,7 +622,7 @@ int xasprintf(char** out, const char *fmt, ...)
 		n = vsnprintf (str, size, fmt, args);
 		va_end (args);
 
-		/* Upon successful return, these functions return the number of characters printed 
+		/* Upon successful return, these functions return the number of characters printed
 		    (excluding the null byte used to end output to strings). [Linux man page] */
 		if (n >= 0 && n < size)
 		{
@@ -632,8 +630,8 @@ int xasprintf(char** out, const char *fmt, ...)
 			return 1;
 		}
 
-		/* If the output was truncated due to this limit then the return value is the number of characters 
-		 * (excluding the terminating null byte) which would have been written to the final if enough space 
+		/* If the output was truncated due to this limit then the return value is the number of characters
+		 * (excluding the terminating null byte) which would have been written to the final if enough space
 		 * had been available. Thus, a return value of size or more means that string the output was truncated.
 		 * If an output error is encountered, a negative value is returned. [Linux man page] */
 
@@ -665,8 +663,6 @@ int xasprintf(char** out, const char *fmt, ...)
 		str = (char*)xrealloc (str, size);
 	}
 }
-
-#endif /* _GNU_SOURCE */
 
 /* BSD strlcpy implmentation */
 size_t xstrlcpy(char* dst, const char* src, size_t siz)
@@ -748,7 +744,7 @@ char *strndup(const char* s, size_t n)
 	return p;
 }
 
-/* 
+/*
  * 分割字符串
  * 该函数会改变源字符串，但可以处理空格的情况
  * 取自 GLIBC 2.16.0
@@ -839,7 +835,7 @@ int strcasecmp(const char *s1, const char* s2)
 	if (!s1 || !s2)
 		return -1;
 
-    for ( ; ; s1++, s2++) 
+    for ( ; ; s1++, s2++)
 	{
 		u1 = (unsigned char) *s1;
 		u2 = (unsigned char) *s2;
@@ -858,7 +854,7 @@ int strncasecmp(const char *s1, const char*s2, size_t length)
 	if (!s1 || !s2)
 		return -1;
 
-    for (; length != 0; length--, s1++, s2++) 
+    for (; length != 0; length--, s1++, s2++)
 	{
 		u1 = (unsigned char) *s1;
 		u2 = (unsigned char) *s2;
@@ -927,10 +923,10 @@ void* memrchr(const void* s, int c, size_t n)
     for (p += n; n > 0; n--)
         if (*--p == c)
             return (void*)p;
-  
+
     return NULL;
 }
-                    
+
 /* 通过简单地将每个字节与00101010异或来实现 */
 void* memfrob(void *mem, size_t length)
 {
@@ -996,7 +992,7 @@ size_t hash_pjw (const char *x, size_t tablesize)
 
 /* 判断路径名是否有效 */
 /* 若路径有效，返回路径名字符串的长度；否则返回0 */
-static inline 
+static inline
 size_t _path_valid(const char* path, int absolute)
 {
 	size_t len;
@@ -1025,7 +1021,7 @@ size_t _path_valid(const char* path, int absolute)
 /* 保证目录路径以分隔符结尾，返回新路径的长度，失败返回0 */
 /* path和outbuf可以相同，表示对某一路径缓冲区进行操作 */
 static
-size_t _end_with_slash(const char* path, char* outbuf, size_t outlen) 
+size_t _end_with_slash(const char* path, char* outbuf, size_t outlen)
 {
 	size_t len = _path_valid(path, 0);
 	if (!len || outlen <= len)
@@ -1057,9 +1053,9 @@ int is_root_path(const char* path)
 	return is_absolute_path(path) && (path[MIN_PATH] == '\0');
 }
 
-/* 返回路径的文件名或最底层目录名 
- * 例1: C:\myfolder\a.txt -> a.txt ; /var/a.out -> a.out 
- * 例2: C:\myfolder\dir -> dir ; /var/temp -> temp 
+/* 返回路径的文件名或最底层目录名
+ * 例1: C:\myfolder\a.txt -> a.txt ; /var/a.out -> a.out
+ * 例2: C:\myfolder\dir -> dir ; /var/temp -> temp
  * 例3: C:\myfolder\dir\ -> dir\ ; /var/temp/ -> temp/
  * 例4: C:\ -> C:\ ; / -> /
  */
@@ -1105,7 +1101,7 @@ const char* path_find_file_name(const char* path)
 /* 注：如果是linux系统环境且locale不是UTF8，结果可能不正确 */
 const char* path_find_extension(const char* path)
 {
-#if (defined OS_WIN) && (!defined USE_UTF8_STR) 
+#if (defined OS_WIN) && (!defined USE_UTF8_STR)
 	return PathFindExtensionA(path);
 #else //UTF-8
 	const char *p, *pe;
@@ -1129,7 +1125,7 @@ const char* path_find_extension(const char* path)
 
 	if (*p == '.')
 		return p;
-	
+
 	return pe;
 #endif
 }
@@ -1182,13 +1178,13 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 
 		while (*p == PATH_SEP_CHAR && p != path)
 			--p;
-		
+
 		while (*p != PATH_SEP_CHAR && p != path)
 			--p;
 
 		if (p == path)
 			return 0;
-		
+
 		nlen = p - path + 1 + 1;
 		if (outlen < nlen)
 			return 0;
@@ -1197,7 +1193,7 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 			outbuf[nlen-1] = '\0';
 		else
 			xstrlcpy(outbuf, path, nlen);
-	
+
 		return 1;
 	}
 #endif
@@ -1321,7 +1317,7 @@ int absolute_path(const char* relpath, char* buf, size_t len)
 	alen = strlen(buf);
 	if (alen >= len)
 		return 0;
-	
+
 	memcpy(buf, abuf, alen + 1);
 	return 1;
 #endif
@@ -1378,7 +1374,7 @@ int relative_path(const char* src, const char* dst, char sep, char* outbuf, size
   /* Construct LINK as explained above. */
   for (i = 0; i < basedirs; i++)
     memcpy (outbuf + 3 * i, sepbuf, 3);
-  
+
   strcpy (outbuf + 3 * i, dst);
 
   return 1;
@@ -1437,7 +1433,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 {
 	int has_slash, i;
 
-	size_t plen = _path_valid(path, 0); 
+	size_t plen = _path_valid(path, 0);
 	if (!plen)
 		return 0;
 
@@ -1446,7 +1442,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 	{
 		if (xstrlcpy(buf, path, len) >= len)
 			return 0;
-	
+
 		goto succeed;
 	}
 
@@ -1459,7 +1455,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 	{
 		/* 新路径名的长度，附加了 " (x)"和'\0' */
 		size_t explen = plen + num_bits(i) + 4 + (has_slash ? 1 : 0);
-		if (len < explen)				
+		if (len < explen)
 			return 0;
 
 		xstrlcpy(buf, path, len);
@@ -1528,7 +1524,7 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
 {
 	char *p, *q;
 	for (p = q = path; *p; p++) {
-		if (PATH_CHAR_ILLEGAL(*p, platform) && 
+		if (PATH_CHAR_ILLEGAL(*p, platform) &&
 			(!reserve_separator || *p != PATH_SEP_CHAR)) {
 			*q = ' ';
 			if (q == path || *(q-1) != ' ')
@@ -1540,7 +1536,7 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
 	*q = '\0';
 }
 
-/* 
+/*
  * 将路径中的非法字符替换为%HH的形式，需外部释放
  * 注：path必须为UTF-8编码
  */
@@ -1798,7 +1794,7 @@ void walk_dir_end(struct walk_dir_context *ctx)
 	xfree(ctx);
 }
 
-/* 
+/*
  * 创建单层目录，成功返回1
  * 注意：Windows下创建目录时目录名两边的空格会被自动删除，
  * 文件夹名末尾的.也会被自动删除
@@ -1902,10 +1898,10 @@ int create_directories(const char* dir)
 
 /* 删除一个空目录 */
 int delete_directory(const char *dir)
-{	
+{
 	if (!_path_valid(dir, 0))
 		return 0;
-	
+
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	{
@@ -1968,7 +1964,7 @@ int delete_directories(const char *dir, delete_dir_cb func, void *arg)
 int is_empty_dir(const char* dir)
 {
 	struct walk_dir_context* ctx = NULL;
-	
+
 	ctx = walk_dir_begin(dir);
 	if (!ctx)
 		return 0;
@@ -1976,7 +1972,7 @@ int is_empty_dir(const char* dir)
 	do {
 		if (walk_entry_is_dot(ctx) || walk_entry_is_dotdot(ctx))
 			continue;
-		else 
+		else
 			WALK_END_RETURN_0;
 	} while (walk_dir_next(ctx));
 
@@ -2033,7 +2029,7 @@ int delete_empty_directories(const char* dir)
 	return 0;
 }
 
-/* 
+/*
  * 递归拷贝目录
  * curdir是指本次要遍历的目录，srcdir和dstdir是不变的，总是指向最初的目录，且必须都以路径分隔符结尾
  * 回调函数参数action：0表示拷贝文件，1表示拷贝目录，2表示创建目录
@@ -2112,7 +2108,7 @@ static int _copy_directories(char *curdir, const char *srcdir, const char *dstdi
  * 如果在Linux下为NTFS/FAT文件系统创建了仅大小写不同的文件/目录，再切换到Windows下是不可预测的
  * 为了编写可移植的应用程序，不应该以大小写来区分不同的文件或目录。
  */
-int copy_directories(const char *src, const char *dst, 
+int copy_directories(const char *src, const char *dst,
 					copy_dir_cb func, void *arg)
 {
 	char sdir[MAX_PATH], ddir[MAX_PATH];
@@ -2167,7 +2163,7 @@ int copy_directories(const char *src, const char *dst,
 
 	/* 如果目标目录下已经存在此目录，说明违反了规则3 */
 	/* 如果已经存在同名文件，则无法创建目录 */
-	if (path_file_exists(target_dir) || 
+	if (path_file_exists(target_dir) ||
 		!create_directory(target_dir))
 		return 0;
 
@@ -2175,8 +2171,8 @@ int copy_directories(const char *src, const char *dst,
 	return _copy_directories(sdir, sdir, target_dir, func, arg);
 }
 
-/* 
- *  查找并处理目录下的每个文件 
+/*
+ *  查找并处理目录下的每个文件
  * 【参数】recursively：是否递归查找文件，regular_only：是否仅处理普通文件
  * 【返回值】1表示成功处理每个发现的文件，0表示查找有误或处理函数返回0
  */
@@ -2213,7 +2209,7 @@ int foreach_file(const char* dir, foreach_file_func_t func, int recursively, int
 	return 1;
 }
 
-/* 
+/*
  *  查找并处理目录下的每个目录
  * 【返回值】1表示成功处理每个发现的目录，0表示查找有误或处理函数返回0
  */
@@ -2232,7 +2228,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
 		else if (walk_entry_is_dir(ctx)) {				// 目录
 			if (walk_entry_path(ctx, buf, MAX_PATH)) {
 				if (!(*func)(buf, arg))
-					WALK_END_RETURN_0;	
+					WALK_END_RETURN_0;
 			} else
 				WALK_END_RETURN_0;
 		}
@@ -2292,13 +2288,13 @@ int copy_file(const char *exists, const char *newfile, int overwritten)
 
 	if (path_file_exists(newfile) && !overwritten)
 		return 0;
-	
+
 	if(stat(exists,&file) == -1)
 		return 0;
-	
+
     if((fd1 = HANDLE_FAILURE(open(exists, O_RDONLY))) == -1)
 		return 0;
-	
+
     if((fd2 = HANDLE_FAILURE(creat(newfile,file.st_mode)))==-1)
 	{
         HANDLE_FAILURE(close(fd1));
@@ -2306,7 +2302,7 @@ int copy_file(const char *exists, const char *newfile, int overwritten)
 	}
 
     while((size = HANDLE_FAILURE(read(fd1,buf,4096))) > 0)
-    { 
+    {
         if (HANDLE_FAILURE(write(fd2,buf,size)) != size)
         {
             HANDLE_FAILURE(close(fd1));
@@ -2321,7 +2317,7 @@ int copy_file(const char *exists, const char *newfile, int overwritten)
 #endif
 }
 
-/* 
+/*
  * 移动文件 (不能移动目录)
  * 如果两路径位于同一文件系统中，则仅对文件重命名并立即返回；
  * 否则，将源文件拷贝到新文件位置，并删除源文件。
@@ -2420,8 +2416,8 @@ int64_t file_size(const char* path)
 int get_file_block_size(const char *path)
 {
 #ifdef OS_WIN
-		DWORD SectorsPerCluster; 
-		DWORD BytesPerSector; 
+		DWORD SectorsPerCluster;
+		DWORD BytesPerSector;
 		DWORD NumberOfFreeClusters;
 		DWORD TotalNumberOfClusters;
 		char drive[4];
@@ -2476,7 +2472,7 @@ int64_t get_file_disk_usage(const char *path)
 #endif
 }
 
-/* 获取可读性强的文件大小 */ 
+/* 获取可读性强的文件大小 */
 /* 如3.51GB, 2.2MB, INT64_MAX 最高可达 8EB */
 void file_size_readable(int64_t size, char* outbuf, int outlen)
 {
@@ -2488,7 +2484,7 @@ void file_size_readable(int64_t size, char* outbuf, int outlen)
 	static const int64_t PB = (int64_t)1<<50;
 	static const int64_t EB = (int64_t)1<<60;
 	/* ZB, YB, DB, NB... */
-	
+
 #define reach_size_unit(fmt, unit)	\
 	else if (size >= unit)	\
 	snprintf(outbuf, outlen, fmt, (long double)size / (long double)unit);
@@ -2544,7 +2540,7 @@ void xfclose(FILE* fp)
 	fclose(fp);
 }
 
-size_t xfread(FILE *fp, int separator, size_t max_bytes, 
+size_t xfread(FILE *fp, int separator, size_t max_bytes,
 				char **lineptr, size_t *n)
 {
 	char *origptr, *mallptr;
@@ -2661,7 +2657,7 @@ struct file_mem* read_file_mem(const char* file, size_t max_size)
 
 	/* 获取文件大小 */
 	length = file_size(file);
-	if (length < 0 || length > (1<<30) || 
+	if (length < 0 || length > (1<<30) ||
 		(max_size > 0 && length > (int64_t)max_size))
 		return NULL;
 
@@ -2702,7 +2698,7 @@ void free_file_mem(struct file_mem *fm)
 	if (fm)
 	{
 		if (fm->content)
-			xfree(fm->content);	
+			xfree(fm->content);
 		xfree(fm);
 	}
 }
@@ -2760,8 +2756,8 @@ int get_fs_usage(const char* path, struct fs_usage *fsp)
 #ifdef OS_WIN
 	{
 		char drive[4];
-		ULARGE_INTEGER ulavail; 
-		ULARGE_INTEGER ultotal; 
+		ULARGE_INTEGER ulavail;
+		ULARGE_INTEGER ultotal;
 		ULARGE_INTEGER ulfree;
 
 		strncpy(drive, path, 3);
@@ -2883,9 +2879,9 @@ const char* get_module_path()
 #ifdef OS_WIN
 	HMODULE instance = NULL;
 	GetModuleHandleExA(
-		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | 
+		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
 		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-		(char*)get_module_path, 
+		(char*)get_module_path,
 		&instance);
 
 #ifdef USE_UTF8_STR
@@ -2916,7 +2912,7 @@ const char* get_current_dir()
 #ifdef OS_WIN
 #ifdef USE_UTF8_STR
 	wchar_t wpath[MAX_PATH];
-	if (!GetCurrentDirectoryW(MAX_PATH, wpath) 
+	if (!GetCurrentDirectoryW(MAX_PATH, wpath)
 		|| !UNI2UTF8(wpath, path, MAX_PATH))
 		path[0] = '\0';
 #else /* MBCS */
@@ -3021,7 +3017,7 @@ const char* get_app_data_dir()
 	if (!GetShellSpecialFolder(CSIDL_LOCAL_APPDATA, path))
 		goto failed;
 	xstrlcat(path, PATH_SEP_STR, MAX_PATH);
-#else /* OS_POSIX */ 
+#else /* OS_POSIX */
 	if (!xstrlcpy(path, get_home_dir(), MAX_PATH))
 		goto failed;
 	xstrlcat(path, ".", MAX_PATH);
@@ -3072,7 +3068,7 @@ const char *get_temp_dir()
 			strcat(path, PATH_SEP_STR);
 			if (path_is_file(path))
 				IGNORE_RESULT(delete_file(path));
-			if (!path_is_directory(path) && 
+			if (!path_is_directory(path) &&
 				!create_directory(path))
 				path[0] = '\0';
 		}
@@ -3083,18 +3079,18 @@ const char *get_temp_dir()
 	return path;
 }
 
-/* 
+/*
  * 获取指定目录下可用的临时文件路径
  *
  * 如果指定的临时目录不存在，将创建此目录。
- * 如果prefix为NULL或为空字符串，将使用g_product_name作为前缀 
+ * 如果prefix为NULL或为空字符串，将使用g_product_name作为前缀
  *
- * 注1：即使不以路径分隔符结尾，tmpdir的最后一部分将被视为目录名 
- * 注2：输出缓冲区的长度应至少为MAX_PATH 
- * 注3：此函数仅保证在调用时该临时文件不存在 
+ * 注1：即使不以路径分隔符结尾，tmpdir的最后一部分将被视为目录名
+ * 注2：输出缓冲区的长度应至少为MAX_PATH
+ * 注3：此函数仅保证在调用时该临时文件不存在
  */
 
-int get_temp_file_under(const char* tmpdir, const char *prefix, 
+int get_temp_file_under(const char* tmpdir, const char *prefix,
 	char *outbuf, size_t outlen)
 {
 	char tempdir_use[MAX_PATH];
@@ -3229,7 +3225,7 @@ time_t parse_datetime(const char* datetime_str) {
 	}
 
 	memset(&t, 0, sizeof(t));
-	
+
 	t.tm_mon = month;
 	t.tm_mday = day;
 	t.tm_year = year - 1900;
@@ -3255,9 +3251,9 @@ static struct time_units tu_locale_plural;
 static int tu_single_init = 0;
 static int tu_plural_init = 0;
 
-/* 
- * 设置时间单位的单、复数形式 
- * time_span_readable 将依据此单位构造国际化的字符串 
+/*
+ * 设置时间单位的单、复数形式
+ * time_span_readable 将依据此单位构造国际化的字符串
  * plural为不为0表示设置复数形式
  */
 void time_unit_localize(const char* year, const char* month, const char* day,
@@ -3507,8 +3503,8 @@ int is_ascii(const void* pBuffer, size_t size)
 // 其他极少使用的Unicode 辅助平面的字符使用四字节编码。
 //
 // UCS-4编码	与 UTF-8字节流 对应关系如下：
-// U+00000000 – U+0000007F [1] 0xxxxxxx 
-// U+00000080 – U+000007FF [2] 110xxxxx 10xxxxxx 
+// U+00000000 – U+0000007F [1] 0xxxxxxx
+// U+00000080 – U+000007FF [2] 110xxxxx 10xxxxxx
 // U+00000800 – U+0000FFFF [3] 1110xxxx 10xxxxxx 10xxxxxx
 // U+00010000 – U+001FFFFF [4] 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
 // U+00200000 – U+03FFFFFF [5] 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
@@ -3531,7 +3527,7 @@ int is_utf8(const void* pBuffer, size_t size)
 		}
 		else if (*start < (0xE0))		/* 2字节 */
 		{
-			if (start >= end - 1) 
+			if (start >= end - 1)
 				break;
 			if ((start[1] & (0xC0)) != 0x80)
 			{
@@ -3539,10 +3535,10 @@ int is_utf8(const void* pBuffer, size_t size)
 				break;
 			}
 			start += 2;
-		} 
+		}
 		else if (*start < (0xF0))		/* 3字节 */
 		{
-			if (start >= end - 2) 
+			if (start >= end - 2)
 				break;
 			if ((start[1] & (0xC0)) != 0x80 || (start[2] & (0xC0)) != 0x80)
 			{
@@ -3802,15 +3798,15 @@ int get_line_charset(char *line, size_t len, size_t nline, void *arg)
 	return 1;
 }
 
-/* 
- * @fname: 探测文件的字符集 
+/*
+ * @fname: 探测文件的字符集
  * @param: outbuf: 返回探测到的字符集编码
  * @param: outlen: 传入缓冲区长度（应至少为MAX_CHARSET）
  * @param: probability: 是此字符集的可能性(0~1.0, 0.95以上可确信)，可传NULL
  * @param: max_line: 最多探测的行数 (0表示检测整个文件)
  * @return: 1: 成功返回，0: 无法获取指定文件的字符集
  */
-int get_file_charset(const char* file, char *outbuf, size_t outlen,	
+int get_file_charset(const char* file, char *outbuf, size_t outlen,
 					double* probability, int max_line)
 {
 	FILE *fp;
@@ -4094,7 +4090,7 @@ int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
 	return -1;
 }
 
-/* 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略 
+/* 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略
  * 比如 "c is a wonderful language" 简写为20个字节，且最后保留3个字符
  * 结果为 "c is a wonderf...age"
  * 注：1、"..."的长度（3个字节）包括于 max_byte 参数中
@@ -4106,7 +4102,7 @@ int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
  */
 #define ABBR_DOTS_LEN	3	/* strlen("...") */
 
-int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte, 
+int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 	size_t last_reserved_words)
 {
 	const char* p, *plast;
@@ -4122,7 +4118,7 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 		strcpy(outbuf, utf8);
 		return 1;
 	}
-	
+
 	if (max_byte <= ABBR_DOTS_LEN) {
 		strncpy(outbuf, "...", max_byte);
 		outbuf[max_byte] = '\0';
@@ -4274,7 +4270,7 @@ UTF16* utf8_to_utf16(const UTF8* utf8, int strict)
 	UTF16* wBeg = (UTF16*)xcalloc((nLen+1), sizeof(UTF16));
 	UTF16* wBegOrig = wBeg;
 
-	cr = ConvertUTF8toUTF16(&uBeg, uBeg+nLen, &wBeg, wBeg+nLen, 
+	cr = ConvertUTF8toUTF16(&uBeg, uBeg+nLen, &wBeg, wBeg+nLen,
 				strict ? strictConversion : lenientConversion);
 	if (cr == conversionOK)
 	{
@@ -4302,8 +4298,8 @@ UTF8* utf16_to_utf8(const UTF16* src, int strict)
 		uEnd = uBeg + nLen * nBytes + 1;
 
 		wBeg = src;
-		
-		cr = ConvertUTF16toUTF8(&wBeg, wBeg + nLen, &uBeg, uEnd, 
+
+		cr = ConvertUTF16toUTF8(&wBeg, wBeg + nLen, &uBeg, uEnd,
 			strict ? strictConversion : lenientConversion);
 		if (cr == conversionOK)
 		{
@@ -4335,7 +4331,7 @@ UTF32* utf8_to_utf32(const UTF8* utf8, int strict)
 	UTF32* wBeg = (UTF32*)xcalloc((nLen+1), sizeof(UTF32));
 	UTF32* wBegOrig = wBeg;
 
-	cr = ConvertUTF8toUTF32(&uBeg, uBeg+nLen, &wBeg, wBeg+nLen, 
+	cr = ConvertUTF8toUTF32(&uBeg, uBeg+nLen, &wBeg, wBeg+nLen,
 		strict ? strictConversion : lenientConversion);
 	if (cr == conversionOK)
 	{
@@ -4364,7 +4360,7 @@ UTF8* utf32_to_utf8(const UTF32* src, int strict)
 
 		wBeg = src;
 
-		cr = ConvertUTF32toUTF8(&wBeg, wBeg + nLen, &uBeg, uEnd, 
+		cr = ConvertUTF32toUTF8(&wBeg, wBeg + nLen, &uBeg, uEnd,
 			strict ? strictConversion : lenientConversion);
 		if (cr == conversionOK)
 		{
@@ -4416,10 +4412,10 @@ UTF16* utf32_to_utf16(const UTF32* src, int strict)
 	UTF16* u16, *u16Orig;
 	const UTF32 *u32 = src;
 	size_t nLen = utf32_len(src);
-	
+
 	u16 = (UTF16*)xcalloc((nLen+1), sizeof(UTF16));
 	u16Orig = u16;
-	
+
 	cr = ConvertUTF32toUTF16(&u32, u32+nLen, &u16, u16+nLen,
 		strict ? strictConversion : lenientConversion);
 	if (cr == conversionOK)
@@ -4427,7 +4423,7 @@ UTF16* utf32_to_utf16(const UTF32* src, int strict)
 		*u16 = L'\0';
 		return u16Orig;
 	}
-	
+
 	xfree(u16Orig);
 	return NULL;
 }
@@ -4590,13 +4586,13 @@ const char *get_language()
  * 3、输出缓冲区过小，设置errno为E2BIG
  */
 static inline
-size_t iconv_convert(const char* from_charset, const char* to_charset, 
-	const char* inbuf, size_t inlen, 
+size_t iconv_convert(const char* from_charset, const char* to_charset,
+	const char* inbuf, size_t inlen,
 	char* outbuf, size_t outlen,
 	int strict)
 {
 	iconv_t cd;
-	const char** pin = &inbuf;  
+	const char** pin = &inbuf;
 	char** pout = &outbuf;
 	size_t leftlen = outlen;
 	int lenient = !strict;
@@ -4608,7 +4604,7 @@ size_t iconv_convert(const char* from_charset, const char* to_charset,
 	if(iconvctl(cd, ICONV_SET_DISCARD_ILSEQ, &lenient) == (size_t)-1)
 		return (size_t)-1;
 
-	memset(outbuf,0,outlen);  
+	memset(outbuf,0,outlen);
 	if(iconv(cd, pin, &inlen, pout, &leftlen)== (size_t)-1)
 		return (size_t)-1;
 
@@ -4626,8 +4622,8 @@ size_t iconv_convert(const char* from_charset, const char* to_charset,
  * 返回值：成功返回1，失败返回0
  * 注：虽然inbuf一般不以'\0'结尾，但会保证输出以'\0'结尾，以防误用
  */
-int convert_to_charset(const char* from, const char* to, 
-						const char* inbuf, size_t inlen, 
+int convert_to_charset(const char* from, const char* to,
+						const char* inbuf, size_t inlen,
 						char **outbuf, size_t *outlen,
 						int strict)
 {
@@ -4689,7 +4685,7 @@ retry_convert:
 
 	// 设置输出参数
 	*outlen = dlen;
-	
+
 	if (tbuf != *outbuf)
 		*outbuf = tbuf;
 
@@ -4795,7 +4791,7 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 		/* 如果执行成功，不会运行到这里 */
 		_exit(127);
 	}
-	
+
 	return pid;
 #endif
 }
@@ -4832,7 +4828,7 @@ int	process_wait(process_t process, int milliseconds, int *exit_code)
 
 	if (unlikely(ret_pid == -1))
 		return 0;
-	
+
 	/* 子进程被信号所终止 */
 	if (WIFSIGNALED(status)) {
 		if (exit_code)
@@ -4934,8 +4930,8 @@ char* popen_readall(const char* command)
 }
 
 #ifdef OS_WIN
-/* 
- * 创建子进程以及与之连接的管道 
+/*
+ * 创建子进程以及与之连接的管道
  * 可以通过管道读取子进程输出(r)或写入管道作为子进程标准输入(w)
  */
 FILE* popen(const char *cmd, const char *mode)
@@ -5006,13 +5002,13 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
 
 	if (!ShellExecuteEx(&sei)) {
 		xfree(wcmd);
-		if (wparam) 
+		if (wparam)
 			xfree(wparam);
 		return 0;
 	}
 
 	xfree(wcmd);
-	if (wparam) 
+	if (wparam)
 		xfree(wparam);
 
 	if (wait_timeout > 0 && sei.hProcess) {
@@ -5544,7 +5540,7 @@ const char* get_last_error_win32()
 		goto not_found;
 
 	if (xstrlcpy(errbuf, lpBuffer, sizeof(errbuf)) >= sizeof(errbuf))
-		goto not_found;	
+		goto not_found;
 #endif
 
 	LocalFree(lpBuffer);
@@ -5597,13 +5593,13 @@ enum BackTraceFlag{
 #ifdef OS_WIN
 
 /* 获取堆栈调用记录 */
-static void StackBackTraceMsg(const void* const* trace, size_t count, const char* info, int flag) 
+static void StackBackTraceMsg(const void* const* trace, size_t count, const char* info, int flag)
 {
 	const int kMaxNameLength = 256;
 	char msgl[1024], msgs[4096];
 	size_t i;
 
-	for (i = 0; i < count; ++i) 
+	for (i = 0; i < count; ++i)
 	{
 		DWORD_PTR frame = (DWORD_PTR)trace[i];
 		DWORD64 sym_displacement = 0;
@@ -5636,7 +5632,7 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 						i+1, symbol->Name, trace[i], sym_displacement,
 						has_line ? line.FileName : "?", line.LineNumber);
 		else
-			snprintf(msgl, sizeof(msgl), "%d. [0x%p] (No Symbol) ", 
+			snprintf(msgl, sizeof(msgl), "%d. [0x%p] (No Symbol) ",
 						i+1, trace[i]);
 
 		/* 记录日志 */
@@ -5705,7 +5701,7 @@ void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int flags)
 	stack_frame.AddrPC.Mode = AddrModeFlat;
 	stack_frame.AddrFrame.Mode = AddrModeFlat;
 	stack_frame.AddrStack.Mode = AddrModeFlat;
-	
+
 	while (StackWalk64(machine_type,
 		GetCurrentProcess(),
 		GetCurrentThread(),
@@ -5743,7 +5739,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 	//////////////////////////////////////////////////////////////////////////
 	//生成内存转储文件
 
-	snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_temp_dir(), 
+	snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_temp_dir(),
 		g_product_name, timestamp_str(time(NULL)));
 
 #ifdef USE_UTF8_STR
@@ -5800,7 +5796,7 @@ void stack_backtrace(int flag)
 	char msg[1024];
 	size_t i;
     int size;
-    
+
     size = backtrace(array, countof(array));
 	char **strings = backtrace_symbols(array, size);
 
@@ -5941,13 +5937,13 @@ static int debug_log_to_stderr = 0;		/* 调试信息发送到标准错误输出 
 static FILE* log_files[MAX_LOGS+1];
 static mutex_t log_locks[MAX_LOGS+1];
 
-static inline 
+static inline
 void log_lock(int log_id)
 {
 	mutex_lock(&log_locks[log_id]);
 }
 
-static inline 
+static inline
 void log_unlock(int log_id)
 {
 	mutex_unlock(&log_locks[log_id]);
@@ -5970,7 +5966,7 @@ int is_debug_log_set_to_stderr()
 	return debug_log_to_stderr;
 }
 
-static inline 
+static inline
 FILE* open_log_helper(const char *path, int append, int binary)
 {
 	const char *mode = append ? (binary ? "ab" : "a") : (binary ? "wb" : "w");
@@ -6120,7 +6116,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	t = time(NULL);
 	memset(tmbuf, 0, sizeof(tmbuf));
 	strftime(tmbuf, sizeof(tmbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
-	
+
 	fprintf (fp, "%s ", tmbuf);
 
 	if (log_id == DEBUG_LOG && debug_log_to_stderr)
@@ -6223,13 +6219,13 @@ void memrt_init()
 	memset(memrt_hash_table, 0, sizeof(memrt_hash_table));
 }
 
-static inline 
-struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *file, 
+static inline
+struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *file,
 		const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
 	/* 不要使用xmalloc，debug_backtrace等，否则会造成死循环 */
 	struct MEMRT_OPERATE *rtp = (struct MEMRT_OPERATE*)malloc(sizeof(struct MEMRT_OPERATE));
-	if (!rtp) 
+	if (!rtp)
 		abort();
 
 	rtp->method = mtd;
@@ -6245,7 +6241,7 @@ struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *fil
 	return rtp;
 }
 
-static inline 
+static inline
 void memrt_dtor(struct MEMRT_OPERATE *rtp)
 {
 	/* 不要使用xfree，否则会造成死循环 */
@@ -6269,11 +6265,11 @@ void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp)
 			rtp->file, rtp->func, rtp->line, rtp->address ,rtp->size, rtp->method);
 		break;
 	case MEMRTE_UNALLOCFREE:
-		__memrt_printf("[MEMORY] {%s %s %d} Memory not malloced but freed at %p.\n", 
+		__memrt_printf("[MEMORY] {%s %s %d} Memory not malloced but freed at %p.\n",
 			rtp->file, rtp->func, rtp->line, rtp->address);
 		break;
 	case MEMRTE_MISRELIEF:
-		__memrt_printf("[MEMORY] {%s %s %d} Memory not reliefed properly at %p, use delete or delete[] instead.\n", 
+		__memrt_printf("[MEMORY] {%s %s %d} Memory not reliefed properly at %p, use delete or delete[] instead.\n",
 			rtp->file, rtp->func, rtp->line, rtp->address);
 		break;
 	default:
@@ -6283,7 +6279,7 @@ void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp)
 }
 
 /* 跟踪分配内存操作 */
-int __memrt_alloc(int mtd, void* addr, size_t sz, const char* file, 
+int __memrt_alloc(int mtd, void* addr, size_t sz, const char* file,
 	const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
 	size_t index = MEMRT_HASH(addr);
@@ -6299,7 +6295,7 @@ int __memrt_alloc(int mtd, void* addr, size_t sz, const char* file,
 }
 
 /* 跟踪释放内存操作 */
-int __memrt_release(int mtd, void* addr, size_t sz, const char* file, 
+int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
 	const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
 	struct MEMRT_OPERATE *rtp, *ptr, *ptr_last = NULL;
@@ -6408,7 +6404,7 @@ void __memrt_printf(const char *fmt, ...)
 /* 参数major, minor, revision, build, suffix 均可为NULL；如果suffix不为NULL，则slen必须大于0 */
 /* 注：常见的后缀描述有alpha1, beta2, Pro, Free, Ultimate, Stable.etc */
 /* 示例: 1.5.8.296 beta1 */
-int version_parse(const char* version, int *major, int *minor,					
+int version_parse(const char* version, int *major, int *minor,
 	int *revision, int *build, char *suffix, size_t suffix_outbuf_len)
 {
 	char *ver, *p, *q;
@@ -6428,7 +6424,7 @@ int version_parse(const char* version, int *major, int *minor,
 	p = strchr((char*)version, ' ');
 	if (p && suffix)
 		xstrlcpy(suffix, p+1, suffix_outbuf_len);
-	
+
 	/* 版本号 */
 	ver = p ? xstrndup(version, p - version) : xstrdup(version);
 	q = ver;
@@ -6601,7 +6597,7 @@ int num_bits (int64_t number)
 {
 	int cnt = 1;
 	if (number < 0)
-		++cnt;  
+		++cnt;
 	while ((number /= 10) != 0)
 		++cnt;
 	return cnt;
