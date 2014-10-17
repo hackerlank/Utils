@@ -372,6 +372,7 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WSTR   L"\\"
 #define LINE_END_STR    "\r\n"
 #define MIN_PATH        3          /* "C:\" */
+#define IS_PATH_SEP(c) ((c) == '\\' || (c) == '/')
 #else
 #define PATH_SEP_CHAR   '/'
 #define PATH_SEP_WCHAR  L'/'
@@ -379,6 +380,7 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WSTR   L"/"
 #define LINE_END_STR    "\r"
 #define MIN_PATH        1         /* "/" */
+#define IS_PATH_SEP(c) ((c) == '/')
 #endif
 
 /* fopen读写大文件(>2GB) */
@@ -447,6 +449,10 @@ char* path_escape(const char* path, int platform, int reserve_separator);
 
 /* 将路径中的非法字符替换为空格符 */
 void path_illegal_blankspace(char *path, int platform, int reserve_separator);
+
+/* 在指定字符串中查找路径分隔符，类似strchr和strrchr */
+char* strpsep(const char* path);
+char* strrpsep(const char* path);
 
 /************************* 目录操作 *************************/
 

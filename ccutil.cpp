@@ -745,8 +745,8 @@ std::string& PathLegalize(std::string& path, int platform, size_t max_length)
 	} else if (max_length > MAX_PATH)
 		max_length = MAX_PATH;
 
-	bool prefix_slash = (path.at(0) == PATH_SEP_CHAR);
-	bool suffix_slash = (path.at(path.length() - 1) == PATH_SEP_CHAR);
+	bool prefix_slash = IS_PATH_SEP(path.at(0));
+	bool suffix_slash = IS_PATH_SEP(path.at(path.length() - 1));
 
 	std::vector<std::string> components;
 	std::string component;

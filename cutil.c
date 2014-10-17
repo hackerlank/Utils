@@ -1006,11 +1006,11 @@ size_t _path_valid(const char* path, int absolute)
 			return 0;
 
 #ifdef OS_WIN
-		if (!(xisalpha(path[0]) && path[1] == ':' && path[2] == '\\') && /* 本地磁盘 */
-			!(path[0] == '\\' && path[1] == '\\'))		                 /* UNC 网络共享 */
+		if (!(xisalpha(path[0]) && path[1] == ':' && IS_PATH_SEP(path[2])) &&    /* 本地磁盘 */
+			!(IS_PATH_SEP(path[0]) && IS_PATH_SEP(path[1])))		             /* UNC 网络共享 */
 			return 0;
 #else
-		if (path[0] != '/')
+		if (!IS_PATH_SEP(path[0]))
 			return 0;
 #endif
 	}
@@ -1030,7 +1030,7 @@ size_t _end_with_slash(const char* path, char* outbuf, size_t outlen)
 	if (path != outbuf)
 		memcpy(outbuf, path, len + 1);
 
-	if (path[len - 1] != PATH_SEP_CHAR) {
+	if (!IS_PATH_SEP(path[len - 1])) {
 		if (len + 1 == outlen)
 			return 0;
 
@@ -1077,12 +1077,12 @@ const char* path_find_file_name(const char* path)
 
 	p = path + len - 1;
 
-	while (*p == PATH_SEP_CHAR && p != path)
+	while (IS_PATH_SEP(*p) && p != path)
 		--p;
 	if (p == path)
 		return p;				/*  全分隔符 */
 
-	while (*p != PATH_SEP_CHAR && p != path)
+	while (!IS_PATH_SEP(*p) && p != path)
 		--p;
 
 	if (p == path)				/* 相对路径 */
@@ -1120,7 +1120,7 @@ const char* path_find_extension(const char* path)
 	if (*p == '.')
 		return p;
 
-	while (*p != PATH_SEP_CHAR && *p != '.' && p != path)
+	while (!IS_PATH_SEP(*p) && *p != '.' && p != path)
 		-- p;
 
 	if (*p == '.')
@@ -1176,10 +1176,10 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 	{
 		const char* p = path + plen - 1;
 
-		while (*p == PATH_SEP_CHAR && p != path)
+		while (IS_PATH_SEP(*p) && p != path)
 			--p;
 
-		while (*p != PATH_SEP_CHAR && p != path)
+		while (!IS_PATH_SEP(*p) && p != path)
 			--p;
 
 		if (p == path)
@@ -1447,7 +1447,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 	}
 
 	/* 直接路径后加" (N)"重试 */
-	has_slash = (path[plen-1] == PATH_SEP_CHAR ? 1 : 0);
+	has_slash = (IS_PATH_SEP(path[plen-1]) ? 1 : 0);
 	if (has_slash)
 		plen --;
 
@@ -1517,6 +1517,27 @@ UWC,  C,  C,  C,   C,  C,  C,  C,   /* NUL SOH STX ETX  EOT ENQ ACK BEL */
 
 #define PATH_CHAR_ILLEGAL(c, mask) (pathchr_table[(unsigned char)(c)] & (mask|C))
 
+char* strpsep(const char* path) {
+    const char* p = path;
+    while (*p && !IS_PATH_SEP(*p)) 
+        ++p;
+
+    return *p != '\0' ? (char*)p : NULL;
+}
+
+char* strrpsep(const char* path) {
+    const char* p;
+
+    if (!path)
+        return NULL;
+
+    p = path + strlen(path) - 1;
+    while (p >= path && !IS_PATH_SEP(*p))
+        --p;
+
+    return p >= path ? (char*)p : NULL;
+}
+
 /* 将路径中的非法字符替换为空格符 */
 /* 如果被替换为多个连续的空格将被合并为一个 */
 /* reserved所指定的字符将被保留(通常为路径分隔符) */
@@ -1525,7 +1546,7 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
 	char *p, *q;
 	for (p = q = path; *p; p++) {
 		if (PATH_CHAR_ILLEGAL(*p, platform) &&
-			(!reserve_separator || *p != PATH_SEP_CHAR)) {
+			(!reserve_separator || !IS_PATH_SEP(*p))) {
 			*q = ' ';
 			if (q == path || *(q-1) != ' ')
 				q++;
@@ -1551,7 +1572,7 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 
 	for (p = path; p < pe; p++)
 		if (PATH_CHAR_ILLEGAL(*p, platform) &&
-			(!reserve_separator || *p != PATH_SEP_CHAR))
+			(!reserve_separator || !IS_PATH_SEP(*p)))
 			++quoted;
 
 	if (!quoted)
@@ -1563,7 +1584,7 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 
 	for (p = path; p < pe; p++) {
 		if (PATH_CHAR_ILLEGAL(*p, platform) &&
-			(!reserve_separator || *p != PATH_SEP_CHAR)) {
+			(!reserve_separator || !IS_PATH_SEP(*p))) {
 			unsigned char ch = *p;
 			*q++ = '%';
 			*q++ = XNUM_TO_DIGIT (ch >> 4);
@@ -1858,8 +1879,8 @@ int create_directories(const char* dir)
 	/* 定位到路径的第一个有效文件[夹] */
 #ifdef OS_WIN
 	/* UNC路径要忽略主机名 */
-	if (*pb == PATH_SEP_CHAR) {		  /* \\192.168.1.6\shared\  */
-		p = strchr(pb + 2, PATH_SEP_CHAR);
+	if (IS_PATH_SEP(*pb)) {		  /* \\192.168.1.6\shared\  */
+		p = strpsep(pb + 2);
 		if (!p)
 			return 0;
 		++p;
@@ -1870,7 +1891,7 @@ int create_directories(const char* dir)
 #endif
 
 	/* 逐级创建文件夹 */
-	while((p = strchr(p, PATH_SEP_CHAR)))
+	while((p = strpsep(p)))
 	{
 		*p = '\0';
 
@@ -2835,7 +2856,7 @@ const char* get_execute_name()
 	if (!path[0])
 		return path;
 
-	slash_end = strrchr(path, PATH_SEP_CHAR);
+	slash_end = strrpsep(path);
 	if (slash_end)
 		return slash_end+1;
 
@@ -2855,7 +2876,7 @@ const char* get_execute_dir()
 		const char* path = get_execute_path();
 		if (path[0])
 		{
-			const char *slash_end = strrchr(path, PATH_SEP_CHAR);
+			const char *slash_end = strrpsep(path);
 			if(slash_end)
 				strncpy(dir, path, slash_end - path + 1);
 			else
