@@ -6176,8 +6176,12 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	log_unlock(log_id);
 
 	/* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
-	if (level == LOG_FATAL)
+    if (level == LOG_FATAL)
 		debug_backtrace(1, "logging level fatal");
+#ifdef _DEBUG
+    else if (level >= LOG_ERROR)
+        debug_backtrace(0, "error occured");
+#endif
 }
 
 void log_flush(int log_id)
