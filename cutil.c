@@ -6111,10 +6111,10 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 {
 	FILE *fp;
 	time_t t;
-	char tmbuf[32];
+	char msgbuf[1024];
 	const char *p;
 	va_list args;
-	int level;
+	int level, len;
 
 	CHECK_INIT();
 
@@ -6133,41 +6133,31 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 		return;
 	}
 
-	// 时间信息
-	t = time(NULL);
-	memset(tmbuf, 0, sizeof(tmbuf));
-	strftime(tmbuf, sizeof(tmbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
+    // 时间信息
+    t = time(NULL);
+    memset(msgbuf, '\0', sizeof(msgbuf));
+    strftime(msgbuf, sizeof(msgbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
 
-	fprintf (fp, "%s ", tmbuf);
-
-	if (log_id == DEBUG_LOG && debug_log_to_stderr)
-		fprintf(stderr, "%s ", tmbuf);
-
-	// 等级信息
-	fprintf(fp, "[%s] ", log_severity_names[level]);
-
-	if (log_id == DEBUG_LOG && debug_log_to_stderr)
-		fprintf(stderr, "[%s] ", log_severity_names[level]);
+    // 等级信息
+    len = strlen(msgbuf);
+    xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]);
 
 	// 正文信息
+    len = strlen(msgbuf);
 	va_start(args, fmt);
-	vfprintf(fp, fmt, args);
+	xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args);
 	va_end(args);
 
-	if (log_id == DEBUG_LOG && debug_log_to_stderr) {
-      	va_list argsd;
-        va_start(argsd, fmt);
-        vfprintf(stderr, fmt, argsd);
-        va_end(argsd);
-    }
-
 	// 换行符
+    len = strlen(msgbuf);
 	p = fmt + strlen(fmt) - 1;
-	if (*p != '\n') {
-		fputc('\n', fp);
-		if (log_id == DEBUG_LOG && debug_log_to_stderr)
-			fputc('\n', stderr);
-	}
+	if (p >= fmt && len < sizeof(msgbuf)-1 && *p != '\n')
+        msgbuf[len++] = '\n';
+
+    fwrite(msgbuf, len, 1, log_files[log_id]);
+
+    if (log_id == DEBUG_LOG && debug_log_to_stderr)
+        fwrite(msgbuf, len, 1, stderr);
 
 #ifdef _DEBUG
 	fflush(log_files[log_id]);
@@ -6176,12 +6166,17 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	log_unlock(log_id);
 
 	/* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
-    if (level == LOG_FATAL)
-		debug_backtrace(1, "logging level fatal");
+    if (level == LOG_FATAL
 #ifdef _DEBUG
-    else if (level >= LOG_ERROR)
-        debug_backtrace(0, "error occured");
+        || level >= LOG_ERROR
 #endif
+        ) {
+        char buf[256];
+        va_start(args, fmt);
+        xvsnprintf(buf, sizeof(buf), fmt, args);
+        va_end(args);
+        debug_backtrace(level == LOG_FATAL, buf);
+    }
 }
 
 void log_flush(int log_id)
