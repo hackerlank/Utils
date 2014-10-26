@@ -1519,7 +1519,7 @@ UWC,  C,  C,  C,   C,  C,  C,  C,   /* NUL SOH STX ETX  EOT ENQ ACK BEL */
 
 char* strpsep(const char* path) {
     const char* p = path;
-    while (*p && !IS_PATH_SEP(*p)) 
+    while (*p && !IS_PATH_SEP(*p))
         ++p;
 
     return *p != '\0' ? (char*)p : NULL;
@@ -6140,12 +6140,12 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 
     // 等级信息
     len = strlen(msgbuf);
-    xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]);
+    IGNORE_RESULT(xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]));
 
 	// 正文信息
     len = strlen(msgbuf);
 	va_start(args, fmt);
-	xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args);
+	IGNORE_RESULT(xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args));
 	va_end(args);
 
 	// 换行符
@@ -6173,9 +6173,9 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
         ) {
         char buf[256];
         va_start(args, fmt);
-        xvsnprintf(buf, sizeof(buf), fmt, args);
+        IGNORE_RESULT(xvsnprintf(buf, sizeof(buf), fmt, args));
         va_end(args);
-        debug_backtrace(level == LOG_FATAL, buf);
+        debug_backtrace(level == LOG_FATAL, "%s", buf);
     }
 }
 
