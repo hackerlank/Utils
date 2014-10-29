@@ -1333,9 +1333,10 @@ int absolute_path(const char* relpath, char* buf, size_t len)
 * eg. src="C:\\a", dst="C:\\a\\b\\1.txt", ret="a\\b\\1.txt"
 * eg. src="C:\\a\\", dst="C:\\a\\b\\1.txt", ret="b\\1.txt"
  */
-int relative_path(const char* src, const char* dst, char sep, char* outbuf, size_t slen)
+int relative_path(const char* src, const char* dst, char* outbuf, size_t slen)
 {
   char sepbuf[3];
+  char separator = '/';
   const char *b, *l;
   int i, basedirs;
   ptrdiff_t start;
@@ -1349,8 +1350,10 @@ int relative_path(const char* src, const char* dst, char sep, char* outbuf, size
   start = 0;
   for (b = src, l = dst; *b == *l && *b != '\0'; ++b, ++l)
     {
-      if (*b == sep)
-        start = (b - src) + 1;
+      if (IS_PATH_SEP(*b)) {
+          start = (b - src) + 1;
+          separator = *b;
+      }
     }
   src += start;
   dst += start;
@@ -1359,13 +1362,15 @@ int relative_path(const char* src, const char* dst, char sep, char* outbuf, size
   basedirs = 0;
   for (b = src; *b; b++)
     {
-      if (*b == sep)
-        ++basedirs;
+      if (IS_PATH_SEP(*b)) {
+          ++basedirs;
+          separator = *b;
+      }
     }
 
   sepbuf[0] = '.';
   sepbuf[1] = '.';
-  sepbuf[2] = sep;
+  sepbuf[2] = separator;
 
   if (slen < 3 * basedirs + strlen (dst) + 1)
 	  return 0;

@@ -410,8 +410,8 @@ int is_absolute_path(const char* path);
 int absolute_path(const char* relpath, char* buf, size_t len) WUR;
 
 /* 获取full_path相对于base_path的相对路径 */
-int relative_path(const char* base_path, const char* full_path, char sep,
-     char* buf, size_t len) WUR;
+int relative_path(const char* base_path, const char* full_path, 
+    char* buf, size_t len) WUR;
 
 /* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
 const char* path_find_file_name(const char* path);

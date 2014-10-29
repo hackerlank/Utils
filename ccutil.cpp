@@ -787,14 +787,14 @@ std::string	AbsolutePath(const std::string& relative)
 }
 
 // 构造相对路径
-std::string RelativePath(const std::string& src, const std::string& dst, char sep)
+std::string RelativePath(const std::string& src, const std::string& dst)
 {
 	char link[MAX_PATH+1];
 
 	if (src.empty() || dst.empty())
 		return "";
 
-	if (!relative_path(src.c_str(), dst.c_str(), sep, link, MAX_PATH+1))
+	if (!relative_path(src.c_str(), dst.c_str(), link, MAX_PATH+1))
 		return "";
 
 	return link;

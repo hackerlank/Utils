@@ -173,9 +173,8 @@ std::string&	PathLegalize(std::string& path,									// 路径合法化
 							size_t max_length = MAX_PATH);
 
 std::string		AbsolutePath(const std::string& relative);						// 获取相对于当前工作目录的绝对路径
-std::string		RelativePath(const std::string& src, const std::string& dst,	// 获取src指定dst的相对链接
-							char sep = PATH_SEP_CHAR);							   
-																				   
+std::string		RelativePath(const std::string& src, const std::string& dst);	// 获取src指定dst的相对链接
+
 // 文件																			 
 bool			CopyFile(const std::string &src, const std::string &dst,		// 复制文件
 							bool bOverWrite = false) WUR;						   
