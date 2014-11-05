@@ -84,6 +84,9 @@ static int g_cutil_inited;
 /* 已打开的文件数 */
 static int g_opened_files;
 
+/* 外部堆栈处理函数 */
+static backtrace_handler g_backtrace_hander;
+
 /* 外部崩溃处理函数 */
 static crash_handler g_crash_handler;
 
@@ -5603,6 +5606,11 @@ void set_crash_handler(crash_handler handler)
 	g_crash_handler = handler;
 }
 
+void set_backtrace_handler(backtrace_handler handler)
+{
+    g_backtrace_hander = handler;
+}
+
 enum BackTraceFlag{
 	BackTraceLogging = 1,
 	BackTraceStdout = 2,
@@ -5698,6 +5706,9 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 	}
 
 	log_flush(DEBUG_LOG);
+
+    if (g_backtrace_hander)
+        g_backtrace_hander(info, msgs);
 
 	if (flag & BackTraceDialog)
 		MessageBoxA(NULL, msgs, info, MB_OK);
@@ -5816,18 +5827,30 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 #else /* POSIX */
 
 #ifdef _DEBUG
-void stack_backtrace(int flag)
+void stack_backtrace(const char* info, int flag)
 {
 	void* array[20];
-	char msg[1024];
+	char msg[1024], msgs[4096];
 	size_t i;
     int size;
+
+    memset(msgs, 0, sizeof(msgs));
+
+    if (flag & BackTraceLogging)
+        log_dprintf(LOG_DEBUG, "%s", info);
+    if (flag & BackTraceStderr)
+        fprintf(stderr, "%s\n", info);
+    if (flag & BackTraceStdout)
+        fprintf(stdout, "%s\n", info);
 
     size = backtrace(array, countof(array));
 	char **strings = backtrace_symbols(array, size);
 
 	for (i = 0; i < size; i++) {
 		IGNORE_RESULT(xsnprintf(msg, sizeof(msg), "%" PRIuS ". %s", i, strings[i]));
+
+        if (g_backtrace_hander)
+            xstrlcat(msgs, msg, sizeof(msgs));
 
 		if (flag & BackTraceLogging)
 			log_dprintf(LOG_DEBUG, "%s", msg);
@@ -5837,11 +5860,14 @@ void stack_backtrace(int flag)
 			fprintf(stdout, "%s\n", msg);
 	}
 	free (strings);
+
+    if (g_backtrace_hander)
+        g_backtrace_hander(info, msgs);
 }
 
 void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 {
-	char signam[16];
+	char msg[128], signam[16];
 	switch(siginfo->si_signo)
 	{
 	case SIGSEGV:
@@ -5859,14 +5885,13 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 	if (g_crash_handler)
 		g_crash_handler("");
 
-	log_dprintf(LOG_CRIT, "%s received. exit now...\n", signam);
-	if (!is_debug_log_set_to_stderr())
-		fprintf(stderr, "%s received. exit now...\n", signam);
+    IGNORE_RESULT(xsnprintf(msg, sizeof(msg), "%s received. exit now...\n", signam));
 
 	int flag = BackTraceLogging;
-	if (!is_debug_log_set_to_stderr())
+	if (is_debug_log_set_to_stderr())
 		flag |= BackTraceStderr;
-	stack_backtrace(flag);
+
+	stack_backtrace(msg, flag);
 
 	log_close_all();
 	exit(3);
@@ -5899,7 +5924,7 @@ void debug_backtrace(int fatal, const char *fmt, ...)
 	}
 #else
 	fprintf(stderr, "%s\n", msg);
-	stack_backtrace(BackTraceLogging | BackTraceStderr);
+	stack_backtrace(msg, BackTraceLogging | BackTraceStderr);
 #endif /* OS_WIN */
 
 #ifdef COMPILER_MSVC

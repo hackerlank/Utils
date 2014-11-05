@@ -45,6 +45,10 @@ void cutil_init();
 /* 清理本库，在程序结束前调用 */
 void cutil_exit();
 
+/* 设置堆栈处理函数 */
+typedef void(*backtrace_handler)(const char* title, const char* content);
+void set_backtrace_handler(backtrace_handler handler);
+
 /* 设置崩溃处理函数 */
 typedef void (*crash_handler)(const char* dump_file);
 void set_crash_handler(crash_handler handler);
