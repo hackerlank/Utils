@@ -35,6 +35,15 @@
 /* 选项配置文件 */
 #include "../utils_config.h"
 
+#include "deps/platform.h"
+#include "deps/compiler.h"
+
+#if !defined(_DEBUG) && !defined(NDEBUG)
+#error "No build mode specified"
+#elif defined(_DEBUG) && defined(NDEBUG)
+#error "Only one build mode can be specified"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -212,6 +221,12 @@ typedef int ssize_t;
 /************************************************************************/
 /*                         Memory 内存管理                               */
 /************************************************************************/
+
+#if (defined DBG_MEM_LOG || defined DBG_MEM_RT)
+#define DBG_MEM
+#else
+#undef DBG_MEM
+#endif
 
 /* 内存调试函数 */
 #ifdef DBG_MEM
@@ -1112,15 +1127,15 @@ char*  hexdump(const void *data, size_t len);
 #define DEBUG_LOG  0         /* 调试日志的ID */
 
 /* 记录等级 */
-enum LogSeverity{
-  LOG_DEBUG = 0,             /* 调试 */
-  LOG_INFO,                  /* 信息 */
-  LOG_NOTICE,                /* 注意 */
-  LOG_WARNING,               /* 警告 */
-  LOG_ERROR,                 /* 错误 */
-  LOG_CRIT,                  /* 紧急 */
+enum LogSeverity {
+  LOG_FATAL = 0,             /* 致命 */
   LOG_ALERT,                 /* 危急 */
-  LOG_FATAL,                 /* 致命 */
+  LOG_CRIT,                  /* 紧急 */
+  LOG_ERROR,                 /* 错误 */
+  LOG_WARNING,               /* 警告 */
+  LOG_NOTICE,                /* 注意 */
+  LOG_INFO,                  /* 信息 */
+  LOG_DEBUG,                 /* 调试 */
 };
 
 /* 初始化日志模块 */

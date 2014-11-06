@@ -5742,8 +5742,6 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 	const char* ext;
 	static int handled = 0;
 
-	log_dprintf(LOG_DEBUG, "CrashDumpHandler Called!");
-
 	if (handled)
 		return EXCEPTION_EXECUTE_HANDLER;
 	handled = 1;
@@ -6119,8 +6117,8 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	if (!LOG_VALID(log_id))
 		return;
 
-	level = xmin(xmax((int)LOG_DEBUG, severity), (int)LOG_FATAL);
-	if (level < log_min_severity)
+	level = xmin(xmax((int)LOG_FATAL, severity), (int)LOG_DEBUG);
+	if (level > log_min_severity)
 		return;
 
 	log_lock(log_id);
@@ -6166,7 +6164,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	/* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
     if (level == LOG_FATAL
 #ifdef _DEBUG
-        || level >= LOG_ERROR
+        || level <= LOG_ERROR
 #endif
         ) {
         char buf[256];
