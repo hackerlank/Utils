@@ -1078,6 +1078,9 @@ int thread_once(thread_once_t* once, thread_once_func func);
  if (!(expr)) {debug_backtrace(LOG_NOTICE, name" %s in %s at %d: %s", \
  path_find_file_name(__FILE__), __FUNCTION__, __LINE__, #expr);}
 
+#undef ASSERT
+#undef VERIFY
+
 /* ASSERT 仅在调试模式下生效，而 VERITY 总是有效 */
 #define VERIFY(expr) ASSERTION(expr, "[Verify]")
 
