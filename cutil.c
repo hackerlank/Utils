@@ -5611,23 +5611,11 @@ void set_backtrace_handler(backtrace_handler handler)
     g_backtrace_hander = handler;
 }
 
-enum BackTraceFlag{
-	BackTraceLogging = 1,
-	BackTraceStdout = 2,
-	BackTraceStderr = 4,
-#ifdef OS_WIN
-	BackTraceDialog = 8,
-#ifdef _MSC_VER
-	BackTraceOutput = 16
-#endif
-#endif
-};
-
 /* 崩溃转储 */
 #ifdef OS_WIN
 
 /* 获取堆栈调用记录 */
-static void StackBackTraceMsg(const void* const* trace, size_t count, const char* info, int flag)
+static void StackBackTraceMsg(const void* const* trace, size_t count, const char* info, int level)
 {
 	const int kMaxNameLength = 256;
 	char msgl[1024], msgs[4096];
@@ -5670,37 +5658,25 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 						i+1, trace[i]);
 
 		/* 记录日志 */
-		if (flag & BackTraceLogging)
-			log_dprintf(LOG_DEBUG, "%s", msgl);
+        log_dprintf(LOG_DEBUG, "%s", msgl);
 
-		/* 打印到标准输出 */
-		if (flag & BackTraceStdout)
-			fprintf(stdout, "%s\n", msgl);
-
-		/* 打印到标准错误输出 */
-		if (flag & BackTraceStderr)
-			fprintf(stderr, "%s\n", msgl);
-
-		/* 打印到VC输出窗口 */
+        /* 打印到VC输出窗口 */
 #ifdef _MSC_VER
-		if (flag & BackTraceOutput)
-		{
-			OutputDebugStringA(msgl);
-			OutputDebugStringA("\r\n");
-		}
-#endif
-
-		/* 对话框信息 */
-		if (flag & BackTraceDialog)
-		{
-			if (i == 0)
-				snprintf(msgs, sizeof(msgs), "%s\r\n", msgl);
-			else
-			{
-				xstrlcat(msgs, msgl, sizeof(msgs));
-				xstrlcat(msgs, "\r\n", sizeof(msgs));
-			}
-		}
+        OutputDebugStringA(msgl);
+        OutputDebugStringA("\r\n");
+#else
+        if (is_debug_log_set_to_stderr())
+            fprintf(stderr, "%s\n", msgl);
+        else
+            fprintf(stdout, "%s\n", msgl);
+#endif			
+        /* 完整堆栈 */
+        if (i == 0) {
+            snprintf(msgs, sizeof(msgs), "%s\r\n", msgl);
+        } else {
+            xstrlcat(msgs, msgl, sizeof(msgs));
+            xstrlcat(msgs, "\r\n", sizeof(msgs));
+        }
 
 		xfree(buffer);
 	}
@@ -5708,14 +5684,13 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 	log_flush(DEBUG_LOG);
 
     if (g_backtrace_hander)
-        g_backtrace_hander(info, msgs);
+        g_backtrace_hander(level, info, msgs);
 
-	if (flag & BackTraceDialog)
-		MessageBoxA(NULL, msgs, info, MB_OK);
+    MessageBoxA(NULL, msgs, info, MB_OK);
 }
 
 static inline
-void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int flags)
+void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
 {
 	size_t i, count = 0;
 	void *trace[62];
@@ -5755,7 +5730,7 @@ void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int flags)
 	for (i = count; i < countof(trace); ++i)
 		trace[i] = NULL;
 
-	StackBackTraceMsg(trace, count, info, flags);
+	StackBackTraceMsg(trace, count, info, level);
 }
 
 static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
@@ -5767,7 +5742,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 	const char* ext;
 	static int handled = 0;
 
-	log_dprintf(LOG_ALERT, "CrashDumpHandler Called!");
+	log_dprintf(LOG_DEBUG, "CrashDumpHandler Called!");
 
 	if (handled)
 		return EXCEPTION_EXECUTE_HANDLER;
@@ -5812,22 +5787,21 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 		pdb[ext - pdb] = '\0';
 	xstrlcat(pdb, ".pdb", sizeof(pdb));
 
-	if (path_file_exists(pdb)) {
-        int flag = BackTraceLogging|BackTraceDialog;
-#ifdef _MSC_VER
-        flag |= BackTraceOutput;
-#endif
-        CrashBackTrace(pException, g_product_name, flag);
-	}
+    if (path_file_exists(pdb)) {
+        memset(pdb, '\0', sizeof(pdb));
+        xsnprintf(pdb, sizeof(pdb), "[Crash] %s crashed!", g_product_name);
+        CrashBackTrace(pException, pdb, LOG_FATAL);
+    }
 
 	log_close_all();
 
 	return EXCEPTION_EXECUTE_HANDLER;
 }
+
 #else /* POSIX */
 
 #ifdef _DEBUG
-void stack_backtrace(const char* info, int flag)
+void stack_backtrace(int level, const char* info)
 {
 	void* array[20];
 	char msg[1024], msgs[4096];
@@ -5835,12 +5809,11 @@ void stack_backtrace(const char* info, int flag)
     int size;
 
     memset(msgs, 0, sizeof(msgs));
+    log_dprintf(LOG_DEBUG, "%s", info);
 
-    if (flag & BackTraceLogging)
-        log_dprintf(LOG_DEBUG, "%s", info);
-    if (flag & BackTraceStderr)
+    if (is_debug_log_set_to_stderr())
         fprintf(stderr, "%s\n", info);
-    if (flag & BackTraceStdout)
+    else
         fprintf(stdout, "%s\n", info);
 
     size = backtrace(array, countof(array));
@@ -5852,22 +5825,21 @@ void stack_backtrace(const char* info, int flag)
         if (g_backtrace_hander)
             xstrlcat(msgs, msg, sizeof(msgs));
 
-		if (flag & BackTraceLogging)
-			log_dprintf(LOG_DEBUG, "%s", msg);
-		if (flag & BackTraceStderr)
-			fprintf(stderr, "%s\n", msg);
-		if (flag & BackTraceStdout)
-			fprintf(stdout, "%s\n", msg);
+        log_dprintf(LOG_DEBUG, "%s", msg);
+        if (is_debug_log_set_to_stderr())
+            fprintf(stderr, "%s\n", msg);
+        else
+            fprintf(stdout, "%s\n", msg);
 	}
 	free (strings);
 
     if (g_backtrace_hander)
-        g_backtrace_hander(info, msgs);
+        g_backtrace_hander(level, info, msgs);
 }
 
 void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 {
-	char msg[128], signam[16];
+	char title[128], signam[16];
 	switch(siginfo->si_signo)
 	{
 	case SIGSEGV:
@@ -5885,13 +5857,10 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 	if (g_crash_handler)
 		g_crash_handler("");
 
-    IGNORE_RESULT(xsnprintf(msg, sizeof(msg), "%s received. exit now...\n", signam));
+    memset(title, 0, sizeof(title));
+    xsnprintf(title, sizeof(title), "[Crash] killed by signal %s\n", signam);
 
-	int flag = BackTraceLogging;
-	if (is_debug_log_set_to_stderr())
-		flag |= BackTraceStderr;
-
-	stack_backtrace(msg, flag);
+    stack_backtrace(LOG_FATAL, title);
 
 	log_close_all();
 	exit(3);
@@ -5902,14 +5871,14 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 
 #endif /* #ifdef USE_CRASH_HANDLER */
 
-void debug_backtrace(int fatal, const char *fmt, ...)
+void debug_backtrace(int level, const char *fmt, ...)
 {
 	va_list args;
 	char msg[1024];
 
 	// 打印信息
 	va_start(args, fmt);
-	IGNORE_RESULT(xvsnprintf(msg, sizeof(msg), fmt, args));
+    xvsnprintf(msg, sizeof(msg), fmt, args);
 	log_printf0(DEBUG_LOG, "%s\n", msg);
 	va_end(args);
 
@@ -5920,11 +5889,10 @@ void debug_backtrace(int fatal, const char *fmt, ...)
 	size_t count;
 	void *trace[62];
 	count = CaptureStackBackTrace(0, countof(trace), trace, NULL);
-	StackBackTraceMsg(trace, count, msg, BackTraceLogging|BackTraceDialog);
+	StackBackTraceMsg(trace, count, msg, level);
 	}
 #else
-	fprintf(stderr, "%s\n", msg);
-	stack_backtrace(msg, BackTraceLogging | BackTraceStderr);
+	stack_backtrace(level, msg);
 #endif /* OS_WIN */
 
 #ifdef COMPILER_MSVC
@@ -5933,7 +5901,7 @@ void debug_backtrace(int fatal, const char *fmt, ...)
 
 #endif /* _DEBUG */
 
-	if (fatal) {
+	if (level == LOG_FATAL) {
 		log_close_all();
 #ifdef _DEBUG
 		// 前面已经显示过堆栈，正常退出即可
@@ -6175,7 +6143,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 	// 正文信息
     len = strlen(msgbuf);
 	va_start(args, fmt);
-	IGNORE_RESULT(xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args));
+    xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args);
 	va_end(args);
 
 	// 换行符
@@ -6203,9 +6171,9 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
         ) {
         char buf[256];
         va_start(args, fmt);
-        IGNORE_RESULT(xvsnprintf(buf, sizeof(buf), fmt, args));
+        xvsnprintf(buf, sizeof(buf), fmt, args);
         va_end(args);
-        debug_backtrace(level == LOG_FATAL, "%s", buf);
+        debug_backtrace(level, "%s", buf);
     }
 }
 

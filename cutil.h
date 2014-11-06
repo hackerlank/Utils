@@ -46,7 +46,8 @@ void cutil_init();
 void cutil_exit();
 
 /* 设置堆栈处理函数 */
-typedef void(*backtrace_handler)(const char* title, const char* content);
+/* title的格式为"[Tag] " */
+typedef void(*backtrace_handler)(int level, const char* title, const char* content);
 void set_backtrace_handler(backtrace_handler handler);
 
 /* 设置崩溃处理函数 */
@@ -288,8 +289,8 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
  * 在大多数UNIX/Linux及高版本VC下，该函数返回欲写入的字符串长度，出错返回负值
  * 对于某些实现（如VC6），在缓冲区不够大的情况下也会返回-1，详见 xasprintf 
  */
-int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FMT(3, 0) WUR;
-int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 4) WUR;
+int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FMT(3, 0);
+int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 4);
 
 /* 格式化输出到新分配的字符串, 需外部释放 */
 /* GLIBC在_GNU_SOURCE宏被定义的情况下已导出此函数 */
@@ -1059,37 +1060,27 @@ int thread_once(thread_once_t* once, thread_once_func func);
 
 /* 断言 */
 #define ASSERTION(expr, name) \
- if (!(expr)) {debug_backtrace(0, name" {%s %s %d} %s", \
+ if (!(expr)) {debug_backtrace(LOG_NOTICE, name" %s in %s at %d: %s", \
  path_find_file_name(__FILE__), __FUNCTION__, __LINE__, #expr);}
 
-#undef ASSERT
-#undef VERIFY
-
 /* ASSERT 仅在调试模式下生效，而 VERITY 总是有效 */
+#define VERIFY(expr) ASSERTION(expr, "[Verify]")
+
 #ifdef _DEBUG
-#define ASSERT(expr) ASSERTION(expr, "[ASSERT]")
+#define ASSERT(expr) ASSERTION(expr, "[Assert]")
+#define NOT_REACHED()   ASSERTION(NULL, "[Not Reached]")
+#define NOT_IMPLEMENTED() ASSERTION(NULL, "[Not Implemented]")
 #else
-#define ASSERT(expr) {;}
+#define ASSERT(expr)
+#define NOT_REACHED()
+#define NOT_IMPLEMENTED()
 #endif
-
-#define VERIFY(expr) ASSERTION(expr, "[VERIFY]")
-
-/* 异常处理 */
-#ifdef _DEBUG
-#define NOT_HANDLED(type) debug_backtrace(0, "%s {%s %s %d} %s", \
-  datetime_str(time(NULL)), path_find_file_name(__FILE__), __FUNCTION__, __LINE__, type)
-#else
-#define NOT_HANDLED(type) 
-#endif
-
-#define NOT_REACHED()   NOT_HANDLED("not reached")
-#define NOT_IMPLEMENTED() NOT_HANDLED("not implemented")
 
 /* 
  * 打印当前执行堆栈并开始调试 
  * 如果fatal参数为真，将导致程序退出
  */
-void debug_backtrace(int fatal, const char *fmt, ...) PRINTF_FMT(2, 3);
+void debug_backtrace(int level, const char *fmt, ...) PRINTF_FMT(2, 3);
 
 /* 错误信息 */
 /* 获取用WIN32 API失败后的错误信息(GetLastError()) */
@@ -1156,7 +1147,7 @@ void log_close(int log_id);
 /* 关闭所有打开的日志文件 */
 void log_close_all();
 
-/* 调试状态下调试日志信息输出到stderr */
+/* 将调试日志信息输出到stderr */
 void set_debug_log_to_stderr(int enable);
 int  is_debug_log_set_to_stderr();
 
