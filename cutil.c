@@ -5686,7 +5686,11 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
     if (g_backtrace_hander)
         g_backtrace_hander(level, info, msgs);
 
-    MessageBoxA(NULL, msgs, info, MB_OK);
+    // Only show message box if level is FATAL in release mode
+#ifdef NDEBUG
+    if (level == LOG_FATAL)
+#endif
+        MessageBoxA(NULL, msgs, info, MB_OK);
 }
 
 static inline
@@ -5733,64 +5737,79 @@ void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
 	StackBackTraceMsg(trace, count, info, level);
 }
 
+// 创建Dump文件并返回其路径
+static const char* CreateDumpFile(EXCEPTION_POINTERS *pException) {
+    static char dump_file[MAX_PATH];
+    MINIDUMP_EXCEPTION_INFORMATION dumpInfo;
+    HANDLE hDumpFile;
+
+    snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_temp_dir(),
+        g_product_name, timestamp_str(time(NULL)));
+
+#ifdef USE_UTF8_STR
+    {
+        wchar_t wdump_file[MAX_PATH];
+        UTF82UNI(dump_file, wdump_file, MAX_PATH);
+        hDumpFile = CreateFileW(wdump_file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    }
+#else
+    hDumpFile = CreateFileA(dump_file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+#endif /* USE_UTF8_STR */
+    if (hDumpFile == INVALID_HANDLE_VALUE) {
+        dump_file[0] = '\0';
+        return dump_file;
+    }
+
+    dumpInfo.ExceptionPointers = pException;
+    dumpInfo.ThreadId = GetCurrentThreadId();
+    dumpInfo.ClientPointers = TRUE;
+    MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hDumpFile, MiniDumpNormal, &dumpInfo, NULL, NULL);
+    CloseHandle(hDumpFile);
+
+    return dump_file;
+}
+
+// 是否存在崩溃模块对应的PDB文件
+static BOOL PDBExists() {
+    char pdb[MAX_PATH];
+    const char* ext;
+
+    xstrlcpy(pdb, get_module_path(), sizeof(pdb));
+    ext = path_find_extension(pdb);
+    if (!strcasecmp(ext, ".exe"))
+        pdb[ext - pdb] = '\0';
+    xstrlcat(pdb, ".pdb", sizeof(pdb));
+
+    return path_file_exists(pdb);
+}
+
 static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 {
-	MINIDUMP_EXCEPTION_INFORMATION dumpInfo;
-	HANDLE hDumpFile;
-	char dump_file[MAX_PATH];
-	char pdb[MAX_PATH];
-	const char* ext;
-	static int handled = 0;
+    static int handled = 0;
+    const char* dump_file;
 
 	if (handled)
 		return EXCEPTION_EXECUTE_HANDLER;
 	handled = 1;
 
-	//////////////////////////////////////////////////////////////////////////
-	//生成内存转储文件
+	// 生成 minidump 转储文件
+    dump_file = CreateDumpFile(pException);
 
-	snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_temp_dir(),
-		g_product_name, timestamp_str(time(NULL)));
-
-#ifdef USE_UTF8_STR
-	{
-		wchar_t wdump_file[MAX_PATH];
-		UTF82UNI(dump_file, wdump_file, MAX_PATH);
-		hDumpFile = CreateFileW(wdump_file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	}
-#else
-	hDumpFile = CreateFileA(dump_file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-#endif /* USE_UTF8_STR */
-
-	if (hDumpFile == INVALID_HANDLE_VALUE) {
-		MessageBoxA(NULL, dump_file, "Could not create dump file!", MB_OK);
-		return EXCEPTION_EXECUTE_HANDLER;
-	}
-
-	// 生成dump文件
-	dumpInfo.ExceptionPointers = pException;
-	dumpInfo.ThreadId = GetCurrentThreadId();
-	dumpInfo.ClientPointers = TRUE;
-	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hDumpFile, MiniDumpNormal, &dumpInfo, NULL, NULL);
-	CloseHandle(hDumpFile);
-
-	// 提示用户上传转储文件，在服务器上结合PDB文件生成堆栈信息
+	// 提示用户上传转储文件
+    // 在服务器上结合PDB文件生成堆栈信息
 	if (g_crash_handler)
 		g_crash_handler(dump_file);
 
 	// 如果有PDB文件，直接打印堆栈信息
-	xstrlcpy(pdb, get_module_path(), sizeof(pdb));
-	ext = path_find_extension(pdb);
-	if (!strcasecmp(ext, ".exe"))
-		pdb[ext - pdb] = '\0';
-	xstrlcat(pdb, ".pdb", sizeof(pdb));
-
-    if (path_file_exists(pdb)) {
-        memset(pdb, '\0', sizeof(pdb));
-        xsnprintf(pdb, sizeof(pdb), "[Crash] %s crashed!", g_product_name);
-        CrashBackTrace(pException, pdb, LOG_FATAL);
+    // 只有内部人员才有Release版本的PDB
+    if (PDBExists()) {
+        char buf[64];
+        memset(buf, 0, sizeof(buf));
+        xsnprintf(buf, sizeof(buf), "[Crash] %s crashed!", g_product_name);
+        CrashBackTrace(pException, buf, LOG_FATAL);
     }
 
+    // 关闭所有打开的日志
 	log_close_all();
 
 	return EXCEPTION_EXECUTE_HANDLER;
@@ -5818,7 +5837,7 @@ void stack_backtrace(int level, const char* info)
 	char **strings = backtrace_symbols(array, size);
 
 	for (i = 0; i < size; i++) {
-		IGNORE_RESULT(xsnprintf(msg, sizeof(msg), "%" PRIuS ". %s", i, strings[i]));
+		xsnprintf(msg, sizeof(msg), "%" PRIuS ". %s", i, strings[i]);
 
         if (g_backtrace_hander)
             xstrlcat(msgs, msg, sizeof(msgs));
@@ -5869,7 +5888,7 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 
 #endif /* #ifdef USE_CRASH_HANDLER */
 
-void debug_backtrace(int level, const char *fmt, ...)
+void backtrace(int level, const char *fmt, ...)
 {
 	va_list args;
 	char msg[1024];
@@ -5880,8 +5899,6 @@ void debug_backtrace(int level, const char *fmt, ...)
 	log_printf0(DEBUG_LOG, "%s\n", msg);
 	va_end(args);
 
-#ifdef _DEBUG
-	/* 调试模式下，直接打印调用堆栈 */
 #ifdef OS_WIN
 	{
 	size_t count;
@@ -5889,15 +5906,12 @@ void debug_backtrace(int level, const char *fmt, ...)
 	count = CaptureStackBackTrace(0, countof(trace), trace, NULL);
 	StackBackTraceMsg(trace, count, msg, level);
 	}
-#else
+#if defined(_DEBUG) && defined(COMPILER_MSVC)
+    __debugbreak();
+#endif
+#else /* OS_WIN */
 	stack_backtrace(level, msg);
 #endif /* OS_WIN */
-
-#ifdef COMPILER_MSVC
-	__debugbreak();
-#endif
-
-#endif /* _DEBUG */
 
 	if (level == LOG_FATAL) {
 		log_close_all();
@@ -5911,8 +5925,6 @@ void debug_backtrace(int level, const char *fmt, ...)
 			*p = 0;
 		}
 #endif
-	} else {
-		log_flush(DEBUG_LOG);
 	}
 }
 
@@ -6136,7 +6148,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 
     // 等级信息
     len = strlen(msgbuf);
-    IGNORE_RESULT(xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]));
+    xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]);
 
 	// 正文信息
     len = strlen(msgbuf);
@@ -6171,7 +6183,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
         va_start(args, fmt);
         xvsnprintf(buf, sizeof(buf), fmt, args);
         va_end(args);
-        debug_backtrace(level, "%s", buf);
+        backtrace(level, "%s", buf);
     }
 }
 
