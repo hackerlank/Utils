@@ -1202,6 +1202,33 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 #endif
 }
 
+/* 将后缀名添加到文件名后扩展名前 */
+/* 如果没有扩展名直接附加到路径最后 */
+int path_insert_before_extension(const char* path, 
+    const char*suffix, char* buf, size_t outlen)
+{
+    const char* ext;
+    size_t plen, elen, slen;
+  
+    plen = _path_valid(path, 0);
+    if (!plen)
+        return 0;
+
+    /* 获取文件扩展名 */
+    ext = path_find_extension(path);
+    elen = strlen(ext);
+    slen = strlen(suffix);
+
+    if (outlen < plen + slen + 1)
+        return 0;
+
+    /* 使用strncpy 以忽略扩展名 */
+    strncpy(buf, path, plen - elen);
+    sprintf(buf + plen - elen, "%s%s", suffix, ext);
+
+    return 1;
+}
+
 /* 路径所指文件/目录是否存在 */
 int path_file_exists(const char* path)
 {
@@ -1395,7 +1422,7 @@ int unique_file(const char* path, char *buf, size_t len, int create_now)
 	size_t plen, elen;
 	int i;
 
-	plen = _path_valid(path, 0);
+	plen = _path_valid(path, 1);
 	if (!plen)
 		return 0;
 
@@ -1412,7 +1439,7 @@ int unique_file(const char* path, char *buf, size_t len, int create_now)
 	ext = path_find_extension(path);
 	elen = strlen(ext);
 
-	for (i = 1; ;i++)
+	for (i = 1; i < 10000; i++)
 	{
 		if (len < plen + num_bits(i) + 4 + elen)	/* " ()"和'\0' */
 			return 0;
@@ -1441,7 +1468,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 {
 	int has_slash, i;
 
-	size_t plen = _path_valid(path, 0);
+	size_t plen = _path_valid(path, 1);
 	if (!plen)
 		return 0;
 
@@ -1459,7 +1486,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 	if (has_slash)
 		plen --;
 
-	for (i = 1; ;i++)
+	for (i = 1; i < 10000; i++)
 	{
 		/* 新路径名的长度，附加了 " (x)"和'\0' */
 		size_t explen = plen + num_bits(i) + 4 + (has_slash ? 1 : 0);

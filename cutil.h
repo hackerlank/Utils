@@ -436,11 +436,16 @@ int relative_path(const char* base_path, const char* full_path,
 /* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
 const char* path_find_file_name(const char* path);
 
-/* 返回文件的扩展名，目录返回NULL */
+/* 返回文件的扩展名 */
+/* 如果path没有扩展名返回空字符串，如果PATH为NULL返回NULL */
 const char* path_find_extension(const char* path);
 
 /* 返回路径所指目录/文件的上级目录路径(路径名需为UTF-8编码) */
 int path_find_directory(const char* path, char* buf, size_t len) WUR;
+
+/* 将后缀名添加到文件名后扩展名前 */
+/* 如果文件没有扩展名或者以路径分隔符结尾，直接附加到路径最后 */
+int path_insert_before_extension(const char* path, const char*suffix, char* buf, size_t len) WUR;
 
 /* 路径所指文件/目录是否存在 */
 int path_file_exists(const char* path);
@@ -451,6 +456,7 @@ int path_is_file(const char* path);
 
 /* 获取当前可用的文件/目录路径 */
 /* 如果create_now参数为真，将立即创建一个空的文件/目录 */
+/* path必须为绝对路径 */
 int unique_file(const char* path, char *buf, size_t len, int create_now) WUR;
 int unique_dir(const char* path, char *buf, size_t len, int create_now) WUR;
 
@@ -1153,7 +1159,7 @@ int  log_open(const char *path, int append, int binary);
 /* 格式化输出到日志 */
 void log_printf0(int id, const char *fmt, ...) PRINTF_FMT(2,3);
 
-/* 同上，但同时附加时间和登记信息 */
+/* 同上，但同时附加时间和等级信息 */
 void log_printf(int id, int severity, const char *, ...) PRINTF_FMT(3,4);
 
 /* 将日志缓冲区数据写入磁盘 */
