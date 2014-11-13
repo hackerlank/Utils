@@ -33,8 +33,8 @@
 #define UNI2MBCS(w, m, s) WideCharToMultiByte(CP_ACP, 0, w, -1, m, s, NULL, NULL)
 
 /* UTF-8 <-> Unicode */
-#define UTF82UNI(m, w, s) MultiByteToWideChar(CP_UTF8, 0, m, -1, w, s)
-#define UNI2UTF8(w, m, s) WideCharToMultiByte(CP_UTF8, 0, w, -1, m, s, NULL, NULL)
+#define UTF82UNI(m, w, s) MultiByteToWideChar(CP_UTF8, 0, m, -1, w, (int)s)
+#define UNI2UTF8(w, m, s) WideCharToMultiByte(CP_UTF8, 0, w, -1, m, (int)s, NULL, NULL)
 
 static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException);
 
@@ -3271,7 +3271,7 @@ time_t parse_datetime(const char* datetime_str) {
         if (rv != 6)
             return 0;
 
-        month = (strcasestr(month_names, s_month) - month_names) / 3;
+        month = (int)(strcasestr(month_names, s_month) - month_names) / 3;
         if (!month)
             return 0;
     }
@@ -4078,19 +4078,19 @@ int write_file_bom(FILE *fp, const char* charset)
 #define UTF8_FIRST(ch) ((((byte)ch)>=0xC0) && (((byte)ch)<=0xFD))
 #define UTF8_OTHER(ch) ((((byte)ch)>=0x80) && (((byte)ch)<=0xBF))
 
-int utf8_len(const char* utf8)
+size_t utf8_len(const char* utf8)
 {
     byte *p = (byte*)utf8;
-    int count = 0;
+    size_t count = 0;
 
     if (!utf8)
-        return -1;
+        return 0;
 
     while (*p){
         if (UTF8_ASCII(*p) || (UTF8_FIRST(*p)))
             count++;
         else if (!UTF8_OTHER(*p))
-            return -1;
+            return 0;
 
         p++;
     }
@@ -4102,14 +4102,14 @@ int utf8_len(const char* utf8)
  * 此函数决定最多可以保留的字符数，返回新字符串的字节数
  * outbuf可为NULL；如果不为NULL，其长度必须大于max_byte (以添加'\0')，且截取后的字串会被复制到outbuf中
  * 如果传入的UTF-8字符串无效，返回－1 */
-int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
+size_t utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
 {
     size_t slen = strlen(utf8);
     const byte *begin = (byte*)utf8;
     const byte *p = begin + max_byte;
 
     if (!utf8)
-        return -1;
+        return 0;
 
     if (max_byte >= slen)
     {
@@ -4122,7 +4122,7 @@ int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
         if (UTF8_ASCII(*p) || (UTF8_FIRST(*p)))
             break;
         else if (!UTF8_OTHER(*p))
-            return -1;
+            return 0;
 
         p--;
     }
@@ -4139,31 +4139,20 @@ int utf8_trim(const char* utf8, char* outbuf, size_t max_byte)
         return count;
     }
 
-    return -1;
+    return 0;
 }
 
-/* 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略
- * 比如 "c is a wonderful language" 简写为20个字节，且最后保留3个字符
- * 结果为 "c is a wonderf...age"
- * 注：1、"..."的长度（3个字节）包括于 max_byte 参数中
- * 2、如果last_reserved_words为0，则"..."将被放置于最后，
- *    如果last_reserved_words大于等于max_byte-3，则"..."将被置于最前
- * 3、受多字节编码的影响，最终返回字符串的长度可能小于 max_byte，但相近
- * 4、outbuf不能为空且其大小必须大于 max_byte (存放'\0')
- * 返回值：成功返回1，失败返回-1
- */
 #define ABBR_DOTS_LEN    3    /* strlen("...") */
 
-int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
+size_t utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
     size_t last_reserved_words)
 {
     const char* p, *plast;
     size_t origlen, word_count;
-    size_t suffix_count, left_room;
-    int prefix_count;
+    size_t suffix_count, prefix_count, left_room;
 
     if (!utf8 || !outbuf)
-        return -1;
+        return 0;
 
     origlen = strlen(utf8);
     if (max_byte >= origlen) {
@@ -4194,7 +4183,7 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
                 break;
             plast = p;
         } else if (!UTF8_OTHER(*p))
-            return -1;
+            return 0;
 
         --p;
     }
@@ -4209,16 +4198,16 @@ int utf8_abbr(const char* utf8, char* outbuf, size_t max_byte,
 
     // 找到新字符串中"..."之前的字符数目
     prefix_count = utf8_trim(utf8, NULL, left_room - ABBR_DOTS_LEN);
-    if (prefix_count == -1)
+    if (!prefix_count)
         return 0;
 
     strncpy(outbuf, utf8, prefix_count);
     outbuf[prefix_count] = '\0';
     strcat(outbuf, "...");
     strcat(outbuf, p);
+
     return 1;
 }
-
 
 #undef UTF8_ASCII
 #undef UTF8_FIRST
@@ -4235,7 +4224,7 @@ wchar_t* mbcs_to_wcs(const char* src)
         return NULL;
 
     buf = xcalloc(outlen, sizeof(wchar_t));
-    if (!MultiByteToWideChar(CP_ACP, 0, src, strlen(src), buf, outlen))
+    if (!MultiByteToWideChar(CP_ACP, 0, src, -1, buf, outlen))
     {
         xfree (buf);
         return NULL;
@@ -4280,7 +4269,7 @@ char* wcs_to_mbcs(const wchar_t* src)
         return NULL;
 
     buf = xcalloc(1, outlen);
-    if (!WideCharToMultiByte(CP_ACP, 0, src, wcslen(src), buf, outlen, NULL, &bUsed))
+    if (!WideCharToMultiByte(CP_ACP, 0, src, -1, buf, outlen, NULL, &bUsed))
     {
         xfree (buf);
         return NULL;
@@ -4554,23 +4543,23 @@ char* mbcs_to_utf8(const char* mbcs, int strict)
     return utf8;
 }
 
-ssize_t utf16_len(const UTF16* u16)
+size_t utf16_len(const UTF16* u16)
 {
     const UTF16* p = u16;
 
     if (!u16)
-        return -1;
+        return 0;
 
     while (*p) p++;
     return p - u16;
 }
 
-ssize_t utf32_len(const UTF32* u32)
+size_t utf32_len(const UTF32* u32)
 {
     const UTF32* p = u32;
 
     if (!u32)
-        return -1;
+        return 0;
 
     while (*p) p++;
     return p - u32;
@@ -6143,7 +6132,8 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
     char msgbuf[1024];
     const char *p;
     va_list args;
-    int level, len;
+    size_t len;
+    int level;
 
     CHECK_INIT();
 

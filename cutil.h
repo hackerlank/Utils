@@ -849,20 +849,33 @@ int convert_to_charset(const char* from, const char* to,
 
 /************************* 编码操作 *************************/
 
-/* 获取UTF-8编码字符串的字符数 (非字节数)，返回－1表示无效UTF-8编码 */
-int utf8_len(const char* u8);
+/* 获取UTF-8编码字符串的字符数 (非字节数) */
+/* 空指针、空字符串或非UTF-8编码返回0 */
+size_t utf8_len(const char* u8);
 
-/* 按照给定的最多字节数截取UTF-8字符串，返回新字符串的长度, outbuf长度必须大于max_byte */
-int utf8_trim(const char* u8, char* outbuf, size_t max_byte);
+/* 按照给定的最多字节数截取UTF-8字符串 */
+/* outbuf长度必须大于max_byte, 成功返回新字符串的长度, 失败返回0 */
+size_t utf8_trim(const char* u8, char* outbuf, size_t max_byte);
 
-/* 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略 */
-/* last_reserved_words指最后应保留多少个字符（注意不是字节） */
-int utf8_abbr(const char* u8, char* outbuf, size_t max_byte,
+/* 
+ * 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略
+ *
+ * 比如 "c is a wonderful language" 简写为20个字节，且最后保留3个字符
+ * 结果为 "c is a wonderf...age"
+ * 注：1、"..."的长度（3个字节）包括于 max_byte 参数中
+ * 2、如果last_reserved_words为0，则"..."将被放置于最后，
+ *    如果last_reserved_words大于等于max_byte-3，则"..."将被置于最前
+ * 3、受多字节编码的影响，最终返回字符串的长度可能小于 max_byte，但相近
+ * 4、outbuf不能为空且其大小必须大于 max_byte (存放'\0')
+ * 成功返回1，失败返回0
+ */
+size_t utf8_abbr(const char* u8, char* outbuf, size_t max_byte,
     size_t last_reserved_words);
 
 /* 获取UTF-16LE/32LE编码字符串的字符数 (非字节数) */
-ssize_t utf16_len(const UTF16* u16);
-ssize_t utf32_len(const UTF32* u32);
+/* 空指针、空字符串返回0 */
+size_t utf16_len(const UTF16* u16);
+size_t utf32_len(const UTF32* u32);
 
 /* 获取系统默认字符集(如UTF-8，CP936) */
 #ifndef OS_ANDROID

@@ -115,7 +115,7 @@ std::string GetCharset(const std::string &str, bool ascii = true);       //探�
 std::string GetFileCharset(const std::string &path, double &probability, //判断文件字符集，最多探测maxline行
                            int maxline = 0);
 
-int UTF8Length(const std::string &utf8);                                  //获取UTF-8字符串的字符数
+size_t UTF8Length(const std::string &utf8);                                  //获取UTF-8字符串的字符数
 std::string UTF8Trim(const std::string &utf8, size_t max_bytes);          //按照最大字节数截取UTF-8字符串
 std::string& UTF8Abbr(std::string &utf8, size_t max_bytes,                //简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略
                       size_t last_reserved_words = 3);                    //last_reserved_words指最后应保留多少个字符（注意不是字节）

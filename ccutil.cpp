@@ -462,7 +462,7 @@ std::string GetFileCharset(const std::string &path, double &probability, int max
 }
 
 // 获取UTF-8字符串的字符数
-int UTF8Length(const std::string &utf8)
+size_t UTF8Length(const std::string &utf8)
 {
     return utf8_len(utf8.c_str());
 }
@@ -470,9 +470,8 @@ int UTF8Length(const std::string &utf8)
 // 按照最大字节数截取UTF-8字符串
 std::string UTF8Trim(const std::string &utf8, size_t max_bytes)
 {
-    int len = utf8_trim(utf8.c_str(), NULL, max_bytes);
-
-    return len < 0 ? std::string() : utf8.substr(0, len);
+    size_t len = utf8_trim(utf8.c_str(), NULL, max_bytes);
+    return len > 0 ? utf8.substr(0, len) : "";
 }
 
 // 缩略UTF8字符串
@@ -482,14 +481,12 @@ std::string& UTF8Abbr(std::string &utf8, size_t max_bytes,
 {
     char *p = (char*)xmalloc(max_bytes + 1);
 
-    if (utf8_abbr(utf8.c_str(), p, max_bytes, last_reserved_words) < 0) {
+    if (utf8_abbr(utf8.c_str(), p, max_bytes, last_reserved_words) > 0)
+        utf8 = p;
+    else
         utf8.clear();
-        return utf8;
-    }
-
-    utf8 = p;
+ 
     xfree(p);
-
     return utf8;
 }
 
