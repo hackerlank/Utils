@@ -48,12 +48,12 @@
 /*
  * 是否启用读写锁 
  */
-//#define USE_READ_WRITE_LOCK	 1
+//#define USE_READ_WRITE_LOCK     1
 
 /*
  * 是否启用条件变量
  */
-//#define USE_CONDITION_VARIABLE	1
+//#define USE_CONDITION_VARIABLE    1
 
 /************************************************************************/
 /*                          third party libraries                       */
