@@ -61,9 +61,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException);
 #include <execinfo.h>        /* backtrace */
 #endif
 
-#ifdef _DEBUG
 void crash_signal_handler(int n, siginfo_t *siginfo, void *act);
-#endif
 
 #endif /* OS_WIN */
 
@@ -337,7 +335,6 @@ void set_default_crash_handler()
     lmt.rlim_max = RLIM_INFINITY;
     setrlimit(RLIMIT_CORE, &lmt);
 
-#ifdef _DEBUG
     struct sigaction act;
     sigemptyset(&act.sa_mask);
     act.sa_flags = SA_SIGINFO;
@@ -350,7 +347,6 @@ void set_default_crash_handler()
     act.sa_flags = 0;
     sigaction(SIGINT, &act, NULL);
     sigaction(SIGTERM, &act, NULL);
-#endif
 #endif /* OS_WIN */
 }
 
@@ -4648,7 +4644,7 @@ size_t iconv_convert(const char* from_charset, const char* to_charset,
     int strict)
 {
     iconv_t cd;
-    const char** pin = &inbuf;
+    char** pin = (char**)&inbuf;
     char** pout = &outbuf;
     size_t leftlen = outlen;
     int lenient = !strict;
@@ -5844,7 +5840,6 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 
 #else /* POSIX */
 
-#ifdef _DEBUG
 void stack_backtrace(int level, const char* info)
 {
     void* array[20];
@@ -5909,13 +5904,12 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
     log_close_all();
     exit(3);
 }
-#endif /* #idef _DEBUG */
 
 #endif /* #ifdef OS_WIN */
 
 #endif /* #ifdef USE_CRASH_HANDLER */
 
-void backtrace(int level, const char *fmt, ...)
+void backtrace_here(int level, const char *fmt, ...)
 {
     va_list args;
     char msg[1024];
@@ -6210,7 +6204,7 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
         va_start(args, fmt);
         xvsnprintf(buf, sizeof(buf), fmt, args);
         va_end(args);
-        backtrace(level, "%s", buf);
+        backtrace_here(level, "%s", buf);
     }
 }
 
