@@ -32,7 +32,9 @@
 #define MSVC11    1700        /* VC 2012 */
 #define MSVC12    1800       /* VC 2013 */
 
+#if _MSC_VER < MSVC12
 #define restrict
+#endif
 
 #pragma warning(disable: 4996)            /* The POSIX name for this item is deprecated */
 #pragma warning (disable: 4786)            /* identifier was truncated to '255' characters */
