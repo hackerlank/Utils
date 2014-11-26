@@ -14,6 +14,7 @@
     <ProjectGuid>{7D97184D-CA41-413C-B729-84BF604EF487}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>vs2013</RootNamespace>
+    <ProjectName>unittest</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -53,13 +54,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)../../gtest/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../gtest/;$(SolutionDir)../../gtest/include/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)../../gtest/msvc/gtest/$(Configuration);$(SolutionDir)../../../third_party/iconv/$(Platform)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gtestd.lib;iconvd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>iconvd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,7 +73,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)../../gtest/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../gtest/;$(SolutionDir)../../gtest/include/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -80,7 +81,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)../../gtest/msvc/gtest/$(Configuration);$(SolutionDir)../../../third_party/iconv/$(Platform)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gtest.lib;iconv.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>iconv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -98,9 +99,10 @@
     <ClCompile Include="..\..\..\cutil.c" />
     <ClCompile Include="..\..\charset.cc" />
     <ClCompile Include="..\..\datatype.cc" />
+    <ClCompile Include="..\..\gtest\src\gtest-all.cc" />
     <ClCompile Include="..\..\string.cc" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="vs2013.cpp" />
+    <ClCompile Include="unittest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

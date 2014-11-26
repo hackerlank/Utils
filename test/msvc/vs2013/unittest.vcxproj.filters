@@ -22,6 +22,9 @@
     <Filter Include="utils\deps">
       <UniqueIdentifier>{3fb94adc-5c8c-4698-8360-85c11015ae03}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gtest">
+      <UniqueIdentifier>{ad444fd9-d562-42c3-b6a5-cff34f657bd4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -50,9 +53,6 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="vs2013.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\cutil.c">
       <Filter>utils</Filter>
     </ClCompile>
@@ -64,6 +64,12 @@
     </ClCompile>
     <ClCompile Include="..\..\charset.cc">
       <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gtest\src\gtest-all.cc">
+      <Filter>gtest</Filter>
+    </ClCompile>
+    <ClCompile Include="unittest.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
