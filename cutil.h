@@ -35,6 +35,15 @@
 /* 选项配置文件 */
 #include "../utils_config.h"
 
+#include "deps/platform.h"
+#include "deps/compiler.h"
+
+#if !defined(_DEBUG) && !defined(NDEBUG)
+#error "No build mode specified"
+#elif defined(_DEBUG) && defined(NDEBUG)
+#error "Only one build mode can be specified"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,6 +53,11 @@ void cutil_init();
 
 /* 清理本库，在程序结束前调用 */
 void cutil_exit();
+
+/* 设置堆栈处理函数 */
+/* title的格式为"[Tag] " */
+typedef void(*backtrace_handler)(int level, const char* title, const char* content);
+void set_backtrace_handler(backtrace_handler handler);
 
 /* 设置崩溃处理函数 */
 typedef void (*crash_handler)(const char* dump_file);
@@ -65,9 +79,6 @@ const char* get_product_name();
 
 /* 系统头文件 */
 #ifdef OS_POSIX
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include <unistd.h>
 #else
 #include <windows.h>
@@ -182,7 +193,11 @@ typedef int ssize_t;
 /*                            Math 数学                                  */
 /************************************************************************/
 
-#include "deps/min-max.h"  /* xmin, xmax */
+/* 最大值/最小值 */
+#define xmin(x, y) ((x) > (y) ? (y) : (x))
+#define xmax(x, y) ((x) > (y) ? (x) : (y))
+#define xmin3(x, y, z) xmin(xmin(x, y), z)
+#define xmax3(x, y, z) xmax(xmax(x, y), z)
 
 /* 数组元素个数 */
 #define countof(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -206,6 +221,12 @@ typedef int ssize_t;
 /************************************************************************/
 /*                         Memory 内存管理                               */
 /************************************************************************/
+
+#if (defined DBG_MEM_LOG || defined DBG_MEM_RT)
+#define DBG_MEM
+#else
+#undef DBG_MEM
+#endif
 
 #if defined(COMPILER_MSVC) && _MSC_VER <= MSVC6
 #define __FUNCTION__ ""
@@ -287,12 +308,12 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
  * 在大多数UNIX/Linux及高版本VC下，该函数返回欲写入的字符串长度，出错返回负值
  * 对于某些实现（如VC6），在缓冲区不够大的情况下也会返回-1，详见 xasprintf 
  */
-int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FORMAT(3, 0) WUR;
-int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FORMAT(3, 4) WUR;
+int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FMT(3, 0);
+int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 4);
 
 /* 格式化输出到新分配的字符串, 需外部释放 */
 /* GLIBC在_GNU_SOURCE宏被定义的情况下已导出此函数 */
-int xasprintf (char** out, const char* format, ...) PRINTF_FORMAT(2, 3) WUR;
+int xasprintf (char** out, const char* format, ...) PRINTF_FMT(2, 3) WUR;
 
 /* BSD风格的字符串拷贝和附加函数 */
 /* 比 str[n]cpy 和 str[n]cat 更快更安全，比较见以下链接 */
@@ -342,6 +363,9 @@ char* strnstr(const char *s, const char *find, size_t slen);
 /* 不区分大小写在字符串s中查找字符串find */
 char* strcasestr(const char *s, const char *find);
 
+/* 逆向查找内存缓冲区 */
+void* memrchr(const void* s, int c, size_t n);
+    
 /* 简单可逆地加密一块内存 */
 void* memfrob(void *mem, size_t length);
 
@@ -372,6 +396,7 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WSTR   L"\\"
 #define LINE_END_STR    "\r\n"
 #define MIN_PATH        3          /* "C:\" */
+#define IS_PATH_SEP(c) ((c) == '\\' || (c) == '/')
 #else
 #define PATH_SEP_CHAR   '/'
 #define PATH_SEP_WCHAR  L'/'
@@ -379,6 +404,7 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WSTR   L"/"
 #define LINE_END_STR    "\r"
 #define MIN_PATH        1         /* "/" */
+#define IS_PATH_SEP(c) ((c) == '/')
 #endif
 
 /* fopen读写大文件(>2GB) */
@@ -408,17 +434,22 @@ int is_absolute_path(const char* path);
 int absolute_path(const char* relpath, char* buf, size_t len) WUR;
 
 /* 获取full_path相对于base_path的相对路径 */
-int relative_path(const char* base_path, const char* full_path, char sep,
-     char* buf, size_t len) WUR;
+int relative_path(const char* base_path, const char* full_path, 
+    char* buf, size_t len) WUR;
 
 /* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
 const char* path_find_file_name(const char* path);
 
-/* 返回文件的扩展名，目录返回NULL */
+/* 返回文件的扩展名 */
+/* 如果path没有扩展名返回空字符串，如果PATH为NULL返回NULL */
 const char* path_find_extension(const char* path);
 
 /* 返回路径所指目录/文件的上级目录路径(路径名需为UTF-8编码) */
 int path_find_directory(const char* path, char* buf, size_t len) WUR;
+
+/* 将后缀名添加到文件名后扩展名前 */
+/* 如果文件没有扩展名或者以路径分隔符结尾，直接附加到路径最后 */
+int path_insert_before_extension(const char* path, const char*suffix, char* buf, size_t len) WUR;
 
 /* 路径所指文件/目录是否存在 */
 int path_file_exists(const char* path);
@@ -428,8 +459,10 @@ int path_is_directory(const char* path);
 int path_is_file(const char* path);
 
 /* 获取当前可用的文件/目录路径 */
-int unique_file(const char* path, char *buf, size_t len) WUR;
-int unique_dir(const char* path, char *buf, size_t len) WUR;
+/* 如果create_now参数为真，将立即创建一个空的文件/目录 */
+/* path必须为绝对路径 */
+int unique_file(const char* path, char *buf, size_t len, int create_now) WUR;
+int unique_dir(const char* path, char *buf, size_t len, int create_now) WUR;
 
 /* 路径合法化 */
 #define PATH_UNIX  1
@@ -446,6 +479,10 @@ char* path_escape(const char* path, int platform, int reserve_separator);
 
 /* 将路径中的非法字符替换为空格符 */
 void path_illegal_blankspace(char *path, int platform, int reserve_separator);
+
+/* 在指定字符串中查找路径分隔符，类似strchr和strrchr */
+char* strpsep(const char* path);
+char* strrpsep(const char* path);
 
 /************************* 目录操作 *************************/
 
@@ -531,7 +568,7 @@ int  move_file(const char* exists, const char* newfile, int overwritten) WUR;
 int  delete_file(const char* path) WUR;
 
 /* 获取指定文件的长度，最大8EB... */
-int file_size(const char* path);
+int64_t file_size(const char* path);
 
 /* 获取可读性强的文件大小，如3.5GB，建议outlen>64 */
 void file_size_readable(int64_t size, char *outbuf, int outlen);
@@ -614,7 +651,7 @@ int  write_mem_file_safe(const char *file, const void *data, size_t len) WUR;
 /* 磁盘空间 */
 struct fs_usage {
  uint64_t fsu_total;                /* 总共字节数 */
- uint64_t fsu_free;                /* 空闲字节数（超级用户） */
+ uint64_t fsu_free;                 /* 空闲字节数（超级用户） */
  uint64_t fsu_avail;                /* 可用字节数（一般用户） */
  uint64_t fsu_files;                /* 文件节点数 */
  uint64_t fsu_ffree;                /* 可用节点数 */
@@ -656,8 +693,8 @@ const char* get_temp_dir();
 
 /* 在指定目录下获取可用的临时文件 */
 int get_temp_file_under(const char* dir, const char *prefix,
-        char *outbuf, size_t outlen) WUR;
-
+                        char *outbuf, size_t outlen) WUR;
+ 
 /* 获取默认临时目录下可用的临时文件（非线程安全） */
 const char* get_temp_file(const char* prefix);
 
@@ -679,6 +716,14 @@ const char* datetime_str (time_t);
 
 /* 返回 YYMMDDHHMMSS 样式的时间戳字符串，非线程安全 */
 const char* timestamp_str(time_t);
+
+/* 
+ * 解析时间日期字符串
+ * 支持 ISO 标准格式，如 2014-09-24 12:59:30，2014/09/24 12:59:30
+ * 以及 __DATE__ __TIME__ 宏, 如 Sep 24 2014 12:59:30
+ * 成功返回自 1970/1/1 以来的秒数，失败返回0 
+ */
+time_t parse_datetime(const char* datetime_str);
 
 #define TIME_UNIT_MAX 20
 
@@ -808,20 +853,33 @@ int convert_to_charset(const char* from, const char* to,
 
 /************************* 编码操作 *************************/
 
-/* 获取UTF-8编码字符串的字符数 (非字节数)，返回－1表示无效UTF-8编码 */
-int utf8_len(const char* u8);
+/* 获取UTF-8编码字符串的字符数 (非字节数) */
+/* 空指针、空字符串或非UTF-8编码返回0 */
+size_t utf8_len(const char* u8);
 
-/* 按照给定的最多字节数截取UTF-8字符串，返回新字符串的长度, outbuf长度必须大于max_byte */
-int utf8_trim(const char* u8, char* outbuf, size_t max_byte);
+/* 按照给定的最多字节数截取UTF-8字符串 */
+/* outbuf长度必须大于max_byte, 成功返回新字符串的长度, 失败返回0 */
+size_t utf8_trim(const char* u8, char* outbuf, size_t max_byte);
 
-/* 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略 */
-/* last_reserved_words指最后应保留多少个字符（注意不是字节） */
-int utf8_abbr(const char* u8, char* outbuf, size_t max_byte,
+/* 
+ * 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略
+ *
+ * 比如 "c is a wonderful language" 简写为20个字节，且最后保留3个字符
+ * 结果为 "c is a wonderf...age"
+ * 注：1、"..."的长度（3个字节）包括于 max_byte 参数中
+ * 2、如果last_reserved_words为0，则"..."将被放置于最后，
+ *    如果last_reserved_words大于等于max_byte-3，则"..."将被置于最前
+ * 3、受多字节编码的影响，最终返回字符串的长度可能小于 max_byte，但相近
+ * 4、outbuf不能为空且其大小必须大于 max_byte (存放'\0')
+ * 成功返回1，失败返回0
+ */
+size_t utf8_abbr(const char* u8, char* outbuf, size_t max_byte,
     size_t last_reserved_words);
 
 /* 获取UTF-16LE/32LE编码字符串的字符数 (非字节数) */
-ssize_t utf16_len(const UTF16* u16);
-ssize_t utf32_len(const UTF32* u32);
+/* 空指针、空字符串返回0 */
+size_t utf16_len(const UTF16* u16);
+size_t utf32_len(const UTF32* u32);
 
 /* 获取系统默认字符集(如UTF-8，CP936) */
 #ifndef OS_ANDROID
@@ -867,7 +925,6 @@ char* popen_readall(const char* command);
 #ifdef OS_WIN
 FILE* popen(const char *command, const char *mode);
 #define pclose _pclose
-
 #endif
 
 /************************************************************************/
@@ -984,28 +1041,28 @@ void cond_destroy(cond_t *cond);                /* 销毁条件变量 */
  */
 
 #ifdef OS_WIN
-typedef HANDLE thread_t;
-typedef unsigned thread_ret_t;
+typedef HANDLE uthread_t;
+typedef unsigned uthread_ret_t;
 #define THREAD_CALLTYPE __stdcall
 #define INVALID_THREAD NULL
 #else /* POSIX */
 #include <pthread.h>
-typedef pthread_t thread_t;
-typedef void* thread_ret_t;
+typedef pthread_t uthread_t;
+typedef void* uthread_ret_t;
 #define THREAD_CALLTYPE
 #define INVALID_THREAD 0
 #endif /* OS_WIN */
 
-typedef thread_ret_t (THREAD_CALLTYPE *thread_proc_t)(void*);
+typedef uthread_ret_t (THREAD_CALLTYPE *uthread_proc_t)(void*);
 
 /* 创建线程 */
-int  thread_create1(thread_t* t, thread_proc_t proc, void *arg, int stacksize) WUR;
+int  uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize) WUR;
 
 /* 线程内退出 */
-void thread_exit(size_t exit_code);
+void uthread_exit(size_t exit_code);
 
 /* 等待线程 */
-int  thread_join(thread_t t, thread_ret_t *exit_code);
+int  uthread_join(uthread_t t, uthread_ret_t *exit_code);
 
 /************************* 线程本地存储 *************************/
 
@@ -1041,34 +1098,30 @@ int thread_once(thread_once_t* once, thread_once_func func);
 
 /* 断言 */
 #define ASSERTION(expr, name) \
- if (!(expr)) {fatal_exit(name" {%s %s %d} %s", \
+ if (!(expr)) {backtrace_here(LOG_WARNING, name" %s in %s at %d: %s", \
  path_find_file_name(__FILE__), __FUNCTION__, __LINE__, #expr);}
 
 #undef ASSERT
 #undef VERIFY
 
 /* ASSERT 仅在调试模式下生效，而 VERITY 总是有效 */
+#define VERIFY(expr) ASSERTION(expr, "[Verify]")
+
 #ifdef _DEBUG
-#define ASSERT(expr) ASSERTION(expr, "[ASSERT]")
+#define ASSERT(expr) ASSERTION(expr, "[Assert]")
+#define NOT_REACHED()   ASSERTION(NULL, "[Not Reached]")
+#define NOT_IMPLEMENTED() ASSERTION(NULL, "[Not Implemented]")
 #else
-#define ASSERT(expr) {;}
+#define ASSERT(expr)
+#define NOT_REACHED()
+#define NOT_IMPLEMENTED()
 #endif
 
-#define VERIFY(expr) ASSERTION(expr, "[VERIFY]")
-
-/* 异常处理 */
-#ifdef _DEBUG
-#define NOT_HANDLED(type) fatal_exit("%s {%s %s %d} %s", \
-  datetime_str(time(NULL)), path_find_file_name(__FILE__), __FUNCTION__, __LINE__, type)
-#else
-#define NOT_HANDLED(type) 
-#endif
-
-#define NOT_REACHED()   NOT_HANDLED("not reached")
-#define NOT_IMPLEMENTED() NOT_HANDLED("not implemented")
-
-/* 软件致命退出 */
-void fatal_exit(const char *fmt, ...) PRINTF_FORMAT(1,2);
+/* 
+ * 打印当前执行堆栈并开始调试 
+ * 如果fatal参数为真，将导致程序退出
+ */
+void backtrace_here(int level, const char *fmt, ...) PRINTF_FMT(2, 3);
 
 /* 错误信息 */
 /* 获取用WIN32 API失败后的错误信息(GetLastError()) */
@@ -1100,15 +1153,15 @@ char*  hexdump(const void *data, size_t len);
 #define DEBUG_LOG  0         /* 调试日志的ID */
 
 /* 记录等级 */
-enum LogSeverity{
-  LOG_DEBUG = 0,             /* 调试 */
-  LOG_INFO,                  /* 信息 */
-  LOG_NOTICE,                /* 注意 */
-  LOG_WARNING,               /* 警告 */
-  LOG_ERROR,                 /* 错误 */
-  LOG_CRIT,                  /* 紧急 */
+enum LogSeverity {
+  LOG_FATAL = 0,             /* 致命 */
   LOG_ALERT,                 /* 危急 */
-  LOG_FATAL,                 /* 致命 */
+  LOG_CRIT,                  /* 紧急 */
+  LOG_ERROR,                 /* 错误 */
+  LOG_WARNING,               /* 警告 */
+  LOG_NOTICE,                /* 注意 */
+  LOG_INFO,                  /* 信息 */
+  LOG_DEBUG,                 /* 调试 */
 };
 
 /* 初始化日志模块 */
@@ -1121,10 +1174,10 @@ void log_severity(int severity);
 int  log_open(const char *path, int append, int binary);
 
 /* 格式化输出到日志 */
-void log_printf0(int id, const char *fmt, ...) PRINTF_FORMAT(2,3);
+void log_printf0(int id, const char *fmt, ...) PRINTF_FMT(2,3);
 
-/* 同上，但同时附加时间和登记信息 */
-void log_printf(int id, int severity, const char *, ...) PRINTF_FORMAT(3,4);
+/* 同上，但同时附加时间和等级信息 */
+void log_printf(int id, int severity, const char *, ...) PRINTF_FMT(3,4);
 
 /* 将日志缓冲区数据写入磁盘 */
 void log_flush(int log_id);
@@ -1135,7 +1188,7 @@ void log_close(int log_id);
 /* 关闭所有打开的日志文件 */
 void log_close_all();
 
-/* 调试状态下调试日志信息输出到stderr */
+/* 将调试日志信息输出到stderr */
 void set_debug_log_to_stderr(int enable);
 int  is_debug_log_set_to_stderr();
 

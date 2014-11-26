@@ -30,9 +30,11 @@
 #define MSVC9    1500        /* VC 2008 */
 #define MSVC10    1600        /* VC 2010 */
 #define MSVC11    1700        /* VC 2012 */
+#define MSVC12    1800       /* VC 2013 */
 
-#define inline _inline
+#if _MSC_VER < MSVC12
 #define restrict
+#endif
 
 #pragma warning(disable: 4996)            /* The POSIX name for this item is deprecated */
 #pragma warning (disable: 4786)            /* identifier was truncated to '255' characters */
@@ -94,17 +96,13 @@
 
 #endif  // COMPILER_MSVC
 
-#undef PRINTF_FORMAT
-#undef WPRINTF_FORMAT
-
 /* GCC Specific */
 #if defined(COMPILER_GCC)
 #define ALLOW_UNUSED        __attribute__((unused))                    /* int x ALLOW_UNUSED = ...; */
 #define DEPRECATED            __attribute__((deprecated))    
 #define ALWAYS_INLINE        __attribute__((always_inline))
-#define PRINTF_FORMAT(a, b) __attribute__((format(printf, a, b)))
+#define PRINTF_FMT(a, b) __attribute__((format(printf, a, b)))
 #define SCANF_FORMAT(a, b)    __attribute__((format(scanf, a, b)))
-#define WPRINTF_FORMAT(a, b)
 #define ATTR_PURE            __attribute__((pure))
 #define ATTR_CONST            __attribute__((__const__))
 #define LINK_ERROR(msg)        __attribute__((__error__(msg)))
@@ -117,9 +115,8 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
 #define ALLOW_UNUSED
 #define DEPRECATED
 #define ALWAYS_INLINE __forceinline
-#define PRINTF_FORMAT(a, b)
+#define PRINTF_FMT(a, b)
 #define SCANF_FORMAT(a, b)
-#define WPRINTF_FORMAT(a, b)
 #define ATTR_PURE            
 #define ATTR_CONST        
 #define LINK_ERROR(msg)        
@@ -171,12 +168,14 @@ inline static void ignore_result_helper(int __attribute__((unused)) dummy, ...) 
  * Use like:
  *   virtual void foo() OVERRIDE;
  */
+#ifndef OVERRIDE
 #if defined(COMPILER_MSVC)
 #define OVERRIDE override
 #elif defined(__clang__)
 #define OVERRIDE override
 #else
 #define OVERRIDE
+#endif
 #endif
 
 /* 分支预测优化 */

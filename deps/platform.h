@@ -23,12 +23,10 @@
 #endif  // defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 #elif defined(ANDROID)
 #define OS_ANDROID 1
-#elif defined(__native_client__)
-#define OS_NACL 1
 #elif defined(__linux__)
 #define OS_LINUX 1
-#if !defined(TOOLKIT_VIEWS)
-//#define TOOLKIT_GTK // Use TOOLKIT_GTK on linux if TOOLKIT_VIEWS isn't defined.
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 #elif defined(_WIN32)
 #define OS_WIN 1
@@ -120,7 +118,7 @@
 
 /* 处理被中断的系统调用 */
 #ifndef HANDLE_FAILURE
-#ifdef OS_POSIX
+#ifdef OS_LINUX
 #define HANDLE_FAILURE(x) ({ \
     typeof(x) eintr_wrapper_result; \
     do { \
