@@ -5,8 +5,22 @@
 
 #define SEP PATH_SEP_STR
 
+class Charset : public testing::Test {
+protected:
+	static void SetUpTestCase() {
+
+	}
+	
+	static void TearDownTestCase() {
+
+	}
+
+	// Some expensive resource shared by all tests.
+	//static T* shared_resource_;
+};
+
 /* 字符编码探测 */
-TEST(Charset, Detect)
+TEST_F(Charset, Detect)
 {
 	const char *ascii = "abcdedfghnqwernozuv~!@$%^&*()%18231892+_\\\t\n\r|][?><./";
 	const char *gb2312 = "这是GB2312编码！";
@@ -58,7 +72,7 @@ TEST(Charset, Detect)
 }
 
 /* UTF-8相关测试 */
-TEST(Charset, Utf8)
+TEST_F(Charset, Utf8)
 {
 	const char *gbk = "這是GBK編碼";
 	char trimbuf[128];
@@ -132,7 +146,7 @@ TEST(Charset, Utf8)
 }
 
 /* 文件编码相关 */
-TEST(Charset, File)
+TEST_F(Charset, File)
 {
 	const char *gbk = "這是GBK編碼";
 	const char *file = "temp"SEP"charset.tmp";
@@ -186,7 +200,7 @@ TEST(Charset, File)
 }
 
 /* UNICODE字符转换 */
-TEST(Charset, Unicode)
+TEST_F(Charset, Unicode)
 {
 	const char *gbk = "這是GBK編碼";
 	UTF8* utf8 = NULL;
@@ -259,7 +273,7 @@ TEST(Charset, Unicode)
 }
 
 /* 多字节宽字符转换 */
-TEST(Charset, MBCS)
+TEST_F(Charset, MBCS)
 {
 	const char *gbk = "编码测试";
 	const char *file = "temp"SEP"wcs.tmp";
@@ -306,7 +320,7 @@ TEST(Charset, MBCS)
 }
 
 /* 宽字符串UTF-8转换 */
-TEST(Charset, WCS_UTF8)
+TEST_F(Charset, WCS_UTF8)
 {
 	const char *gbk = "這是GBK編碼";
 	char* utf8 = NULL;
@@ -338,7 +352,7 @@ TEST(Charset, WCS_UTF8)
 }
 
 /* 多字节UTF-8转换 */
-TEST(Charset, MBCS_UTF8)
+TEST_F(Charset, MBCS_UTF8)
 {
 	const char *gbk = "這是GBK編碼";
 	char* utf8 = NULL, *mbcs = NULL;
@@ -366,13 +380,13 @@ TEST(Charset, MBCS_UTF8)
 }
 
 /* 系统本地字符集 */
-TEST(Charset, Locale)
+TEST_F(Charset, Locale)
 {
 	printf("system locale: %s\n", get_locale());
 }
 
 /* 字符编码转换 */
-TEST(Charset, Convert)
+TEST_F(Charset, Convert)
 {
 	const char *gbk = "這是GBK編碼";
 	char* utf8 = NULL;

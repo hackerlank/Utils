@@ -6,13 +6,15 @@ int _tmain(int argc, _TCHAR* argv[])
 {
     cutil_init();
 
+	delete_directories("temp", NULL, NULL);
+	create_directory("temp");
+
     testing::InitGoogleTest(&argc, argv);
 
     int rv = RUN_ALL_TESTS();
 
+	delete_directories("temp", NULL, NULL);
     cutil_exit();
 
-    getchar();
     return rv;
 }
-

@@ -71,5 +71,14 @@
     <ClCompile Include="unittest.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\filesystem.cc">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\math.cc">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\others.cc">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

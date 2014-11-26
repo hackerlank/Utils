@@ -207,6 +207,7 @@ typedef int ssize_t;
 #define LOWER_32_BITS(n) ((uint32_t)(n))
 
 /* 特殊字符 */
+#undef ISDIGIT
 #define ISDIGIT(c) (c >= '0' && c <= '9')
 #define ISXDIGIT(c) (((c >= '0' && c <= '9') || ((c & ~0x20) >= 'A' && (c & ~0x20) <= 'F')) ? 1 : 0)
 

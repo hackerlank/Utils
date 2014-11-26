@@ -1418,7 +1418,7 @@ int unique_file(const char* path, char *buf, size_t len, int create_now)
     size_t plen, elen;
     int i;
 
-    plen = _path_valid(path, 1);
+    plen = _path_valid(path, 0);
     if (!plen)
         return 0;
 
@@ -1464,7 +1464,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 {
     int has_slash, i;
 
-    size_t plen = _path_valid(path, 1);
+    size_t plen = _path_valid(path, 0);
     if (!plen)
         return 0;
 
@@ -1884,7 +1884,7 @@ int create_directories(const char* dir)
     char wbuf[MAX_PATH];
 #endif
 
-    len = _path_valid(dir, 1);
+    len = _path_valid(dir, 0);
     if (!len)
         return 0;
 
@@ -1910,7 +1910,8 @@ int create_directories(const char* dir)
     /* 定位到路径的第一个有效文件[夹] */
 #ifdef OS_WIN
     /* UNC路径要忽略主机名 */
-    if (IS_PATH_SEP(*pb)) {          /* \\192.168.1.6\shared\  */
+	/* 如 \\192.168.1.6\shared\  */
+	if (len > 2 && IS_PATH_SEP(pb[0]) && IS_PATH_SEP(pb[1])) {
         p = strpsep(pb + 2);
         if (!p)
             return 0;
