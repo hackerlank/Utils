@@ -54,6 +54,9 @@ void cutil_init();
 /* 清理本库，在程序结束前调用 */
 void cutil_exit();
 
+/* 禁用默认的调试日志 */
+void set_disable_debug_log();
+
 /* 设置堆栈处理函数 */
 /* title的格式为"[Tag] " */
 typedef void(*backtrace_handler)(int level, const char* title, const char* content);
@@ -1186,7 +1189,7 @@ void log_close(int log_id);
 void log_close_all();
 
 /* 将调试日志信息输出到stderr */
-void set_debug_log_to_stderr(int enable);
+void set_debug_log_to_stderr();
 int  is_debug_log_set_to_stderr();
 
 /* 记录调试日志（记录文件名、函数名、行号） */

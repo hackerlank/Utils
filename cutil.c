@@ -82,6 +82,9 @@ static int g_cutil_inited;
 /* 已打开的文件数 */
 static int g_opened_files;
 
+/* 是否禁用调试日志 */
+static int g_disable_debug_log;
+
 /* 外部堆栈处理函数 */
 static backtrace_handler g_backtrace_hander;
 
@@ -109,7 +112,8 @@ void cutil_init()
     ASSERT(ret);
 
     /* 初始化日志模块 */
-    log_init();
+    if (!g_disable_debug_log)
+        log_init();
 
     /* 运行时内存调试 */
 #ifdef DBG_MEM_RT
@@ -191,6 +195,11 @@ int check_cutil_init()
 }
 
 #define CHECK_INIT() ASSERT(check_cutil_init())
+
+void set_disable_debug_log()
+{
+    g_disable_debug_log = 1;
+}
 
 void set_product_name(const char* product_name)
 {
@@ -5962,16 +5971,17 @@ char* hexdump(const void *data, size_t len)
 #define LOG_VALID(id) ((id) >= DEBUG_LOG && (id) <= MAX_LOGS)
 
 static const char* log_severity_names[] = {
-    "Debug",
-    "Info",
-    "Notice",
-    "Warning",
-    "Error",
-    "Critical",
+    "Fatal",
     "Alert",
-    "Fatal"};
+    "Critical",
+    "Error",
+    "Warning",
+    "Notice",
+    "Info",
+    "Debug"
+};
 
-static int log_min_severity = 0;        /* 设置最低记录等级 */
+static int log_min_severity = LOG_DEBUG;   /* 设置最低记录等级 */
 static int debug_log_to_stderr = 0;        /* 调试信息发送到标准错误输出 */
 
 static FILE* log_files[MAX_LOGS+1];
@@ -5995,10 +6005,10 @@ void log_severity(int severity)
     log_min_severity = severity;
 }
 
-void set_debug_log_to_stderr(int enable)
+void set_debug_log_to_stderr()
 {
     CHECK_INIT();
-    debug_log_to_stderr = enable;
+    debug_log_to_stderr = 1;
 }
 
 int is_debug_log_set_to_stderr()
