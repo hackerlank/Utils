@@ -5712,7 +5712,9 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 #ifdef NDEBUG
     if (level == LOG_FATAL)
 #endif
+    {
         MessageBoxA(NULL, msgs, info, MB_OK);
+    }
 }
 
 static inline
@@ -6001,13 +6003,11 @@ void log_unlock(int log_id)
 
 void log_severity(int severity)
 {
-    CHECK_INIT();
     log_min_severity = severity;
 }
 
 void set_debug_log_to_stderr()
 {
-    CHECK_INIT();
     debug_log_to_stderr = 1;
 }
 
