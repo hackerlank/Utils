@@ -112,9 +112,8 @@ void cutil_init()
     ASSERT(ret);
 
     /* 初始化日志模块 */
-    if (!g_disable_debug_log)
-        log_init();
-
+    log_init();
+        
     /* 运行时内存调试 */
 #ifdef DBG_MEM_RT
     memrt_init();
@@ -660,8 +659,10 @@ int xasprintf(char** out, const char *fmt, ...)
         else
             size = n + 1;
 
-        if (size > 32 * 1024 * 1024)
+        if (size > 32 * 1024 * 1024) {
+            xfree(str);
             return 0;
+        }
 
         str = (char*)xrealloc (str, size);
     }
@@ -6108,7 +6109,7 @@ void log_init()
 
     /* 打开软件全局调试日志 */
 #ifdef USE_DEBUG_LOG
-    {
+    if (!g_disable_debug_log) {
         char exe_name[MAX_PATH], log_path[MAX_PATH];
         xstrlcpy(exe_name, get_execute_name(), MAX_PATH);
         exe_name[path_find_extension(exe_name) - exe_name] = '\0';
@@ -6131,7 +6132,8 @@ void log_printf0(int log_id, const char *fmt, ...)
 
     CHECK_INIT();
 
-    if (!LOG_VALID(log_id))
+    if (!LOG_VALID(log_id) ||
+        (log_id == DEBUG_LOG && g_disable_debug_log))
         return;
 
     log_lock(log_id);
@@ -6169,7 +6171,8 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
 
     CHECK_INIT();
 
-    if (!LOG_VALID(log_id))
+    if (!LOG_VALID(log_id) ||
+        (log_id == DEBUG_LOG && g_disable_debug_log))
         return;
 
     level = xmin(xmax((int)LOG_FATAL, severity), (int)LOG_DEBUG);
@@ -6263,9 +6266,11 @@ void log_close_all()
         log_close(i);
 
 #ifdef USE_DEBUG_LOG
-    log_printf0(DEBUG_LOG, "\n");
-    log_dprintf(LOG_INFO, " ==================== Program Exit ====================\n\n");
-    log_close(DEBUG_LOG);
+    if (!g_disable_debug_log) {
+        log_printf0(DEBUG_LOG, "\n");
+        log_dprintf(LOG_INFO, " ==================== Program Exit ====================\n\n");
+        log_close(DEBUG_LOG);
+    }
 #endif
 }
 
