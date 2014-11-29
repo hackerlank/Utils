@@ -209,9 +209,7 @@ typedef int ssize_t;
 #define UPPER_32_BITS(n) ((uint32_t)(((n) >> 16) >> 16))
 #define LOWER_32_BITS(n) ((uint32_t)(n))
 
-/* 特殊字符 */
-#undef ISDIGIT
-#define ISDIGIT(c) (c >= '0' && c <= '9')
+/* 是否是十六进制字符 */
 #define ISXDIGIT(c) (((c >= '0' && c <= '9') || ((c & ~0x20) >= 'A' && (c & ~0x20) <= 'F')) ? 1 : 0)
 
 /* 转换一个十六进制字符(0~9,A~F)到相应数值(0~15) */
@@ -278,9 +276,9 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #include <Shlwapi.h> /* StrDuaA */
 #endif
 
-#define xisdigit(c) ISDIGIT(c)
 #define xisxdigit(c) ISXDIGIT(c)
 #define xisascii(c) ((unsigned)c < 0x80)
+#define xisdigit(c) ((unsigned)c < 0xFF && isdigit(c))
 #define xisalpha(c) ((unsigned)c < 0xFF && isalpha(c))
 #define xisalnum(c) ((unsigned)c < 0xFF && isalnum(c))
 #define xisupper(c) ((unsigned)c < 0xFF && isupper(c))
@@ -304,9 +302,11 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 
 /*
  * 安全的字符串格式化输出
- * 在任何情况下，都会保证缓冲区以'\0'结尾
- * 在大多数UNIX/Linux及高版本VC下，该函数返回欲写入的字符串长度，出错返回负值
- * 对于某些实现（如VC6），在缓冲区不够大的情况下也会返回-1，详见 xasprintf
+ * 返回格式化后完整的字符串的长度，出错返回负值，保证缓冲区以'\0'结尾
+ * 只有返回值的长度大于0且小于输入缓冲区的长度，才是真正的成功完成
+ * 注：某些实现在缓冲区不够大的情况下也会返回-1，同时：
+ * VC高版本将errno置为ERANGE，但VC6不这么做；某些posix实现将errno置为EOVERFLOW
+ * 具体处理方式可参见 xasprintf 函数的实现
  */
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FMT(3, 0);
 int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 4);
@@ -315,9 +315,13 @@ int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 
 /* GLIBC在_GNU_SOURCE宏被定义的情况下已导出此函数 */
 int xasprintf (char** out, const char* format, ...) PRINTF_FMT(2, 3) WUR;
 
-/* BSD风格的字符串拷贝和附加函数 */
-/* 比 str[n]cpy 和 str[n]cat 更快更安全，比较见以下链接 */
-/* http://www.gratisoft.us/todd/papers/strlcpy.html */
+/* 
+ * BSD风格的字符串拷贝和附加函数
+ * 它们总是保证缓冲区以'\0'结尾(只要 dst_size > 0) 
+ * 返回值总是为最终要构造的字符串的长度(不包括结尾的'\0')
+ * 比 str[n]cpy 和 str[n]cat 更快更安全，比较见以下链接
+ * http://www.gratisoft.us/todd/papers/strlcpy.html 
+ */
 size_t xstrlcpy(char* dst, const char* src, size_t dst_size);
 size_t xstrlcat(char* dst, const char *src, size_t dst_size);
 
@@ -1116,8 +1120,8 @@ int thread_once(thread_once_t* once, thread_once_func func);
 
 #ifdef _DEBUG
 #define ASSERT(expr) ASSERTION(expr, "[Assert]")
-#define NOT_REACHED()   ASSERTION(false, "[Not Reached]")
-#define NOT_IMPLEMENTED() ASSERTION(false, "[Not Implemented]")
+#define NOT_REACHED()   ASSERTION(0, "[Not Reached]")
+#define NOT_IMPLEMENTED() ASSERTION(0, "[Not Implemented]")
 #else
 #define ASSERT(expr)
 #define NOT_REACHED()

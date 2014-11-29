@@ -97,6 +97,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\cutil.c" />
+    <ClCompile Include="..\..\char.cc" />
     <ClCompile Include="..\..\charset.cc" />
     <ClCompile Include="..\..\datatype.cc" />
     <ClCompile Include="..\..\filepath.cc" />
@@ -105,8 +106,8 @@
     <ClCompile Include="..\..\math.cc" />
     <ClCompile Include="..\..\others.cc" />
     <ClCompile Include="..\..\string.cc" />
+    <ClCompile Include="..\..\unittest.cc" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="unittest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

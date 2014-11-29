@@ -68,9 +68,6 @@
     <ClCompile Include="..\..\gtest\src\gtest-all.cc">
       <Filter>gtest</Filter>
     </ClCompile>
-    <ClCompile Include="unittest.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\filesystem.cc">
       <Filter>tests</Filter>
     </ClCompile>
@@ -82,6 +79,12 @@
     </ClCompile>
     <ClCompile Include="..\..\filepath.cc">
       <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\char.cc">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unittest.cc">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

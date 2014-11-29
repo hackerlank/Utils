@@ -570,39 +570,37 @@ substrdup(const char *beg, const char *end)
 }
 
 /* 安全的vsnprintf */
-/* 具体用法见asnprintf */
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args)
 {
 #ifdef OS_WIN
 #if _MSC_VER <= MSVC6
-    /* 该函数在缓冲区不够大的情况下也会返回-1
-     * 在VC6中，不会设置errno的值，
-     * 在高版本VC中，会将errno置为ERANGE，调用失败则置为EINVAL */
     int i = _vsnprintf(buffer, size, format, args);
     if (size > 0)
         buffer[size-1] = '\0';
     return i;
 #else
-    /* 高版本VC支持模拟C99标准行为 */
+    /* 模拟snprintf的标准行为 */
     int length = _vsprintf_p(buffer, size, format, args);
     if (length < 0) {
         if (size > 0)
-            buffer[0] = 0;
+            buffer[size-1] = '\0';
         return _vscprintf_p(format, args);
     }
     return length;
 #endif
 #else
-    /* 注：有的POSIX实现在缓冲区不够大时也会返回-1，但会将errno置为EOVERFLOW */
     return vsnprintf(buffer, size, format, args);
 #endif
 }
 
-/* 可移植的snprintf */
+/* 安全的snprintf */
 int xsnprintf(char* buffer, size_t size, const char* format, ...)
 {
     int result;
     va_list arguments;
+
+    if (!size)
+        return -1;
 
     va_start(arguments, format);
     result = xvsnprintf(buffer, size, format, arguments);
@@ -611,7 +609,7 @@ int xsnprintf(char* buffer, size_t size, const char* format, ...)
     return result;
 }
 
-/* 可移植的asprintf */
+/* 安全可移植的 asprintf */
 int xasprintf(char** out, const char *fmt, ...)
 {
     int size = 128;
@@ -663,10 +661,7 @@ int xasprintf(char** out, const char *fmt, ...)
             size = n + 1;
 
         if (size > 32 * 1024 * 1024)
-        {
-            ASSERT(!"Unable to asprintf the requested string due to size.");
             return 0;
-        }
 
         str = (char*)xrealloc (str, size);
     }
