@@ -99,6 +99,7 @@
     <ClCompile Include="..\..\..\cutil.c" />
     <ClCompile Include="..\..\charset.cc" />
     <ClCompile Include="..\..\datatype.cc" />
+    <ClCompile Include="..\..\filepath.cc" />
     <ClCompile Include="..\..\filesystem.cc" />
     <ClCompile Include="..\..\gtest\src\gtest-all.cc" />
     <ClCompile Include="..\..\math.cc" />

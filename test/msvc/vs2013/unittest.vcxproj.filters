@@ -80,5 +80,8 @@
     <ClCompile Include="..\..\others.cc">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\filepath.cc">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

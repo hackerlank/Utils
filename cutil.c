@@ -1050,10 +1050,19 @@ size_t _end_with_slash(const char* path, char* outbuf, size_t outlen)
 }
 
 /* 判断path所指的路径是否是绝对路径 */
-int    is_absolute_path(const char* path)
+int is_absolute_path(const char* path)
 {
     return _path_valid(path, 1) != 0;
 }
+
+/* 判断path是否是Windows的 UNC (Universal Naming Convention) 路径 */
+#ifdef OS_WIN
+int is_unc_path(const char* path) 
+{
+    return path && path[0] && path[1] && path[2] &&
+        IS_PATH_SEP(path[0]) && IS_PATH_SEP(path[1]) && !IS_PATH_SEP(path[2]);
+}
+#endif
 
 /* 判断路径是否是根路径 */
 int is_root_path(const char* path)
@@ -1216,7 +1225,7 @@ int path_insert_before_extension(const char* path,
     size_t plen, elen, slen;
   
     plen = _path_valid(path, 0);
-    if (!plen)
+    if (!plen || !suffix)
         return 0;
 
     /* 获取文件扩展名 */
@@ -1428,7 +1437,7 @@ int unique_file(const char* path, char *buf, size_t len, int create_now)
     int i;
 
     plen = _path_valid(path, 0);
-    if (!plen)
+    if (!plen || !buf)
         return 0;
 
     // 如果初始路径不存在，直接返回
@@ -1474,7 +1483,7 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
     int has_slash, i;
 
     size_t plen = _path_valid(path, 0);
-    if (!plen)
+    if (!plen || !buf)
         return 0;
 
     /* 如果初始目录不存在，直接返回 */
@@ -1920,15 +1929,20 @@ int create_directories(const char* dir)
 #ifdef OS_WIN
     /* UNC路径要忽略主机名 */
 	/* 如 \\192.168.1.6\shared\  */
-	if (len > 2 && IS_PATH_SEP(pb[0]) && IS_PATH_SEP(pb[1])) {
+	if (is_unc_path(pb)) {
         p = strpsep(pb + 2);
         if (!p)
             return 0;
         ++p;
+    } else if (is_absolute_path(pb)) {
+        p = pb + MIN_PATH;
     } else
-        p = pb + MIN_PATH;                /* "a\b\c\d.txt */
+        p = pb;
 #else
-    p = pb + MIN_PATH;                    /* "a/b/c/d.txt */
+    if (is_absolute_path(pb))
+        p = pb;
+    else
+        p = pb + MIN_PATH;
 #endif
 
     /* 逐级创建文件夹 */

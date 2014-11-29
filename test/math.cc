@@ -10,26 +10,28 @@ struct item{
 
 TEST(Math, Basic)
 {
-	char carray[10];
-	static struct item items[] = {
-		{1, 1.0, 1},
-		{2, 2.0, 2},
-		{3, 3.0, 3},
-	};
+    char carray[10];
+    int i = countof(carray);
 
-	EXPECT_EQ(countof(carray), 10);
-	EXPECT_EQ(countof(items), 3);
+    static struct item items[] = {
+        { 1, 1.0, 1 },
+        { 2, 2.0, 2 },
+        { 3, 3.0, 3 },
+    };
 
-	EXPECT_EQ(min(1+1,-1), -1);
-	EXPECT_EQ(max(0,2), 2);
+    EXPECT_EQ(i, 10);
+    EXPECT_EQ(countof(items), 3);
+
+    EXPECT_EQ(min(1 + 1, -1), -1);
+    EXPECT_EQ(max(0, 2), 2);
 }
 
 TEST(Math, Hex)
 {
-	EXPECT_EQ(ISDIGIT('0'), 1);
-	EXPECT_EQ(ISDIGIT('9'), 1);
-	EXPECT_EQ(ISDIGIT('a'), 0);
-	EXPECT_EQ(ISDIGIT('/'), 0);
+	EXPECT_EQ(ISDIGIT('0'), true);
+    EXPECT_EQ(ISDIGIT('9'), true);
+	EXPECT_EQ(ISDIGIT('a'), false);
+	EXPECT_EQ(ISDIGIT('/'), false);
 
 	EXPECT_TRUE(ISXDIGIT('0'));
 	EXPECT_TRUE(ISXDIGIT('9'));

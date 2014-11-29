@@ -430,7 +430,14 @@ int is_root_path(const char* path);
 /* 判断path所指的路径是否是绝对路径 */
 int is_absolute_path(const char* path);
 
+#ifdef OS_WIN
+/* 是否是Windows网络共享路径
+ * 如 \\servername\sharename\directory\filename */
+int is_unc_path(const char* path);
+#endif
+
 /* 获取文件/目录相对于当前工作目录的绝对路径 */
+/* 如果路径本身已经是绝对路径，直接返回 */
 int absolute_path(const char* relpath, char* buf, size_t len) WUR;
 
 /* 获取full_path相对于base_path的相对路径 */
@@ -447,16 +454,16 @@ const char* path_find_extension(const char* path);
 /* 返回路径所指目录/文件的上级目录路径(路径名需为UTF-8编码) */
 int path_find_directory(const char* path, char* buf, size_t len) WUR;
 
-/* 将后缀名添加到文件名后扩展名前 */
-/* 如果文件没有扩展名或者以路径分隔符结尾，直接附加到路径最后 */
-int path_insert_before_extension(const char* path, const char*suffix, char* buf, size_t len) WUR;
-
 /* 路径所指文件/目录是否存在 */
 int path_file_exists(const char* path);
 
 /* 路径是否是有效目录/文件 */
 int path_is_directory(const char* path);
 int path_is_file(const char* path);
+
+/* 将后缀名添加到文件名后扩展名前 */
+/* 如果文件没有扩展名或者以路径分隔符结尾，直接附加到路径最后 */
+int path_insert_before_extension(const char* path, const char*suffix, char* buf, size_t len) WUR;
 
 /* 获取当前可用的文件/目录路径 */
 /* 如果create_now参数为真，将立即创建一个空的文件/目录 */
@@ -513,7 +520,6 @@ int create_directory(const char *dir) WUR;
 
 /*
  * 创建多级目录
- * 路径名必须是绝对路径名
  * 如果路径名以"\"结尾，那最后的部分创建为目录
  * 注：linux下dir必须为UTF-8编码
  */
