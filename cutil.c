@@ -140,7 +140,7 @@ void cutil_init()
     /* 多字节/宽字符串转换 */
     /* 将进程的locale设置为系统的locale，进程启动时默认为"C" */
     /* GLIBC实现为依次查询LC_ALL,LC_CTYPE,LANG环境变量 */
-    setlocale(LC_CTYPE, "UTF-8");
+    setlocale(LC_CTYPE, "");
 
 #ifndef OS_ANDROID
     /* 检查系统默认编码 */
@@ -4601,16 +4601,17 @@ size_t utf32_len(const UTF32* u32)
 /* 获取系统默认字符集(多字节编码所用字符集) */
 const char *get_locale()
 {
-#if defined(OS_MACOSX)
-    CHECK_INIT();
-    return setlocale(LC_CTYPE, NULL);
-#elif defined(OS_POSIX)
-    CHECK_INIT();
-    return nl_langinfo(CODESET);
-#else
+#ifdef OS_WIN
     static char lcs[20];
     snprintf(lcs, sizeof(lcs), "CP%u", GetACP());
     return lcs;
+#elif defined(OS_MACOSX)
+    /* Mac 下 nl_langinfo 返回的是US-ASCII */
+    static const char utf8[] = "UTF-8";
+    return utf8;
+#else
+    CHECK_INIT();
+    return nl_langinfo(CODESET);
 #endif
 }
 #endif

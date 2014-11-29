@@ -19,6 +19,12 @@ protected:
 	//static T* shared_resource_;
 };
 
+/* 系统本地字符集 */
+TEST_F(Charset, Locale)
+{
+	printf("system locale: %s\n", get_locale());
+}
+
 /* 字符编码探测 */
 TEST_F(Charset, Detect)
 {
@@ -378,12 +384,6 @@ TEST_F(Charset, MBCS_UTF8)
 
 	xfree(utf8);
 	xfree(mbcs);
-}
-
-/* 系统本地字符集 */
-TEST_F(Charset, Locale)
-{
-	printf("system locale: %s\n", get_locale());
 }
 
 /* 字符编码转换 */

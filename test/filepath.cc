@@ -73,9 +73,7 @@ TEST(FilePath, UNCPath) {
 TEST(FilePath, AbsolutePath) {
     char buf[MAX_PATH], abspath[MAX_PATH];
 
-#ifdef OS_MACOSX
     IGNORE_RESULT(touch("abc"));
-#endif
     ASSERT_TRUE(absolute_path("abc", buf, sizeof(buf)));
     xstrlcpy(abspath, get_current_dir(), sizeof(abspath));
     xstrlcat(abspath, "abc", sizeof(abspath));
@@ -95,6 +93,7 @@ TEST(FilePath, AbsolutePath) {
 #else
     EXPECT_TRUE(absolute_path("/tmp", buf, sizeof(buf)));
     EXPECT_STREQ("/tmp", buf);
+    IGNORE_RESULT(touch("/tmp/123.txt"));
     EXPECT_TRUE(absolute_path("/tmp/123.txt", buf, sizeof(buf)));
     EXPECT_STREQ("/tmp/123.txt", buf);
 #endif
