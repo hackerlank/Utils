@@ -1,4 +1,4 @@
-﻿/* 
+﻿/*
 * @file: cutil.h
 * @desc: 可移植系统平台兼容层
 *        主要基于系统API及标准C库，高效实用
@@ -162,7 +162,7 @@ typedef int ssize_t;
 /* 带符号类型最大值(gnulib) */
 #define TYPE_MAXIMUM(t) ((t) (~ (~ (t) 0 << (sizeof (t) * CHAR_BIT - 1))))
 
-/* 
+/*
  * 格式化输入输出
  * 用法如 printf ("value=%" PRId64 "\n", i64);
  */
@@ -174,17 +174,17 @@ typedef int ssize_t;
 #endif
 #include <inttypes.h>         /* PRId64, PRIu64... */
 #define PRIlf  "Lf"           /* long double */
-#elif defined (OS_WIN)     
+#elif defined (OS_WIN)
 #define PRIu64  "I64u"        /* uint64_t */
 #define PRId64  "I64d"        /* int64_t */
 #define PRIlf  "llf"          /* long double */
-#endif      
+#endif
 
-#ifndef PRIuS      
-#ifdef OS_WIN      
-#if __WORDSIZE == 64      
+#ifndef PRIuS
+#ifdef OS_WIN
+#if __WORDSIZE == 64
 #define PRIuS  PRIu64         /* size_t is 64bit */
-#else 
+#else
 #define PRIuS  "u"            /* size_t is 32bit */
 #endif
 #else /* POSIX */
@@ -302,11 +302,11 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #define STRIEQ(a, b) \
  (toupper(*(a)) == toupper(*(b)) && strcasecmp((a), (b)) == 0)
 
-/* 
+/*
  * 安全的字符串格式化输出
  * 在任何情况下，都会保证缓冲区以'\0'结尾
  * 在大多数UNIX/Linux及高版本VC下，该函数返回欲写入的字符串长度，出错返回负值
- * 对于某些实现（如VC6），在缓冲区不够大的情况下也会返回-1，详见 xasprintf 
+ * 对于某些实现（如VC6），在缓冲区不够大的情况下也会返回-1，详见 xasprintf
  */
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FMT(3, 0);
 int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 4);
@@ -327,11 +327,11 @@ int uppercase_str (char *str);
 int lowercase_str (char *str);
 
 /* 获取一个字符串的大/小写版拷贝 */
-char *strdup_upper (const char *s); 
+char *strdup_upper (const char *s);
 char *strdup_lower (const char *s);
 
 /* 返回字符串的一个字串，以'\0'结尾，需外部释放 */
-char *substrdup (const char *beg, const char *end); 
+char *substrdup (const char *beg, const char *end);
 
 /* 字符串比较、查找操作 */
 /* GLIBC实现的但其他库未实现的一些函数 */
@@ -365,7 +365,7 @@ char* strcasestr(const char *s, const char *find);
 
 /* 逆向查找内存缓冲区 */
 void* memrchr(const void* s, int c, size_t n);
-    
+
 /* 简单可逆地加密一块内存 */
 void* memfrob(void *mem, size_t length);
 
@@ -438,10 +438,11 @@ int is_unc_path(const char* path);
 
 /* 获取文件/目录相对于当前工作目录的绝对路径 */
 /* 如果路径本身已经是绝对路径，直接返回 */
+/* 注：Mac OS X 10.6 以上的系统要求 realpath 中的所有目录/文件必须实际存在 */
 int absolute_path(const char* relpath, char* buf, size_t len) WUR;
 
 /* 获取full_path相对于base_path的相对路径 */
-int relative_path(const char* base_path, const char* full_path, 
+int relative_path(const char* base_path, const char* full_path,
     char* buf, size_t len) WUR;
 
 /* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
@@ -542,7 +543,7 @@ int  delete_empty_directories(const char* dir) WUR;
 
 /* 拷贝整个目录回调函数*/
 /* action参数0、1、2分别表示拷贝文件、拷贝目录和创建目录  */
-typedef int (*copy_dir_cb)(const char* src, const char *dst, 
+typedef int (*copy_dir_cb)(const char* src, const char *dst,
     int action, int succ, void *arg);
 
 /* 将src目录拷贝到dst目录下（用法及注意见copy_directories） */
@@ -587,7 +588,7 @@ int  get_file_block_size(const char *absolute_path);
 
 /* 根据文件实际大小和分区块大小计算实际占用的磁盘空间 */
 #define CALC_DISK_USAGE(real_size, block_size) \
-  (((real_size) + (block_size)) & (~((block_size) - 1))) 
+  (((real_size) + (block_size)) & (~((block_size) - 1)))
 
 /* 打开文件，递增已打开的文件计数 */
 FILE* xfopen(const char* file, const char* mode);
@@ -595,7 +596,7 @@ FILE* xfopen(const char* file, const char* mode);
 /* 关闭文件，递减文件计数 */
 void xfclose(FILE *fp);
 
-/* 
+/*
  * 从文件中读取数据
  * 如果读取过程中：遇到指定分隔符、达到指定最多读取字节数或读到文件末尾则结束
  * 【参数】：如果separator为-1，则不比较分隔符；
@@ -606,7 +607,7 @@ void xfclose(FILE *fp);
  * *lineptr必须是数组或者alloca的内存。这样可以减少动态申请/释放内存的次数。
  * 返回值：返回成功读入的字节数，包括分隔符，但不包括结尾的'\0'。文件为空或过大返回0
  */
-size_t xfread(FILE *fp, int separator, size_t max_bytes, 
+size_t xfread(FILE *fp, int separator, size_t max_bytes,
  char **lineptr, size_t *n) WUR;
 
 /*
@@ -700,7 +701,7 @@ const char* get_temp_dir();
 /* 在指定目录下获取可用的临时文件 */
 int get_temp_file_under(const char* dir, const char *prefix,
                         char *outbuf, size_t outlen) WUR;
- 
+
 /* 获取默认临时目录下可用的临时文件（非线程安全） */
 const char* get_temp_file(const char* prefix);
 
@@ -723,11 +724,11 @@ const char* datetime_str (time_t);
 /* 返回 YYMMDDHHMMSS 样式的时间戳字符串，非线程安全 */
 const char* timestamp_str(time_t);
 
-/* 
+/*
  * 解析时间日期字符串
  * 支持 ISO 标准格式，如 2014-09-24 12:59:30，2014/09/24 12:59:30
  * 以及 __DATE__ __TIME__ 宏, 如 Sep 24 2014 12:59:30
- * 成功返回自 1970/1/1 以来的秒数，失败返回0 
+ * 成功返回自 1970/1/1 以来的秒数，失败返回0
  */
 time_t parse_datetime(const char* datetime_str);
 
@@ -752,7 +753,7 @@ void msleep(int milliseconds);
 
 /************************* 计时器 *************************/
 
-/* 
+/*
  * 可用于时长计算及代码性能分析
  * 最高精确到微秒级别
  */
@@ -795,7 +796,7 @@ int is_gb2312(const void* str, size_t size);         /* 字符串是否是GB2312
 int is_gbk(const void* str, size_t size);            /* 字符串是否是GBK编码 */
 
 /* 获取字符串的字符集(ASCII,UTF-8,GB2312,GBK,GB18030) */
-int get_charset(const void* str, size_t size, 
+int get_charset(const void* str, size_t size,
     char *outbuf, size_t outlen, int can_ascii) WUR;
 
 /* 探测文件的字符集 */
@@ -829,7 +830,7 @@ UTF32* utf8_to_utf32(const UTF8* in,  int strict);
 UTF8*  utf32_to_utf8(const UTF32* in,  int strict);
 
 /* UTF-16LE字符串 <=> UTF-32LE字符串转换，需外部释放 */
-UTF32* utf16_to_utf32(const UTF16* in, int strict);      
+UTF32* utf16_to_utf32(const UTF16* in, int strict);
 UTF16* utf32_to_utf16(const UTF32* in, int strict);
 
 /* UTF-8字符串 <=> UTF-7字符串转换，需要外部释放 */
@@ -867,7 +868,7 @@ size_t utf8_len(const char* u8);
 /* outbuf长度必须大于max_byte, 成功返回新字符串的长度, 失败返回0 */
 size_t utf8_trim(const char* u8, char* outbuf, size_t max_byte);
 
-/* 
+/*
  * 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略
  *
  * 比如 "c is a wonderful language" 简写为20个字节，且最后保留3个字符
@@ -1079,7 +1080,7 @@ typedef pthread_key_t thread_tls_t;
 #endif
 
 int  thread_tls_create(thread_tls_t *tls) WUR;          /* 创建TLS键 */
-int  thread_tls_set(thread_tls_t tls, void *data) WUR;  /* 设置TLS值 */        
+int  thread_tls_set(thread_tls_t tls, void *data) WUR;  /* 设置TLS值 */
 int  thread_tls_get(thread_tls_t tls, void **data) WUR; /* 获取TLS值 */
 int  thread_tls_free(thread_tls_t tls) WUR;             /* 释放TLS */
 
@@ -1115,16 +1116,16 @@ int thread_once(thread_once_t* once, thread_once_func func);
 
 #ifdef _DEBUG
 #define ASSERT(expr) ASSERTION(expr, "[Assert]")
-#define NOT_REACHED()   ASSERTION(NULL, "[Not Reached]")
-#define NOT_IMPLEMENTED() ASSERTION(NULL, "[Not Implemented]")
+#define NOT_REACHED()   ASSERTION(false, "[Not Reached]")
+#define NOT_IMPLEMENTED() ASSERTION(false, "[Not Implemented]")
 #else
 #define ASSERT(expr)
 #define NOT_REACHED()
 #define NOT_IMPLEMENTED()
 #endif
 
-/* 
- * 打印当前执行堆栈并开始调试 
+/*
+ * 打印当前执行堆栈并开始调试
  * 如果fatal参数为真，将导致程序退出
  */
 void backtrace_here(int level, const char *fmt, ...) PRINTF_FMT(2, 3);
@@ -1148,7 +1149,7 @@ char*  hexdump(const void *data, size_t len);
 /*                          Logging 日志系统                            */
 /************************************************************************/
 
-/* 
+/*
  * Linux风格的日志记录
  * 可同时打开多个日志文件，多线程安全
  * 2012/03/21 08:15:21 [ERROR] {main.c main 10} foo bar.
@@ -1214,7 +1215,7 @@ int  is_debug_log_set_to_stderr();
 #ifdef DBG_MEM_RT
 
 /* 内存操作类型 */
-enum MEMRT_MTD_C{ 
+enum MEMRT_MTD_C{
  MEMRT_MALLOC = 0, MEMRT_CALLOC, MEMRT_REALLOC, MEMRT_STRDUP, MEMRT_FREE, MEMRT_C_END,
 };
 
@@ -1250,9 +1251,9 @@ extern void memrt_init();
 extern int  memrt_check();
 
 /* 仅库使用 */
-extern int  __memrt_alloc(int mtd, void* addr, size_t sz, const char* file, 
+extern int  __memrt_alloc(int mtd, void* addr, size_t sz, const char* file,
  const char* func, int line, const char* desc, memrt_msg_callback pmsgfun);
-extern int  __memrt_release(int mtd, void* addr, size_t sz, const char* file, 
+extern int  __memrt_release(int mtd, void* addr, size_t sz, const char* file,
  const char* func, int line, const char*desc, memrt_msg_callback pmsgfun);
 extern void __memrt_printf(const char *fmt, ...);
 extern int g_xalloc_count;

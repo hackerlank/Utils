@@ -27,7 +27,7 @@ TEST(String, Case)
 /* ×Ö·û´®¸´ÖÆ */
 TEST(String, Duplicate)
 {
-	char *s = "no matching symbolic information FOUND.";
+	const char *s = "no matching symbolic information FOUND.";
 
 	/* strndup */
 	char *p = xstrndup(s, 10);
@@ -69,13 +69,13 @@ TEST(String, Duplicate)
 /* ×Ö·û´®·Ö¸î */
 TEST(String, Split)
 {
-	char *s = "1, 22,  ,, 333,44 44,";
-	char *sa = strdupa(s);
+	const char *s = "1, 22,  ,, 333,44 44,";
+	char *sa = xstrdup(s);
 	char *p = sa, *q;
 	int i;
 
 	i = 0;
-	while (q = strsep(&p, ","))
+	while ((q = strsep(&p, ",")))
 	{
 		switch(++i){
 		case 1:
@@ -104,6 +104,8 @@ TEST(String, Split)
 			break;
 		}
 	}
+
+	xfree(sa);
 }
 
 /* ×Ö·û´®¸ñÊ½»¯ */
@@ -111,7 +113,7 @@ TEST(String, Format)
 {
 	/* asprintf */
     char *p;
-    asprintf(&p, "%s %d - %.2f + %x", "Hello world", 1989, 2134.2311, 255);
+    ASSERT_TRUE(xasprintf(&p, "%s %d - %.2f + %x", "Hello world", 1989, 2134.2311, 255));
 	EXPECT_STREQ(p, "Hello world 1989 - 2134.23 + ff");
 	xfree(p);
 }
@@ -123,7 +125,7 @@ TEST(String, Compare)
 	EXPECT_TRUE(!strcasecmp("a2bc4d*/", "a2bc4d*/"));
 	EXPECT_TRUE(!strcasecmp("a2bc4d*/", "A2bC4d*/"));
 	EXPECT_TRUE(!strcasecmp("", ""));
-	
+
 	/* strncasecmp */
 	EXPECT_TRUE(!strncasecmp("a2bc4d", "a2bc4d*/", 6));
 	EXPECT_TRUE(!strncasecmp("a2bc4d", "A2bC4d*/", 6));
@@ -134,7 +136,7 @@ TEST(String, Compare)
 /* ×Ö·û´®²éÕÒ */
 TEST(String, Search)
 {
-	char *s = "modify=20120620105939;perm=flcdmpe;type=dir;unique=FD00U6A88C26;UNIX.group=680;UNIX.mode=0711;UNIX.owner=679; domains";
+	const char *s = "modify=20120620105939;perm=flcdmpe;type=dir;unique=FD00U6A88C26;UNIX.group=680;UNIX.mode=0711;UNIX.owner=679; domains";
 
 	/* strcasestr */
 	EXPECT_EQ(strcasestr(s, "TYPE"), s + 35);
@@ -151,5 +153,5 @@ TEST(String, Search)
 /* ×Ö·û´®¹þÏ£Öµ */
 TEST(String, Hash)
 {
-	
+
 }

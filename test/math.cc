@@ -22,8 +22,8 @@ TEST(Math, Basic)
     EXPECT_EQ(i, 10);
     EXPECT_EQ(countof(items), 3);
 
-    EXPECT_EQ(min(1 + 1, -1), -1);
-    EXPECT_EQ(max(0, 2), 2);
+    EXPECT_EQ(xmin(1 + 1, -1), -1);
+    EXPECT_EQ(xmax(0, 2), 2);
 }
 
 TEST(Math, Hex)

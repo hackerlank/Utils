@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>5C19E729-0C6C-425D-A93C-EA4E825AC91E</string>
+	<key>IDESourceControlProjectName</key>
+	<string>unittest</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>9FDFF8CEB5E5AE6CC655403E48A0D4DBB47BFEB1</key>
+		<string>192.168.1.6:opensrc/gtest.git</string>
+		<key>DD1F015D736377208EF4A2B240C5A5FC06C725AC</key>
+		<string>192.168.1.6:misc/utils.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>test/xcode/unittest.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>9FDFF8CEB5E5AE6CC655403E48A0D4DBB47BFEB1</key>
+		<string>../../../..test/gtest/</string>
+		<key>DD1F015D736377208EF4A2B240C5A5FC06C725AC</key>
+		<string>../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>192.168.1.6:misc/utils.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>DD1F015D736377208EF4A2B240C5A5FC06C725AC</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>9FDFF8CEB5E5AE6CC655403E48A0D4DBB47BFEB1</string>
+			<key>IDESourceControlWCCName</key>
+			<string>gtest</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>DD1F015D736377208EF4A2B240C5A5FC06C725AC</string>
+			<key>IDESourceControlWCCName</key>
+			<string>utils</string>
+		</dict>
+	</array>
+</dict>
+</plist>

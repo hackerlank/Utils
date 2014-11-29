@@ -53,16 +53,20 @@ TEST(Datetype, Format)
 	char buf[30];
 
 	/* int64_t */
-	snprintf(buf, sizeof(buf), "%"PRId64, (int64_t)INT64_MAX);
+	snprintf(buf, sizeof(buf), "%" PRId64, (int64_t)INT64_MAX);
 	EXPECT_STREQ(buf, "9223372036854775807");
 
 	/* uint64_t */
-	snprintf(buf, sizeof(buf), "%"PRIu64, (uint64_t)UINT64_MAX);
+	snprintf(buf, sizeof(buf), "%" PRIu64, (uint64_t)UINT64_MAX);
 	EXPECT_STREQ(buf, "18446744073709551615");
 
 	/* size_t */
-	snprintf(buf, sizeof(buf), "%"PRIuS, SIZE_T_MAX);
+	snprintf(buf, sizeof(buf), "%" PRIuS, SIZE_T_MAX);
+#if __WORDSIZE == 64
+    EXPECT_STREQ(buf, "18446744073709551615");
+#else
 	EXPECT_STREQ(buf, "4294967295");
+#endif
 }
 
 /* 测试数据类型长度 */

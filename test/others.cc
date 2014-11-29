@@ -9,21 +9,21 @@ TEST(Misc, Version)
 	const size_t slen = 128;
 	char suffix[128];
 
-	version_parse("1.0", &major, &minor, &revision, &build, suffix, slen);
+	ASSERT_TRUE(version_parse("1.0", &major, &minor, &revision, &build, suffix, slen));
 	EXPECT_EQ(major, 1);
 	EXPECT_EQ(minor, 0);
 	EXPECT_EQ(revision, 0);
 	EXPECT_EQ(build, 0);
 	EXPECT_STREQ(suffix, "");
 
-	version_parse("3.2.5.8848 alpha1", &major, &minor, &revision, &build, suffix, slen);
+	ASSERT_TRUE(version_parse("3.2.5.8848 alpha1", &major, &minor, &revision, &build, suffix, slen));
 	EXPECT_EQ(major, 3);
 	EXPECT_EQ(minor, 2);
 	EXPECT_EQ(revision, 5);
 	EXPECT_EQ(build, 8848);
 	EXPECT_STREQ(suffix, "alpha1");
 
-	version_parse("26.0.2343.1", &major, &minor, NULL, NULL, NULL, 0);
+	ASSERT_TRUE(version_parse("26.0.2343.1", &major, &minor, NULL, NULL, NULL, 0));
 	EXPECT_EQ(major, 26);
 	EXPECT_EQ(minor, 0);
 }

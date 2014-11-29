@@ -1,4 +1,4 @@
-ï»¿#include "../cutil.h"
+#include "../cutil.h"
 
 #include <gtest/gtest.h>
 #include <locale.h>
@@ -10,7 +10,7 @@ protected:
 	static void SetUpTestCase() {
 
 	}
-	
+
 	static void TearDownTestCase() {
 
 	}
@@ -19,12 +19,12 @@ protected:
 	//static T* shared_resource_;
 };
 
-/* å­—ç¬¦ç¼–ç æ¢æµ‹ */
+/* ×Ö·û±àÂëÌ½²â */
 TEST_F(Charset, Detect)
 {
 	const char *ascii = "abcdedfghnqwernozuv~!@$%^&*()%18231892+_\\\t\n\r|][?><./";
-	const char *gb2312 = "è¿™æ˜¯GB2312ç¼–ç ï¼";
-	const char *gbk = "é€™æ˜¯GBKç·¨ç¢¼";
+	const char *gb2312 = "ÕâÊÇGB2312±àÂë£¡";
+	const char *gbk = "ß@ÊÇGBK¾´a";
 	char charset[MAX_CHARSET];
 	char* utf8 = NULL;
 	size_t ulen = 0;
@@ -35,8 +35,8 @@ TEST_F(Charset, Detect)
 		return;
 	}
 
-	EXPECT_TRUE(is_ascii(ascii, strlen(ascii)));			/* çº¯ASCIIå­—ç¬¦ */
-	
+	EXPECT_TRUE(is_ascii(ascii, strlen(ascii)));			/* ´¿ASCII×Ö·û */
+
 	EXPECT_FALSE(is_ascii(gb2312, strlen(gb2312)));
 	EXPECT_TRUE(is_gb2312(gb2312, strlen(gb2312)));
 
@@ -44,19 +44,19 @@ TEST_F(Charset, Detect)
 	EXPECT_TRUE(is_gbk(gbk, strlen(gbk)));
 
 	EXPECT_FALSE(is_gb2312(utf8, strlen(utf8)));
-	EXPECT_TRUE(is_gbk(utf8, strlen(utf8)));	/* UTF-8ç¼–ç æœ‰æ—¶ä¼šè¢«è¯¯è®¤ä¸ºæ˜¯GBKç¼–ç  */
+	EXPECT_TRUE(is_gbk(utf8, strlen(utf8)));	/* UTF-8±àÂëÓĞÊ±»á±»ÎóÈÏÎªÊÇGBK±àÂë */
 	EXPECT_TRUE(is_utf8(utf8, strlen(utf8)));
 
-	/* å¯¹äºASCIIå­—ç¬¦ä¸²ï¼Œå¦‚æœæ¢æµ‹ç»“æœå¯ä»¥æ˜¯ASCIIå­—ç¬¦ä¸²ï¼Œåˆ™è¿”å›ASCII; */
-	/* å¦‚æœä¸å¯ä»¥è¿”å›ASCIIï¼Œåˆ™è¿”å›å…¶è¶…é›†UTF-8 */
+	/* ¶ÔÓÚASCII×Ö·û´®£¬Èç¹ûÌ½²â½á¹û¿ÉÒÔÊÇASCII×Ö·û´®£¬Ôò·µ»ØASCII; */
+	/* Èç¹û²»¿ÉÒÔ·µ»ØASCII£¬Ôò·µ»ØÆä³¬¼¯UTF-8 */
 	EXPECT_TRUE(get_charset(ascii, strlen(ascii), charset, MAX_CHARSET, 1));
 	EXPECT_STREQ(charset, "ASCII");
 	EXPECT_TRUE(get_charset(ascii, strlen(ascii), charset, MAX_CHARSET, 0));
 	EXPECT_STREQ(charset, "UTF-8");
 
-	/* å¯¹äºéASCIIå­—ç¬¦ä¸²ï¼Œåˆ™è¿”å›å€¼æ€»ä¸å¯èƒ½æ˜¯ASCII */
+	/* ¶ÔÓÚ·ÇASCII×Ö·û´®£¬Ôò·µ»ØÖµ×Ü²»¿ÉÄÜÊÇASCII */
 	EXPECT_TRUE(get_charset(gb2312, strlen(gb2312), charset, MAX_CHARSET, 1));
-	EXPECT_STREQ(charset, "GB2312");	
+	EXPECT_STREQ(charset, "GB2312");
 	EXPECT_TRUE(get_charset(gb2312, strlen(gb2312), charset, MAX_CHARSET, 0));
 	EXPECT_STREQ(charset, "GB2312");
 
@@ -66,15 +66,15 @@ TEST_F(Charset, Detect)
 
 	/* UTF-8 */
 	EXPECT_TRUE(get_charset(utf8, strlen(utf8), charset, MAX_CHARSET, 1));
-	EXPECT_STREQ(charset, "UTF-8");	/* é¦–å…ˆæ£€æµ‹æ˜¯å¦æ˜¯UTF-8ç¼–ç ï¼Œç«‹å³è¿”å› */
+	EXPECT_STREQ(charset, "UTF-8");	/* Ê×ÏÈ¼ì²âÊÇ·ñÊÇUTF-8±àÂë£¬Á¢¼´·µ»Ø */
 
 	xfree(utf8);
 }
 
-/* UTF-8ç›¸å…³æµ‹è¯• */
+/* UTF-8Ïà¹Ø²âÊÔ */
 TEST_F(Charset, Utf8)
 {
-	const char *gbk = "é€™æ˜¯GBKç·¨ç¢¼";
+	const char *gbk = "ß@ÊÇGBK¾´a";
 	char trimbuf[128];
 	char* utf8 = NULL;
 	size_t ulen = 0, i;
@@ -85,13 +85,13 @@ TEST_F(Charset, Utf8)
 		return;
 	}
 
-	/* UTF-8 å­—ç¬¦æ•° */
+	/* UTF-8 ×Ö·ûÊı */
 	EXPECT_EQ(utf8_len(utf8), 7);
 
-	/* UTF-8 æˆªå– */
+	/* UTF-8 ½ØÈ¡ */
 	for (i = 0; i <= strlen(utf8); i++)
 	{
-		int leave = utf8_trim(utf8, trimbuf, i);
+		size_t leave = utf8_trim(utf8, trimbuf, i);
 
 		switch(i)
 		{
@@ -141,32 +141,32 @@ TEST_F(Charset, Utf8)
 			break;
 		}
 	}
-	
+
 	xfree(utf8);
 }
 
-/* æ–‡ä»¶ç¼–ç ç›¸å…³ */
+/* ÎÄ¼ş±àÂëÏà¹Ø */
 TEST_F(Charset, File)
 {
-	const char *gbk = "é€™æ˜¯GBKç·¨ç¢¼";
-	const char *file = "temp"SEP"charset.tmp";
+	const char *gbk = "ß@ÊÇGBK¾´a";
+	const char *file = "temp" SEP "charset.tmp";
 	char charset[MAX_CHARSET];
 	char* utf8 = NULL;
 	double prob;
 	size_t ulen = 0;
 	FILE *fp;
 
-	/* å†™å…¥GBKæ–‡ä»¶ */
-	EXPECT_TRUE((int)(fp = fopen(file, "w")));
-    if (!fp)
-        FAIL();
+	/* Ğ´ÈëGBKÎÄ¼ş */
+	fp = fopen(file, "w");
+	ASSERT_NE((FILE*)NULL, fp);
 	fwrite(gbk, strlen(gbk), 1, fp);
 	fclose(fp);
 
-	/* è¯»å–BOM(å¤±è´¥) */
-	EXPECT_TRUE((int)(fp = fopen(file, "rb")));
+	/* ¶ÁÈ¡BOM(Ê§°Ü) */
+	fp = fopen(file, "rb");
+	ASSERT_NE((FILE*)NULL, fp);
 	EXPECT_FALSE(read_file_bom(fp, charset, MAX_CHARSET));
-	EXPECT_TRUE(ftell(fp) == 0);	/* æ–‡ä»¶æµåº”è¢«å¤åŸ */
+	EXPECT_TRUE(ftell(fp) == 0);	/* ÎÄ¼şÁ÷Ó¦±»¸´Ô­ */
 	fclose(fp);
 
 	EXPECT_TRUE(get_file_charset(file, charset, MAX_CHARSET, &prob, 0));
@@ -179,19 +179,21 @@ TEST_F(Charset, File)
 		return;
 	}
 
-	/* å†™å…¥UTF-8æ–‡ä»¶ */
-	EXPECT_TRUE((int)(fp = fopen(file, "w")));
-	write_file_bom(fp, "UTF-8");
+	/* Ğ´ÈëUTF-8ÎÄ¼ş */
+	fp = fopen(file, "w");
+	ASSERT_NE((FILE*)NULL, fp);
+	EXPECT_TRUE(write_file_bom(fp, "UTF-8"));
 	fwrite(utf8, strlen(utf8), 1, fp);
 	fclose(fp);
-	
-	/* è¯»å–BOM(æˆåŠŸ) */
-	EXPECT_TRUE((int)(fp = fopen(file, "rb")));
+
+	/* ¶ÁÈ¡BOM(³É¹¦) */
+	fp = fopen(file, "rb");
+	ASSERT_NE((FILE*)NULL, fp);
 	EXPECT_TRUE(read_file_bom(fp, charset, MAX_CHARSET));
-	EXPECT_TRUE(ftell(fp) == 3);	/* UTF-8 BOM å 3ä¸ªå­—èŠ‚ */
+	EXPECT_TRUE(ftell(fp) == 3);	/* UTF-8 BOM Õ¼3¸ö×Ö½Ú */
 	fclose(fp);
 
-	/* æ¢æµ‹æ–‡ä»¶å­—ç¬¦é›† */
+	/* Ì½²âÎÄ¼ş×Ö·û¼¯ */
 	EXPECT_TRUE(get_file_charset(file, charset, MAX_CHARSET, &prob, 0));
 	EXPECT_STREQ(charset, "UTF-8");
 	EXPECT_EQ(prob, 1);
@@ -199,10 +201,10 @@ TEST_F(Charset, File)
 	xfree(utf8);
 }
 
-/* UNICODEå­—ç¬¦è½¬æ¢ */
+/* UNICODE×Ö·û×ª»» */
 TEST_F(Charset, Unicode)
 {
-	const char *gbk = "é€™æ˜¯GBKç·¨ç¢¼";
+	const char *gbk = "ß@ÊÇGBK¾´a";
 	UTF8* utf8 = NULL;
 	UTF16* utf16 = NULL;
 	UTF32* utf32 = NULL;
@@ -272,11 +274,11 @@ TEST_F(Charset, Unicode)
 	xfree(utf32);
 }
 
-/* å¤šå­—èŠ‚å®½å­—ç¬¦è½¬æ¢ */
+/* ¶à×Ö½Ú¿í×Ö·û×ª»» */
 TEST_F(Charset, MBCS)
 {
-	const char *gbk = "ç¼–ç æµ‹è¯•";
-	const char *file = "temp"SEP"wcs.tmp";
+	const char *gbk = "±àÂë²âÊÔ";
+	const char *file = "temp" SEP "wcs.tmp";
 	char *mbcs = NULL;
 	wchar_t *wcs = NULL;
 	FILE* fp;
@@ -284,25 +286,24 @@ TEST_F(Charset, MBCS)
 	size_t llen;
 
 	/* MBCS */
-	EXPECT_TRUE(convert_to_charset("GBK", get_locale(), gbk, strlen(gbk), &mbcs, &llen, 1));
+	ASSERT_TRUE(convert_to_charset("GBK", get_locale(), gbk, strlen(gbk), &mbcs, &llen, 1));
 	printf("MBCS: %s\n", mbcs);
 
 	/* MBCS -> WCS */
-	/* å› ä¸ºæ ‡å‡†è¾“å‡ºæµå’Œæ ‡å‡†é”™è¯¯æµå·²ç»è¢«å®šå‘å­—èŠ‚æµï¼Œæ‰€ä»¥ä¸èƒ½ç”¨äºè¾“å‡ºæµ‹è¯•
-	   åˆ›å»ºä¸€ä¸ªæ–°çš„æ–‡ä»¶æµç”¨äºæµ‹è¯•ï¼Œå†™å…¥æ–‡ä»¶åçš„å­—ç¬¦é›†ä¸ºç³»ç»Ÿå¤šå­—èŠ‚ */
+	/* ÒòÎª±ê×¼Êä³öÁ÷ºÍ±ê×¼´íÎóÁ÷ÒÑ¾­±»¶¨Ïò×Ö½ÚÁ÷£¬ËùÒÔ²»ÄÜÓÃÓÚÊä³ö²âÊÔ
+	   ´´½¨Ò»¸öĞÂµÄÎÄ¼şÁ÷ÓÃÓÚ²âÊÔ£¬Ğ´ÈëÎÄ¼şºóµÄ×Ö·û¼¯ÎªÏµÍ³¶à×Ö½Ú */
 	wcs = mbcs_to_wcs(mbcs);
 	fp = fopen(file,"wb");
-    if (!fp)
-        FAIL();
+    ASSERT_NE((FILE*)NULL, fp);
 	fwprintf(fp, L"%ls", wcs);
 	fclose(fp);
 	fm = read_file_mem(file, 0);
-#ifdef __linux
-	/* linuxå¹³å°ä¸‹wprintfå†™å…¥çš„æ˜¯å¤šå­—èŠ‚å­—ç¬¦ä¸² */
+#ifdef OS_POSIX
+	/* linuxÆ½Ì¨ÏÂwprintfĞ´ÈëµÄÊÇ¶à×Ö½Ú×Ö·û´® */
 	EXPECT_STREQ(fm->content, mbcs);
 #else
 	{
-	/* windowså¹³å°ä¸‹ç›´æ¥å†™å…¥UNICODEå­—ç¬¦ä¸² */
+	/* windowsÆ½Ì¨ÏÂÖ±½ÓĞ´ÈëUNICODE×Ö·û´® */
 	char *hex = hexdump(fm->content, fm->length);
     EXPECT_STREQ(hex, "16 7F 01 78 4B 6D D5 8B ");
 	xfree(hex);
@@ -319,10 +320,10 @@ TEST_F(Charset, MBCS)
 	xfree(mbcs);
 }
 
-/* å®½å­—ç¬¦ä¸²UTF-8è½¬æ¢ */
+/* ¿í×Ö·û´®UTF-8×ª»» */
 TEST_F(Charset, WCS_UTF8)
 {
-	const char *gbk = "é€™æ˜¯GBKç·¨ç¢¼";
+	const char *gbk = "ß@ÊÇGBK¾´a";
 	char* utf8 = NULL;
 	wchar_t* wcs = NULL;
 	char *hex;
@@ -351,14 +352,14 @@ TEST_F(Charset, WCS_UTF8)
 	xfree(wcs);
 }
 
-/* å¤šå­—èŠ‚UTF-8è½¬æ¢ */
+/* ¶à×Ö½ÚUTF-8×ª»» */
 TEST_F(Charset, MBCS_UTF8)
 {
-	const char *gbk = "é€™æ˜¯GBKç·¨ç¢¼";
+	const char *gbk = "ß@ÊÇGBK¾´a";
 	char* utf8 = NULL, *mbcs = NULL;
 	char *hex;
 	size_t ulen;
-	
+
 	//UTF-8
 	if (!convert_to_charset("GBK", "UTF-8", gbk, strlen(gbk), &utf8, &ulen, 1))
 	{
@@ -370,7 +371,7 @@ TEST_F(Charset, MBCS_UTF8)
 	mbcs = utf8_to_mbcs(utf8, 1);
 	printf ("MBCS: %s\n", mbcs);
 	xfree(utf8);
-	
+
 	//MBCS -> UTF-8
 	utf8 = mbcs_to_utf8(mbcs, 1);
 	CHECK_UTF8();
@@ -379,16 +380,16 @@ TEST_F(Charset, MBCS_UTF8)
 	xfree(mbcs);
 }
 
-/* ç³»ç»Ÿæœ¬åœ°å­—ç¬¦é›† */
+/* ÏµÍ³±¾µØ×Ö·û¼¯ */
 TEST_F(Charset, Locale)
 {
 	printf("system locale: %s\n", get_locale());
 }
 
-/* å­—ç¬¦ç¼–ç è½¬æ¢ */
+/* ×Ö·û±àÂë×ª»» */
 TEST_F(Charset, Convert)
 {
-	const char *gbk = "é€™æ˜¯GBKç·¨ç¢¼";
+	const char *gbk = "ß@ÊÇGBK¾´a";
 	char* utf8 = NULL;
 	char* big5 = NULL;
 	char *hex;

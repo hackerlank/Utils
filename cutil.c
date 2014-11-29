@@ -140,7 +140,7 @@ void cutil_init()
     /* 多字节/宽字符串转换 */
     /* 将进程的locale设置为系统的locale，进程启动时默认为"C" */
     /* GLIBC实现为依次查询LC_ALL,LC_CTYPE,LANG环境变量 */
-    setlocale(LC_CTYPE, "");
+    setlocale(LC_CTYPE, "UTF-8");
 
 #ifndef OS_ANDROID
     /* 检查系统默认编码 */
@@ -1102,7 +1102,7 @@ const char* path_find_file_name(const char* path)
     while (!IS_PATH_SEP(*p) && p != path)
         --p;
 
-    if (p == path)                /* 相对路径 */
+    if (p == path && !IS_PATH_SEP(*p))  /* 相对路径 */
         return p;
     else
         return p+1;
@@ -1358,7 +1358,7 @@ int absolute_path(const char* relpath, char* buf, size_t len)
     if (!realpath(relpath, abuf))
         return 0;
 
-    alen = strlen(buf);
+    alen = strlen(abuf);
     if (alen >= len)
         return 0;
 
@@ -1587,6 +1587,14 @@ char* strrpsep(const char* path) {
     return p >= path ? (char*)p : NULL;
 }
 
+static inline
+int _is_path_sep(int platform, char c) {
+    if (platform == PATH_WINDOWS)
+        return c == '/' || c == '\\';
+    else
+        return c == '/';
+}
+                    
 /* 将路径中的非法字符替换为空格符 */
 /* 如果被替换为多个连续的空格将被合并为一个 */
 /* reserved所指定的字符将被保留(通常为路径分隔符) */
@@ -1595,7 +1603,7 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
     char *p, *q;
     for (p = q = path; *p; p++) {
         if (PATH_CHAR_ILLEGAL(*p, platform) &&
-            (!reserve_separator || !IS_PATH_SEP(*p))) {
+            (!reserve_separator || !_is_path_sep(platform, *p))) {
             *q = ' ';
             if (q == path || *(q-1) != ' ')
                 q++;
@@ -1621,7 +1629,7 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 
     for (p = path; p < pe; p++)
         if (PATH_CHAR_ILLEGAL(*p, platform) &&
-            (!reserve_separator || !IS_PATH_SEP(*p)))
+            (!reserve_separator || !_is_path_sep(platform, *p)))
             ++quoted;
 
     if (!quoted)
@@ -1633,7 +1641,7 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 
     for (p = path; p < pe; p++) {
         if (PATH_CHAR_ILLEGAL(*p, platform) &&
-            (!reserve_separator || !IS_PATH_SEP(*p))) {
+            (!reserve_separator || !_is_path_sep(platform, *p))) {
             unsigned char ch = *p;
             *q++ = '%';
             *q++ = XNUM_TO_DIGIT (ch >> 4);
@@ -1940,9 +1948,9 @@ int create_directories(const char* dir)
         p = pb;
 #else
     if (is_absolute_path(pb))
-        p = pb;
-    else
         p = pb + MIN_PATH;
+    else
+        p = pb;
 #endif
 
     /* 逐级创建文件夹 */
@@ -4593,7 +4601,10 @@ size_t utf32_len(const UTF32* u32)
 /* 获取系统默认字符集(多字节编码所用字符集) */
 const char *get_locale()
 {
-#ifdef OS_POSIX
+#if defined(OS_MACOSX)
+    CHECK_INIT();
+    return setlocale(LC_CTYPE, NULL);
+#elif defined(OS_POSIX)
     CHECK_INIT();
     return nl_langinfo(CODESET);
 #else

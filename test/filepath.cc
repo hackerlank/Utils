@@ -70,10 +70,13 @@ TEST(FilePath, UNCPath) {
 #endif
 
 /* 绝对路径 */
-TEST(FilePath, AboslutePath) {
+TEST(FilePath, AbsolutePath) {
     char buf[MAX_PATH], abspath[MAX_PATH];
 
-    EXPECT_TRUE(absolute_path("abc", buf, sizeof(buf)));
+#ifdef OS_MACOSX
+    IGNORE_RESULT(touch("abc"));
+#endif
+    ASSERT_TRUE(absolute_path("abc", buf, sizeof(buf)));
     xstrlcpy(abspath, get_current_dir(), sizeof(abspath));
     xstrlcat(abspath, "abc", sizeof(abspath));
     EXPECT_STREQ(abspath, buf);
@@ -83,11 +86,17 @@ TEST(FilePath, AboslutePath) {
     EXPECT_STREQ("C:\\abc\\123.txt", buf);
     EXPECT_TRUE(absolute_path("C:\\abc", buf, sizeof(buf)));
     EXPECT_STREQ("C:\\abc", buf);
+#elif defined OS_MACOSX
+    EXPECT_TRUE(absolute_path("/private/tmp", buf, sizeof(buf)));
+    EXPECT_STREQ("/private/tmp", buf);
+    IGNORE_RESULT(touch("/private/tmp/123.txt"));
+    EXPECT_TRUE(absolute_path("/private/tmp/123.txt", buf, sizeof(buf)));
+    EXPECT_STREQ("/private/tmp/123.txt", buf);
 #else
-    EXPECT_TRUE(absolute_path("/abc", buf, sizeof(buf)));
-    EXPECT_STREQ("/abc", buf);
-    EXPECT_TRUE(absolute_path("/abc/123.txt", buf, sizeof(buf)));
-    EXPECT_STREQ("/abc/123.txt", buf);
+    EXPECT_TRUE(absolute_path("/tmp", buf, sizeof(buf)));
+    EXPECT_STREQ("/tmp", buf);
+    EXPECT_TRUE(absolute_path("/tmp/123.txt", buf, sizeof(buf)));
+    EXPECT_STREQ("/tmp/123.txt", buf);
 #endif
 }
 
@@ -127,7 +136,7 @@ TEST(FilePath, PathFindFileName)
     EXPECT_STREQ(expect, path_find_file_name(path)); \
     EXPECT_STREQ(expect, PathFindFileNameA(path));
 #else
-#define EXPECT_STREQ_W(path) EXPECT_EQ(expect, path_find_file_name(path))
+#define EXPECT_STREQ_W(path, expect) EXPECT_STREQ(expect, path_find_file_name(path))
 #endif
 
     /* path_find_file_name */
@@ -169,13 +178,14 @@ TEST(FilePath, PathFindFileName)
 
 TEST(FilePath, PathFindExtension) {
     /* 在Windows下结果需与Win32 API PathFindExtension 一致 */
+#undef EXPECT_STREQ_W
 #ifdef OS_WIN
 #undef EXPECT_STREQ_W
 #define EXPECT_STREQ_W(path, expect) \
     EXPECT_STREQ(expect, path_find_extension(path)); \
     EXPECT_STREQ(expect, PathFindExtensionA(path));
 #else
-#define EXPECT_STREQ_W(path) EXPECT_EQ(expect, path_find_extension(path))
+#define EXPECT_STREQ_W(path, expect) EXPECT_STREQ(expect, path_find_extension(path))
 #endif
 
     EXPECT_STREQ_W("abc.", ".");
@@ -197,17 +207,17 @@ TEST(FilePath, PathFindExtension) {
     EXPECT_STREQ_W("\\", "");									/* 仅分隔符 */
     EXPECT_STREQ_W("\\\\", "");									/* 仅分隔符 */
 #else
-    EXPECT_STREQ_W("/a.txt", ".txt");							
-    EXPECT_STREQ_W("/a.", ".");								    
-    EXPECT_STREQ_W("/a", "");									
-    EXPECT_STREQ_W("/", "");									    
+    EXPECT_STREQ_W("/a.txt", ".txt");
+    EXPECT_STREQ_W("/a.", ".");
+    EXPECT_STREQ_W("/a", "");
+    EXPECT_STREQ_W("/", "");
     EXPECT_STREQ_W("//", "");
 #endif
 }
 
 TEST(FilePath, PathFindDirectory) {
     char buf[MAX_PATH];
-    
+
     EXPECT_FALSE(path_find_directory(NULL, buf, MAX_PATH));
     EXPECT_FALSE(path_find_directory("", buf, MAX_PATH));
 
@@ -223,7 +233,7 @@ TEST(FilePath, PathFindDirectory) {
     EXPECT_STREQ(buf, "/folder/");
     EXPECT_TRUE(path_find_directory("/folder/another/", buf, MAX_PATH));
     EXPECT_STREQ(buf, "/folder/");
-    EXPECT_FALSE(path_find_directory("/", buf, MAX_PATH));			
+    EXPECT_FALSE(path_find_directory("/", buf, MAX_PATH));
     EXPECT_FALSE(path_find_directory("//", buf, MAX_PATH));
 #endif
 }
@@ -242,12 +252,11 @@ TEST(FilePath, PathExists)
     EXPECT_TRUE(path_file_exists("/"));
     EXPECT_TRUE(path_file_exists("/etc"));
     EXPECT_TRUE(path_file_exists("/etc/"));
-    EXPECT_TRUE(path_file_exists("/etc/fstab"));
+    EXPECT_TRUE(path_file_exists("/etc/passwd"));
     EXPECT_FALSE(path_file_exists("/etc/rkqwkjsjdfas"));
 #endif
 
     const char* random_name = "not_exist_but_coincidence";
-    delete_file(random_name);
 
     /* path_is_file */
     EXPECT_FALSE(path_is_file(random_name));
@@ -260,7 +269,7 @@ TEST(FilePath, PathExists)
     EXPECT_TRUE(path_is_file("C:\\Windows\\explorer.exe"));
     EXPECT_FALSE(path_is_file("C:\\Windows\\explorer11223123.exe"));
 #else
-    EXPECT_TRUE(path_is_file("/etc/fstab"));
+    EXPECT_TRUE(path_is_file("/etc/passwd"));
     EXPECT_FALSE(path_is_file("/etc/fstab2k421k4jf"));
 #endif
 
@@ -310,53 +319,53 @@ TEST(FilePath, InsertBeforeExtension) {
 TEST(FilePath, UniqueFile)
 {
     char buf[MAX_PATH], buf1[MAX_PATH], buf2[MAX_PATH];
-    const char *p = "temp"SEP"unique_file_test.txt";
+    const char *p = "temp" SEP "unique_file_test.txt";
 
     EXPECT_FALSE(unique_file(NULL, buf, MAX_PATH, 0));
     EXPECT_FALSE(unique_file(p, NULL, MAX_PATH, 0));
     EXPECT_FALSE(unique_file("", NULL, MAX_PATH, 0));
 
     EXPECT_EQ(unique_file(p, buf, MAX_PATH, 0), 1);
-    EXPECT_STREQ(buf, "temp"SEP"unique_file_test.txt");
+    EXPECT_STREQ(buf, "temp" SEP "unique_file_test.txt");
     EXPECT_EQ(unique_file(p, buf, MAX_PATH, 1), 1);
     ASSERT_TRUE(path_file_exists(buf));
 
     EXPECT_EQ(unique_file(buf, buf1, MAX_PATH, 0), 1);
-    EXPECT_STREQ(buf1, "temp"SEP"unique_file_test (1).txt");
+    EXPECT_STREQ(buf1, "temp" SEP "unique_file_test (1).txt");
     EXPECT_EQ(unique_file(buf, buf1, MAX_PATH, 1), 1);
     ASSERT_TRUE(path_file_exists(buf1));
 
     EXPECT_EQ(unique_file(buf, buf2, MAX_PATH, 0), 1);
-    EXPECT_STREQ(buf2, "temp"SEP"unique_file_test (2).txt");
+    EXPECT_STREQ(buf2, "temp" SEP "unique_file_test (2).txt");
     EXPECT_EQ(unique_file(buf, buf2, MAX_PATH, 1), 1);
     ASSERT_TRUE(path_file_exists(buf2));
 
-    delete_file(buf);
-    delete_file(buf1);
-    delete_file(buf2);
+    EXPECT_TRUE(delete_file(buf));
+    EXPECT_TRUE(delete_file(buf1));
+    EXPECT_TRUE(delete_file(buf2));
 }
 
 TEST(FilePath, UniqueDir)
 {
     char buf[MAX_PATH], buf1[MAX_PATH], buf2[MAX_PATH];
-    const char *q = "temp"SEP"unique_dir_test"SEP;
+    const char *q = "temp" SEP "unique_dir_test" SEP;
 
     EXPECT_FALSE(unique_dir(NULL, buf, MAX_PATH, 0));
     EXPECT_FALSE(unique_dir(q, NULL, MAX_PATH, 0));
     EXPECT_FALSE(unique_dir("", NULL, MAX_PATH, 0));
 
     EXPECT_EQ(unique_dir(q, buf, MAX_PATH, 0), 1);
-    EXPECT_STREQ(buf, "temp"SEP"unique_dir_test"SEP);
+    EXPECT_STREQ(buf, "temp" SEP "unique_dir_test" SEP);
     EXPECT_EQ(unique_dir(q, buf, MAX_PATH, 1), 1);
     ASSERT_TRUE(path_is_directory(buf));
 
     EXPECT_EQ(unique_dir(buf, buf1, MAX_PATH, 0), 1);
-    EXPECT_STREQ(buf1, "temp"SEP"unique_dir_test (1)"SEP);
+    EXPECT_STREQ(buf1, "temp" SEP "unique_dir_test (1)" SEP);
     EXPECT_EQ(unique_dir(buf, buf1, MAX_PATH, 1), 1);
     ASSERT_TRUE(path_is_directory(buf1));
 
     EXPECT_EQ(unique_dir(buf, buf2, MAX_PATH, 0), 1);
-    EXPECT_STREQ(buf2, "temp"SEP"unique_dir_test (2)"SEP);
+    EXPECT_STREQ(buf2, "temp" SEP "unique_dir_test (2)" SEP);
     EXPECT_EQ(unique_dir(buf, buf2, MAX_PATH, 1), 1);
     ASSERT_TRUE(path_is_directory(buf2));
 
@@ -370,21 +379,25 @@ TEST(FilePath, BlankIllegalChar)
 {
     char p[] = "\\/:*?\"<>|abc!@%^&()+-=[]{};,.123";
 
-    char* t = strdupa(p);
+    char* t = xstrdup(p);
     path_illegal_blankspace(t, PATH_WINDOWS, 0);
     EXPECT_STREQ(" abc!@%^&()+-=[]{};,.123", t);
+    xfree(t);
 
-    t = strdupa(p);
+    t = xstrdup(p);
     path_illegal_blankspace(t, PATH_WINDOWS, 1);
     EXPECT_STREQ("\\/ abc!@%^&()+-=[]{};,.123", t);
+    xfree(t);
 
-    t = strdupa(p);
+    t = xstrdup(p);
     path_illegal_blankspace(t, PATH_UNIX, 0);
     EXPECT_STREQ("\\ :*?\"<>|abc!@%^&()+-=[]{};,.123", t);
+    xfree(t);
 
-    t = strdupa(p);
+    t = xstrdup(p);
     path_illegal_blankspace(t, PATH_UNIX, 1);
     EXPECT_STREQ("\\/:*?\"<>|abc!@%^&()+-=[]{};,.123", t);
+    xfree(t);
 }
 
 TEST(FilePath, EscapeIllegalChar)
