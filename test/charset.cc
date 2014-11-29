@@ -375,9 +375,11 @@ TEST_F(Charset, MBCS_UTF8)
 
 	//UTF-8 -> MBCS
 	mbcs = utf8_to_mbcs(utf8, 1);
-	printf ("MBCS: %s\n", mbcs);
 	xfree(utf8);
 
+    ASSERT_NE((char*)NULL, mbcs);
+    printf ("MBCS: %s\n", mbcs);
+    
 	//MBCS -> UTF-8
 	utf8 = mbcs_to_utf8(mbcs, 1);
 	CHECK_UTF8();

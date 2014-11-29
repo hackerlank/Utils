@@ -50,8 +50,12 @@ TEST(String, Printf) {
     EXPECT_STREQ(output, "Hello world 1989 - 2134.23 + ff");
     xfree(output);
 
-    char *random = (char*)xmalloc(64 * 1024 * 1024);
-    ASSERT_TRUE(random);
+    const size_t len = 64 * 1024 * 1024;
+    char *random = (char*)xmalloc(len);
+    ASSERT_NE((char*)NULL, random);
+    for (size_t i = 0; i < len-1; i++)
+        random[i] = 'a';
+    random[len-1] = '\0';
     EXPECT_FALSE(xasprintf(&output, "%s", random));
     xfree(random);
 }

@@ -625,7 +625,7 @@ int xasprintf(char** out, const char *fmt, ...)
         errno = 0;
 
         va_start (args, fmt);
-        n = vsnprintf (str, size, fmt, args);
+        n = xvsnprintf (str, size, fmt, args);
         va_end (args);
 
         /* Upon successful return, these functions return the number of characters printed

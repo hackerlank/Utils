@@ -18,6 +18,7 @@
 		022FB0231A29AAD200451E79 /* unittest.cc in Sources */ = {isa = PBXBuildFile; fileRef = 022FB01B1A29AAD200451E79 /* unittest.cc */; };
 		022FB0251A29AFE700451E79 /* gtest-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 022FB0241A29AFE700451E79 /* gtest-all.cc */; };
 		022FB02B1A29BC2700451E79 /* filepath.cc in Sources */ = {isa = PBXBuildFile; fileRef = 022FB02A1A29BC2700451E79 /* filepath.cc */; };
+		022FB02D1A2A250E00451E79 /* char.cc in Sources */ = {isa = PBXBuildFile; fileRef = 022FB02C1A2A250E00451E79 /* char.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -49,6 +50,7 @@
 		022FB0281A29B43600451E79 /* ConvertUTF-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "ConvertUTF-inl.h"; path = "../../deps/ConvertUTF-inl.h"; sourceTree = "<group>"; };
 		022FB0291A29B43600451E79 /* platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = platform.h; path = ../../deps/platform.h; sourceTree = "<group>"; };
 		022FB02A1A29BC2700451E79 /* filepath.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = filepath.cc; path = ../filepath.cc; sourceTree = "<group>"; };
+		022FB02C1A2A250E00451E79 /* char.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = char.cc; path = ../char.cc; sourceTree = "<group>"; };
 		0297DCE41A29A9BB004C5FE9 /* unittest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = unittest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -86,6 +88,7 @@
 		022FB0131A29AABA00451E79 /* tests */ = {
 			isa = PBXGroup;
 			children = (
+				022FB02C1A2A250E00451E79 /* char.cc */,
 				022FB02A1A29BC2700451E79 /* filepath.cc */,
 				022FB0141A29AAD200451E79 /* charset.cc */,
 				022FB0161A29AAD200451E79 /* datatype.cc */,
@@ -191,6 +194,7 @@
 				022FB0251A29AFE700451E79 /* gtest-all.cc in Sources */,
 				022FB01F1A29AAD200451E79 /* filesystem.cc in Sources */,
 				022FB0201A29AAD200451E79 /* math.cc in Sources */,
+				022FB02D1A2A250E00451E79 /* char.cc in Sources */,
 				022FB0211A29AAD200451E79 /* others.cc in Sources */,
 				022FB0111A29AAA000451E79 /* ccutil.cpp in Sources */,
 			);
