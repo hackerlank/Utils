@@ -113,7 +113,7 @@ void cutil_init()
 
     /* 初始化日志模块 */
     log_init();
-        
+
     /* 运行时内存调试 */
 #ifdef DBG_MEM_RT
     memrt_init();
@@ -1055,7 +1055,7 @@ int is_absolute_path(const char* path)
 
 /* 判断path是否是Windows的 UNC (Universal Naming Convention) 路径 */
 #ifdef OS_WIN
-int is_unc_path(const char* path) 
+int is_unc_path(const char* path)
 {
     return path && path[0] && path[1] && path[2] &&
         IS_PATH_SEP(path[0]) && IS_PATH_SEP(path[1]) && !IS_PATH_SEP(path[2]);
@@ -1216,12 +1216,12 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 
 /* 将后缀名添加到文件名后扩展名前 */
 /* 如果没有扩展名直接附加到路径最后 */
-int path_insert_before_extension(const char* path, 
+int path_insert_before_extension(const char* path,
     const char*suffix, char* buf, size_t outlen)
 {
     const char* ext;
     size_t plen, elen, slen;
-  
+
     plen = _path_valid(path, 0);
     if (!plen || !suffix)
         return 0;
@@ -1592,7 +1592,7 @@ int _is_path_sep(int platform, char c) {
     else
         return c == '/';
 }
-                    
+
 /* 将路径中的非法字符替换为空格符 */
 /* 如果被替换为多个连续的空格将被合并为一个 */
 /* reserved所指定的字符将被保留(通常为路径分隔符) */
@@ -5075,7 +5075,7 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
     sei.lpFile = wcmd;
     sei.lpParameters = wparam;
 
-    if (!ShellExecuteEx(&sei)) {
+    if (!ShellExecuteExW(&sei)) {
         xfree(wcmd);
         if (wparam)
             xfree(wparam);
@@ -5715,7 +5715,7 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
             fprintf(stderr, "%s\n", msgl);
         else
             fprintf(stdout, "%s\n", msgl);
-#endif            
+#endif
         /* 完整堆栈 */
         if (i == 0) {
             snprintf(msgs, sizeof(msgs), "%s\r\n", msgl);
