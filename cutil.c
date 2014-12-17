@@ -369,7 +369,9 @@ void set_default_crash_handler()
 int g_xalloc_count = 0;
 
 #ifdef DBG_MEM_RT
-static void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp);
+static void memrt_msg_c(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method);
 #endif
 
 /* 释放内存 */
@@ -6280,10 +6282,10 @@ void log_close_all()
 
 #ifdef DBG_MEM_RT
 
-#define MEMRT_HASH_SIZE        16384                                    /* 哈希数组的大小 */
+#define MEMRT_HASH_SIZE        16384                                /* 哈希数组的大小 */
 #define MEMRT_HASH(p) (((size_t)(p) >> 8) % MEMRT_HASH_SIZE)        /* 哈希算法 */
 
-static struct MEMRT_OPERATE* memrt_hash_table[MEMRT_HASH_SIZE];        /* 哈希数组链表 */
+static struct MEMRT_OPERATE* memrt_hash_table[MEMRT_HASH_SIZE];     /* 哈希数组链表 */
 
 static mutex_t memrt_lock;
 static mutex_t memrt_print_lock;
@@ -6295,11 +6297,28 @@ void memrt_init()
     memset(memrt_hash_table, 0, sizeof(memrt_hash_table));
 }
 
+/* 代表一次内存操作 */
+struct MEMRT_OPERATE{
+    int  method;                /* 操作类型 */
+    void* address;              /* 操作地址 */
+    size_t size;                /* 内存大小 */
+
+    char file[32];              /* 文件名 */
+    char func[32];              /* 函数名 */
+    int  line;                  /* 行  号 */
+
+    char desc[64];              /* 如保存类名 */
+
+    memrt_msg_callback msgfunc;
+
+    struct MEMRT_OPERATE *next;
+};
+
 static inline
 struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *file,
         const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
-    /* 不要使用xmalloc，debug_backtrace等，否则会造成死循环 */
+    /* 不能使用xmalloc，debug_backtrace等，否则会造成死循环 */
     struct MEMRT_OPERATE *rtp = (struct MEMRT_OPERATE*)malloc(sizeof(struct MEMRT_OPERATE));
     if (!rtp)
         abort();
@@ -6307,10 +6326,10 @@ struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *fil
     rtp->method = mtd;
     rtp->address = addr;
     rtp->size = sz;
-    rtp->file = file ? strdup(path_find_file_name(file)) : NULL;
-    rtp->func = func ? strdup(func) : NULL;
+    xstrlcpy(rtp->file, file ? path_find_file_name(file) : "", sizeof(rtp->file));
+    xstrlcpy(rtp->func, func ? func : "", sizeof(rtp->func));
+    xstrlcpy(rtp->desc, desc ? desc : "", sizeof(rtp->desc));
     rtp->line = line;
-    rtp->desc = desc ? strdup(desc) : NULL;
     rtp->msgfunc = pmsgfun;
     rtp->next = NULL;
 
@@ -6320,33 +6339,28 @@ struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *fil
 static inline
 void memrt_dtor(struct MEMRT_OPERATE *rtp)
 {
-    /* 不要使用xfree，否则会造成死循环 */
-    if (rtp->file)
-        free(rtp->file);
-    if (rtp->func)
-        free(rtp->func);
-    if (rtp->desc)
-        free(rtp->desc);
+    /* 不能使用xfree，否则会造成死循环 */
     free(rtp);
 }
 
 /* 根据错误类型输出相应字符串 */
 static
-void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp)
+void memrt_msg_c(int error,
+   const char* file, const char* func, int line,
+    void* address, size_t size, int method) 
 {
-    switch(error)
-    {
+    switch(error) {
     case MEMRTE_NOFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not freed at %p size %u method %d.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address ,rtp->size, rtp->method);
+            file, func, line, address, size, method);
         break;
     case MEMRTE_UNALLOCFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not malloced but freed at %p.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     case MEMRTE_MISRELIEF:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not reliefed properly at %p, use delete or delete[] instead.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     default:
         NOT_REACHED();
@@ -6374,11 +6388,9 @@ int __memrt_alloc(int mtd, void* addr, size_t sz, const char* file,
 int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
     const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
-    struct MEMRT_OPERATE *rtp, *ptr, *ptr_last = NULL;
+    struct MEMRT_OPERATE *ptr, *ptr_last = NULL;
     size_t index = MEMRT_HASH(addr);
-    int ret = MEMRTE_UNALLOCFREE;
-
-    rtp = memrt_ctor(mtd, addr, sz, file, func, line, desc, pmsgfun);
+    int error = MEMRTE_UNALLOCFREE;
 
     mutex_lock(&memrt_lock);
 
@@ -6392,11 +6404,11 @@ int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
             else
                 ptr_last->next = ptr->next;
 
-            if ((ptr->method >= MEMRT_MALLOC && ptr->method <= MEMRT_STRDUP && rtp->method != MEMRT_FREE) ||
-                (ptr->method >= MEMRT_C_END && rtp->method == MEMRT_FREE))
-                ret = MEMRTE_MISRELIEF;
+            if ((ptr->method >= MEMRT_MALLOC && ptr->method <= MEMRT_STRDUP && mtd != MEMRT_FREE) ||
+                (ptr->method >= MEMRT_C_END && mtd == MEMRT_FREE))
+                error = MEMRTE_MISRELIEF;
             else
-                ret = MEMRTE_OK;
+                error = MEMRTE_OK;
 
             memrt_dtor(ptr);
             break;
@@ -6409,11 +6421,10 @@ int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
     mutex_unlock(&memrt_lock);
 
     /* 打印错误信息 */
-    if (ret != MEMRTE_OK && rtp->msgfunc)
-        rtp->msgfunc(ret, rtp);
+    if (error != MEMRTE_OK && pmsgfun)
+        pmsgfun(error, file, func, line, addr, sz, mtd);
 
-    memrt_dtor(rtp);
-    return ret;
+    return error;
 }
 
 int memrt_check()
@@ -6434,7 +6445,9 @@ int memrt_check()
         {
             /* 打印未释放信息 */
             if (ptr->msgfunc)
-                ptr->msgfunc(MEMRTE_NOFREE, ptr);
+                ptr->msgfunc(MEMRTE_NOFREE, 
+                  ptr->file, ptr->func, ptr->line,
+                  ptr->address, ptr->size, ptr->method);
 
             ptr_tmp = ptr;
             ptr = ptr->next;

@@ -612,7 +612,9 @@ enum MEMRT_ERR_CPP{
     MEMRTE_CPP_END
 };
 
-void memrt_msg_cpp(int error, struct MEMRT_OPERATE *rtp);
+void memrt_msg_cpp(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method);
 
 #define DBG_DELETE_MEMRT(p) __memrt_release(MEMRT_DELETE, p, 0, path_find_file_name(__FILE__),__FUNCTION__,__LINE__, NULL, memrt_msg_cpp),
 #define DBG_DELETE_ARRAY_MEMRT(p) __memrt_release(MEMRT_DELETE_ARRAY, p, 0, path_find_file_name(__FILE__),__FUNCTION__,__LINE__, NULL, memrt_msg_cpp),

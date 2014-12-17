@@ -1219,12 +1219,12 @@ int  is_debug_log_set_to_stderr();
 #ifdef DBG_MEM_RT
 
 /* 内存操作类型 */
-enum MEMRT_MTD_C{
+enum MEMRT_MTD_C {
  MEMRT_MALLOC = 0, MEMRT_CALLOC, MEMRT_REALLOC, MEMRT_STRDUP, MEMRT_FREE, MEMRT_C_END,
 };
 
 /* 返回错误值 */
-enum MEMRT_ERR_C{
+enum MEMRT_ERR_C {
   MEMRTE_OK,
   MEMRTE_NOFREE,              /* 内存未被释放(泄露) */
   MEMRTE_UNALLOCFREE,         /* 内存未分配却被释放 */
@@ -1232,23 +1232,9 @@ enum MEMRT_ERR_C{
   MEMRTE_C_END,
 };
 
-/* 代表一次内存操作 */
-struct MEMRT_OPERATE{
-  int  method;                /* 操作类型 */
-  void* address;              /* 操作地址 */
-  size_t size;                /* 内存大小 */
-
-  char* file;                 /* 文件名 */
-  char* func;                 /* 函数名 */
-  int  line;                  /* 行  号 */
-
-  char* desc;                 /* 如保存类名 */
-  void (*msgfunc)(int error, struct MEMRT_OPERATE *rtp);
-
-  struct MEMRT_OPERATE *next;
-};
-
-typedef void (*memrt_msg_callback)(int error, struct MEMRT_OPERATE *rtp);
+typedef void(*memrt_msg_callback)(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method);
 
 /* 外部接口 */
 extern void memrt_init();

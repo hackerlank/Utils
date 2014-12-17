@@ -1133,21 +1133,23 @@ bool Thread::Once()
 
 #ifdef DBG_MEM_RT
 
-void memrt_msg_cpp(int error, struct MEMRT_OPERATE *rtp)
+void memrt_msg_cpp(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method)
 {
     switch(error)
     {
     case MEMRTE_NOFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not deleted at %p size %u method %d.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address ,rtp->size, rtp->method);
+            file, func, line, address ,size, method);
         break;
     case MEMRTE_UNALLOCFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory unexceptly deleted at %p.\n", 
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     case MEMRTE_MISRELIEF:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not reliefed properly at %p, use free() instead.\n", 
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     default:
         break;
