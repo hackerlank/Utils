@@ -9,10 +9,19 @@ include_directories(
   gtest/include
 )
 
+if(WIN32)
+  if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DUNICODE /D_UNICODE /DNOMINMAX /MP4")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} /DNDEBUG /MD")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} /DNDEBUG /MD")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} /D_DEBUG /MDd /ZI /Od")
+  endif()
+else()
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
   add_definitions(-D_DEBUG)
 else()
   add_definitions(-DNDEBUG)
+endif()
 endif()
 
 set(SOURCES
@@ -36,7 +45,19 @@ add_executable(UtilsTest
   ${SOURCES}
 )
 
+if(WIN32)
+set(ICONV_LIB_DIR "${CMAKE_CURRENT_LIST_DIR}/../third_party/iconv/win32")
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
+  set(ICONV_LIB ${ICONV_LIB_DIR}/iconvd.lib)
+else()
+  set(ICONV_LIB ${ICONV_LIB_DIR}/iconv.lib)
+endif()
+target_link_libraries(UtilsTest
+  ${ICONV_LIB}
+)
+else()
 target_link_libraries(UtilsTest
   pthread
   iconv
 )
+endif()
