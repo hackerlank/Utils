@@ -364,9 +364,6 @@ int strncasecmp (const char *s1, const char *s2, size_t n);
 /* 在字符串s的前slen个字节中查找find */
 char* strnstr(const char *s, const char *find, size_t slen);
 
-/* 不区分大小写在字符串s中查找字符串find */
-char* strcasestr(const char *s, const char *find);
-
 /* 逆向查找内存缓冲区 */
 void* memrchr(const void* s, int c, size_t n);
 
@@ -374,6 +371,12 @@ void* memrchr(const void* s, int c, size_t n);
 void* memfrob(void *mem, size_t length);
 
 #endif /* !__GLIBC__ */
+
+#if !defined(__GLIBC__) || !defined(_GNU_SOURCE)
+/* 不区分大小写在字符串s中查找字符串find */
+/* Linux下只有定义了_GNU_SOURCE宏才会导出此函数 */
+char* strcasestr(const char *s, const char *find);
+#endif
 
 /* 不区分大小写在字符串s的前slen个字节中中查找字符串 */
 char *strncasestr(const char *s, const char *find, size_t slen);

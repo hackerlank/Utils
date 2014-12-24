@@ -898,31 +898,6 @@ char *strnstr(const char *s, const char *find, size_t slen)
     return ((char *)s);
 }
 
-/*
- * 不区分大小写查找字符串是否包含指定字串
- */
-char *strcasestr(const char *s, const char *find)
-{
-    char c, sc;
-    size_t len;
-
-    if (!s || !find)
-        return NULL;
-
-    if ((c = *find++) != 0) {
-        c = tolower((unsigned char)c);
-        len = strlen(find);
-        do {
-            do {
-                if ((sc = *s++) == 0)
-                    return NULL;
-            } while ((char)tolower((unsigned char)sc) != c);
-        } while (strncasecmp(s, find, len) != 0);
-        s--;
-    }
-    return ((char *)s);
-}
-
 void* memrchr(const void* s, int c, size_t n)
 {
     const unsigned char* p = (const unsigned char*)s;
@@ -945,6 +920,33 @@ void* memfrob(void *mem, size_t length)
 }
 
 #endif /* !__GLIBC__ */
+
+#if !defined(__GLIBC__) || !defined(_GNU_SOURCE)
+/*
+* 不区分大小写查找字符串是否包含指定字串
+*/
+char *strcasestr(const char *s, const char *find)
+{
+    char c, sc;
+    size_t len;
+
+    if (!s || !find)
+        return NULL;
+
+    if ((c = *find++) != 0) {
+        c = tolower((unsigned char)c);
+        len = strlen(find);
+        do {
+            do {
+                if ((sc = *s++) == 0)
+                    return NULL;
+            } while ((char)tolower((unsigned char)sc) != c);
+        } while (strncasecmp(s, find, len) != 0);
+        s--;
+    }
+    return ((char *)s);
+}
+#endif
 
 /*
  * 不区分大小写查找字符串的前多少个字节是否包含指定字串
@@ -2239,7 +2241,7 @@ int copy_directories(const char *src, const char *dst,
             xsnprintf(dirname, MAX_PATH, "%c_DRIVE", fn[0]);
 #endif
         memcpy(target_dir, ddir, dlen + 1);
-        if (!dirname || xstrlcat(target_dir, dirname, MAX_PATH) >= MAX_PATH)
+        if (xstrlcat(target_dir, dirname, MAX_PATH) >= MAX_PATH)
             return 0;
     }
 
