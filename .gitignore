@@ -1,5 +1,6 @@
 utils_config.h
 a.out
+*.gcov
 
 #Visual Studio files
 *.[Oo]bj

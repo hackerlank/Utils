@@ -18,7 +18,7 @@ if(WIN32)
   endif()
 else()
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
-  add_definitions(-D_DEBUG)
+  add_definitions(-D_DEBUG -g -o0 -Wall -fprofile-arcs -ftest-coverage)
 else()
   add_definitions(-DNDEBUG)
 endif()
@@ -60,4 +60,12 @@ target_link_libraries(UtilsTest
   pthread
   iconv
 )
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+#Mac OS X
+else()
+#Linux
+target_link_libraries(UtilsTest gcov)
+endif()
+
 endif()

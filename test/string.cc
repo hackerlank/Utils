@@ -276,7 +276,6 @@ TEST(String, Encrypt) {
 TEST(String, Hash)
 {
     char table[] = "askfjwueriwnjv87s8923nrfsafsd*^%$#^%(*ISBHfbadfasdfd";
-    size_t table_size = sizeof(table) / sizeof(table[0]);
     std::set<size_t> hashes;
     std::string h;
     for (int i = 0; i < 1000; i++) {
