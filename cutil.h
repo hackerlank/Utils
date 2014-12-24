@@ -416,7 +416,7 @@ size_t hash_pjw (const char *s, size_t tablesize);
 
 /* fopen读写大文件(>2GB) */
 /* 32位Linux需在包含头文件之前定义_FILE_OFFSET_BIT=64 */
-#ifdef OS_POSIX
+#if defined(OS_POSIX) || defined(__MINGW32__)
 #define fseek fseeko
 #define ftell ftello
 #define seek_off_t int64_t
@@ -936,7 +936,7 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
 char* popen_readall(const char* command);
 
 /* 创建子进程和连接管道 */
-#ifdef OS_WIN
+#if defined(OS_WIN) && !defined(__MINGW32__)
 FILE* popen(const char *command, const char *mode);
 #define pclose _pclose
 #endif

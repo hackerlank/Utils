@@ -21,12 +21,14 @@ TEST(String, Printf) {
     int i;
 
     EXPECT_EQ(xsnprintf(buf, 0, "%s", "abc"), -1);
+#ifndef __MINGW32__
     i = xsnprintf(buf, 1, "%s", "abc");
     EXPECT_EQ(3, i);
     EXPECT_STREQ("", buf);
     i = xsnprintf(buf, 2, "%s", "abc");
     EXPECT_EQ(3, i);
     EXPECT_STREQ("a", buf);
+#endif
     i = xsnprintf(buf, 4, "%s", "abc");
     EXPECT_EQ(3, i);
     EXPECT_STREQ("abc", buf);

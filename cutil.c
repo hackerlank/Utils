@@ -573,18 +573,21 @@ substrdup(const char *beg, const char *end)
 /* 安全的vsnprintf */
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args)
 {
-#ifdef OS_WIN
-#if _MSC_VER <= MSVC6
+#if defined(OS_WIN)
+#if defined(__MINGW32__) || _MSC_VER <= MSVC6
+    // MingW的实现当缓冲区过小时总是返回-1
+    // 低版本的VC不支持_vsprintf_p等函数
+    // 因此使用功能最相近的_vsnprintf函数
     int i = _vsnprintf(buffer, size, format, args);
     if (size > 0)
-        buffer[size-1] = '\0';
+        buffer[size - 1] = '\0';
     return i;
 #else
     /* 模拟snprintf的标准行为 */
     int length = _vsprintf_p(buffer, size, format, args);
     if (length < 0) {
         if (size > 0)
-            buffer[size-1] = '\0';
+            buffer[size - 1] = '\0';
         return _vscprintf_p(format, args);
     }
     return length;
@@ -5006,7 +5009,7 @@ char* popen_readall(const char* command)
     return buf;
 }
 
-#ifdef OS_WIN
+#if defined(OS_WIN) && !defined(__MINGW32__)
 /*
  * 创建子进程以及与之连接的管道
  * 可以通过管道读取子进程输出(r)或写入管道作为子进程标准输入(w)
