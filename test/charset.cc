@@ -25,6 +25,8 @@ TEST_F(Charset, Locale)
 	printf("system locale: %s\n", get_locale());
 }
 
+#ifdef _LIBICONV_H
+
 /* ×Ö·û±àÂëÌ½²â */
 TEST_F(Charset, Detect)
 {
@@ -420,3 +422,5 @@ TEST_F(Charset, Convert)
 	xfree(utf8);
 	xfree(big5);
 }
+
+#endif // _LIBICONV_H
