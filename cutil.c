@@ -5491,7 +5491,7 @@ int uthread_join(uthread_t t, uthread_ret_t *exit_code)
         return 0;
 #else
     WaitForSingleObject(t, INFINITE);
-    if (exit_code && !GetExitCodeThread(t, exit_code))
+    if (exit_code && !GetExitCodeThread(t, (LPDWORD)exit_code))
     {
         CloseHandle(t);
         return 0;
