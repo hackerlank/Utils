@@ -401,7 +401,6 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WCHAR  L'\\'
 #define PATH_SEP_STR    "\\"
 #define PATH_SEP_WSTR   L"\\"
-#define LINE_END_STR    "\r\n"
 #define MIN_PATH        3          /* "C:\" */
 #define IS_PATH_SEP(c) ((c) == '\\' || (c) == '/')
 #else
@@ -409,7 +408,6 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WCHAR  L'/'
 #define PATH_SEP_STR    "/"
 #define PATH_SEP_WSTR   L"/"
-#define LINE_END_STR    "\r"
 #define MIN_PATH        1         /* "/" */
 #define IS_PATH_SEP(c) ((c) == '/')
 #endif
@@ -545,7 +543,11 @@ int  delete_directories(const char* dir, delete_dir_cb func, void *arg) WUR;
 /* 判断目录是否是空目录 */
 int  is_empty_dir(const char* dir);
 
-/* 删除一个目录下的所有不包含文件的目录（不删除参数目录本身） */
+/* 
+ * 递归删除目录下的所有空目录
+ * 如果没有任何文件，指定目录本也会被删除
+ * 仅当目录下没有任何文件且目录本身也成功删除时返回1，否则返回0
+ */
 int  delete_empty_directories(const char* dir) WUR;
 
 /* 拷贝整个目录回调函数*/

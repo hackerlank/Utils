@@ -2067,7 +2067,10 @@ int is_empty_dir(const char* dir)
     return 1;
 }
 
-static int _delete_empty_directories(const char* dir)
+/*
+* 递归删除目录下的所有空目录
+*/
+int delete_empty_directories(const char* dir)
 {
     struct walk_dir_context* ctx;
     char buf[MAX_PATH];
@@ -2080,7 +2083,7 @@ static int _delete_empty_directories(const char* dir)
                 continue;
             else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
                 if (walk_entry_is_dir(ctx)) {        //目录
-                    if (!_delete_empty_directories(buf))
+                    if (!delete_empty_directories(buf))
                         empty = 0;
                 } else                                //文件
                     empty = 0;
@@ -2095,26 +2098,6 @@ static int _delete_empty_directories(const char* dir)
     return empty && delete_directory(dir);
 }
 
-/*
- * 删除目录下的所有空目录
- * 不删除文件、及参数目录本身
- * 返回值：仅当目录下没有任何文件时返回1，否则都返回0
- */
-int delete_empty_directories(const char* dir)
-{
-    if (!_path_valid(dir, 0))
-        return 0;
-
-    /* 仅当所有子目录均不包含文件时返回1 */
-    /* 此时_delete_empty_directories也会删除参数目录 */
-    if (_delete_empty_directories(dir))
-    {
-        IGNORE_RESULT(create_directory(dir)); //FIXME: handle failure
-        return 1;
-    }
-
-    return 0;
-}
 
 /*
  * 递归拷贝目录
@@ -2306,7 +2289,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
     char buf[MAX_PATH];
 
     ctx = walk_dir_begin(dir);
-    if (ctx)
+    if (!ctx)
         return 0;
 
     do {

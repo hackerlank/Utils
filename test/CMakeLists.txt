@@ -27,6 +27,8 @@ set(SOURCES
   char.cc
   charset.cc
   datatype.cc
+  directory.cc
+  file.cc
   filepath.cc
   filesystem.cc
   math.cc
@@ -73,7 +75,8 @@ else() # WIN32
   
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     #Mac OS X
-  else()
+    target_link_libraries(UtilsTest --coverage) 
+else()
     #Linux
     target_link_libraries(UtilsTest gcov)
   endif()
