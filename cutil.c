@@ -3202,7 +3202,7 @@ int get_temp_file_under(const char* tmpdir, const char *prefix,
         xstrlcat(outbuf, ".XXXXXXXX", outlen) >= outlen)
         return 0;
 
-    if (!mktemp(outbuf))
+    if (!mktemp(outbuf) || !touch(outbuf))
         return 0;
 
     return 1;

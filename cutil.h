@@ -707,11 +707,15 @@ const char* get_app_data_dir();
 /* 获取应用程序的临时目录 */
 const char* get_temp_dir();
 
-/* 在指定目录下获取可用的临时文件 */
+/* 
+ * 在指定目录下获取可用的临时文件 
+ * 成功返回1, 且已创建空的临时文件
+ */
 int get_temp_file_under(const char* dir, const char *prefix,
                         char *outbuf, size_t outlen) WUR;
 
 /* 获取默认临时目录下可用的临时文件（非线程安全） */
+/* 成功返回临时文件的路径，且临时文件已创建为空文件 */
 const char* get_temp_file(const char* prefix);
 
 /************************************************************************/

@@ -47,6 +47,7 @@ TEST(Directory, DeleteEmpty)
     char buf[MAX_PATH];
     ASSERT_TRUE(create_directories(multi_dir));
     ASSERT_TRUE(get_temp_file_under(multi_dir, "test", buf, sizeof(buf)));
+    printf("%s\n", buf);
     EXPECT_FALSE(delete_empty_directories("temp"SEP"foo"));
     EXPECT_TRUE(path_is_file(buf));
     EXPECT_TRUE(path_is_directory("temp"SEP"foo"));
