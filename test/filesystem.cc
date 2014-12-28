@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#ifndef OS_MACOSX
+
 TEST(FileSystem, Usage)
 {
     struct fs_usage usage;
@@ -17,11 +19,16 @@ TEST(FileSystem, Usage)
     EXPECT_GT(usage.fsu_avail, 0);
 }
 
+#endif
+
 TEST(FileSystem, SpecialPath)
 {
     char buf[MAX_PATH];
     strlcpy(buf, get_execute_dir(), sizeof(buf));
     strlcat(buf, get_execute_name(), sizeof(buf));
     EXPECT_STREQ(get_execute_path(), buf);
+#ifdef OS_WIN
     EXPECT_STREQ(get_module_path(), buf);
+#endif
 }
+
