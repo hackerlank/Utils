@@ -39,6 +39,8 @@ set(SOURCES
   ../cutil.c
   ../ccutil.h
   ../ccutil.cpp
+  gnu-md5.h
+  gnu-md5.c
   gtest/src/gtest-all.cc
 )
 

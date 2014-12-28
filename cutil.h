@@ -290,6 +290,8 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #define vsnprintf xvsnprintf
 #define snprintf xsnprintf
 #define asprintf xasprintf
+#define strlcat xstrlcat
+#define strlcpy xstrlcpy
 #endif
 
 /* 字符串比较宏 */
@@ -612,8 +614,7 @@ void xfclose(FILE *fp);
  * 如果max_bytes设置为0或-1，也表示不限制读取的字节数
  * 如果*lineptr不为NULL,且读入数据的长度小于*n,则入读行存放于原缓冲区中；
  * 否则将动态申请一块内存用于存放读入内容；如果*lineptr为NULL，则总是动态分配内存；
- * 【注意】：传入的缓冲区如果不够大将不会被释放(不同于GLIBC的getline)，这就意味着
- * *lineptr必须是数组或者alloca的内存。这样可以减少动态申请/释放内存的次数。
+ * 【注意】：传入的缓冲区如果不够大将不会被释放(不同于GLIBC的getline),
  * 返回值：返回成功读入的字节数，包括分隔符，但不包括结尾的'\0'。文件为空或过大返回0
  */
 size_t xfread(FILE *fp, int separator, size_t max_bytes,
@@ -641,7 +642,7 @@ int  foreach_line (FILE* fp, foreach_line_cb func, void *arg) WUR;
 /* 文件内容信息 */
 struct file_mem {
  char* content;               /* 文件内容 */
- size_t length;                /* 文件长度 */
+ size_t length;               /* 文件长度 */
 };
 
 /* 将文件读入内存 */

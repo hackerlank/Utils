@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 /* ≤‚ ‘∞Ê±æ∫≈Ω‚Œˆ */
-TEST(Misc, Version)
+TEST(Vesion, Parse)
 {
 	int major, minor, revision, build;
 	const size_t slen = 128;
@@ -29,7 +29,7 @@ TEST(Misc, Version)
 }
 
 /* ≤‚ ‘∞Ê±æ∫≈±»Ωœ */
-void other_ver_cmp()
+TEST(Version, Compare)
 {
 	EXPECT_EQ(version_compare("1.0", "1.1"), -1);
 	EXPECT_EQ(version_compare("1.0", "1.0.2"), -1);

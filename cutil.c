@@ -2680,7 +2680,7 @@ size_t get_line(FILE *fp, char **lineptr, size_t *n)
 }
 
 /* 从文件中读取每个分隔符块进行操作 */
-int    foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
+int foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
 {
     char buf[1024], *block;
     size_t len, nblock;
@@ -2709,7 +2709,7 @@ int    foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
 }
 
 /* 从文件流中读入每一行并进行操作 */
-int    foreach_line(FILE* fp, foreach_line_cb func, void *arg)
+int foreach_line(FILE* fp, foreach_line_cb func, void *arg)
 {
     return foreach_block(fp, func, '\n', arg);
 }
