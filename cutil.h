@@ -290,6 +290,9 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #define vsnprintf xvsnprintf
 #define snprintf xsnprintf
 #define asprintf xasprintf
+#endif
+
+#ifdef OS_WIN
 #define strlcat xstrlcat
 #define strlcpy xstrlcpy
 #endif

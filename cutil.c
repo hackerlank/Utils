@@ -1939,8 +1939,8 @@ int create_directories(const char* dir)
     /* 定位到路径的第一个有效文件[夹] */
 #ifdef OS_WIN
     /* UNC路径要忽略主机名 */
-	/* 如 \\192.168.1.6\shared\  */
-	if (is_unc_path(pb)) {
+    /* 如 \\192.168.1.6\shared\  */
+    if (is_unc_path(pb)) {
         p = strpsep(pb + 2);
         if (!p)
             return 0;
@@ -2492,11 +2492,14 @@ int get_file_block_size(const char *path)
         DWORD TotalNumberOfClusters;
         char drive[4];
 
-        /* 检查是否是绝对路径 */
-        if (!_path_valid(path, 1))
-            return 0;
+        if (!is_absolute_path (path)) {
+            char abspath[MAX_PATH];
+            if (!absolute_path (path, abspath, sizeof(abspath)))
+                return 0;
+            strncpy(drive, abspath, 3);
+        } else
+            strncpy(drive, path, 3);
 
-        strncpy(drive, path, 3);
         drive[3] = '\0';
 
         /* 获取磁盘分区簇/块大小 */
@@ -6335,7 +6338,7 @@ void memrt_dtor(struct MEMRT_OPERATE *rtp)
 static
 void memrt_msg_c(int error,
    const char* file, const char* func, int line,
-    void* address, size_t size, int method) 
+    void* address, size_t size, int method)
 {
     switch(error) {
     case MEMRTE_NOFREE:
@@ -6433,7 +6436,7 @@ int memrt_check()
         {
             /* 打印未释放信息 */
             if (ptr->msgfunc)
-                ptr->msgfunc(MEMRTE_NOFREE, 
+                ptr->msgfunc(MEMRTE_NOFREE,
                   ptr->file, ptr->func, ptr->line,
                   ptr->address, ptr->size, ptr->method);
 
