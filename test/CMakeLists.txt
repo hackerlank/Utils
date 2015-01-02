@@ -34,7 +34,8 @@ set(SOURCES
   math.cc
   others.cc
   string.cc
-  unittest.cc
+  version.cc
+  main.cc
   ../cutil.h
   ../cutil.c
   ../ccutil.h

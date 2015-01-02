@@ -3292,9 +3292,11 @@ time_t parse_datetime(const char* datetime_str) {
         if (rv != 6)
             return 0;
 
-        month = (int)(strcasestr(month_names, s_month) - month_names) / 3;
-        if (!month)
+        char *p = strcasestr(month_names, s_month);
+        if (!p)
             return 0;
+
+        month = (int)(p - month_names) / 3;
     }
 
     memset(&t, 0, sizeof(t));
@@ -6484,48 +6486,54 @@ void __memrt_printf(const char *fmt, ...)
 /* 参数major, minor, revision, build, suffix 均可为NULL；如果suffix不为NULL，则slen必须大于0 */
 /* 注：常见的后缀描述有alpha1, beta2, Pro, Free, Ultimate, Stable.etc */
 /* 示例: 1.5.8.296 beta1 */
-int version_parse(const char* version, int *major, int *minor,
-    int *revision, int *build, char *suffix, size_t suffix_outbuf_len)
+int version_parse(const char* version, struct version_info* parsed)
 {
-    char *ver, *p, *q;
+    char ver[128], *p, *q;
     int id = 0;
 
-    if (!version)
+    if (!version || !strlen(version) || !parsed)
         return 0;
 
     /* 初始化 */
-    if (major) *major = 0;
-    if (minor) *minor = 0;
-    if (revision) *revision = 0;
-    if (build) *build = 0;
-    if (suffix) *suffix = '\0';
+    parsed->major = 0;
+    parsed->minor = 0;
+    parsed->revision = 0;
+    parsed->build = 0;
 
     /* 后缀描述 */
     p = strchr((char*)version, ' ');
-    if (p && suffix)
-        xstrlcpy(suffix, p+1, suffix_outbuf_len);
+    if (p) {
+        q = p;
+        while (*q == ' ') 
+            q++;
+        xstrlcpy(parsed->suffix, q, sizeof(parsed->suffix));
+    }
+    else
+        memset(parsed->suffix, '\0', sizeof(parsed->suffix));
 
     /* 版本号 */
-    ver = p ? xstrndup(version, p - version) : xstrdup(version);
+    strlcpy(ver, version, p ? p - version + 1: sizeof(ver));
     q = ver;
 
-    while ((p = strsep(&q, ".")))
-    {
-        if (id == 0 && major)
-            *major = atoi(p);
-        else if (id == 1 && minor)
-            *minor = atoi(p);
-        else if (id == 2 && revision)
-            *revision = atoi(p);
-        else if (id == 3 && build)
-            *build = atoi(p);
-        else
+    while ((p = strsep(&q, "."))) {
+        switch (id++) {
+        case 0:
+            parsed->major = atoi(p);
             break;
-
-        id++;
+        case 1:
+            parsed->minor = atoi(p);
+            break;
+        case 2:
+            parsed->revision = atoi(p);
+            break;
+        case 3:
+            parsed->build = atoi(p);
+            break;
+        default:
+            break;
+        }
     }
 
-    xfree(ver);
     return 1;
 }
 
@@ -6534,38 +6542,35 @@ int version_parse(const char* version, int *major, int *minor,
 /* 注：不会比较版本后缀信息 */
 int version_compare(const char* v1, const char* v2)
 {
-    int major1, minor1, revision1, build1;
-    int major2, minor2, revision2, build2;
-
-    if (!version_parse(v1, &major1, &minor1, &revision1, &build1, NULL, 0)
-        || !version_parse(v2, &major2, &minor2, &revision2, &build2, NULL, 0))
+    struct version_info vi1, vi2;
+    if (!version_parse(v1, &vi1) || !version_parse(v2, &vi2))
         return -2;
 
     /* 比较主版本号 */
-    if (major1 > major2)
+    if (vi1.major > vi2.major)
         return 1;
-    else if (major1 < major2)
+    else if (vi1.major < vi2.major)
         return -1;
 
     /* 主版本号相同，比较次版本号 */
-    if (minor1 > minor2)
+    if (vi1.minor > vi2.minor)
         return 1;
-    else if (minor1 < minor2)
+    else if (vi1.minor < vi2.minor)
         return -1;
 
     /* 次版本号也相同，比较修定版本号 */
-    if (revision1 > revision2)
+    if (vi1.revision > vi2.revision)
         return 1;
-    else if (revision1 < revision2)
+    else if (vi1.revision < vi2.revision)
         return -1;
 
     /* 修定版本号还相同，比较编译版本号 */
-    if (build1 > build2)
+    if (vi1.build > vi2.build)
         return 1;
-    else if (build1 < build2)
+    else if (vi1.build < vi2.build)
         return -1;
 
-    /* 所有版本号均相同 */
+    /* 版本号相同 */
     return 0;
 }
 

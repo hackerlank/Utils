@@ -1266,9 +1266,16 @@ extern int g_xalloc_count;
 /*                           Version 版本管理                           */
 /************************************************************************/
 
+struct version_info {
+    int major;         /* 主版本号 */
+    int minor;         /* 次版本号 */
+    int revision;      /* 修正版本号 */
+    int build;         /* 编译/提交次数号 */
+    char suffix[32];   /* 版本后缀名（如Alpha/Beta） */
+};
+
  /* 分析一个以点分隔的版本字符串，字符串格式见实现 */
-int version_parse(const char* version, int *major, int *minor,
-    int *revision, int *build, char *suffix, size_t plen) WUR;
+int version_parse(const char* version, struct version_info* parsed) WUR;
 
 /* 比较v1和v2两个版本号，v1比v2新返回1，相等返回0 */
 int version_compare(const char* v1, const char* v2) WUR;
