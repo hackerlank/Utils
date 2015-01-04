@@ -5740,7 +5740,7 @@ static void StackBackTraceMsg(const DWORD64* trace, size_t count, const char* in
 static inline
 void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
 {
-    size_t i, count = 0;
+    size_t count = 0;
     DWORD64 trace[62];
     int machine_type;
 
@@ -5942,10 +5942,13 @@ void backtrace_here(int level, const char *fmt, ...)
 
 #ifdef OS_WIN
     {
-    size_t count;
-    DWORD64 trace[62];
+    size_t i, count;
+    PVOID trace[62];
+    DWORD64 trace64[62];
     count = CaptureStackBackTrace(0, countof(trace), trace, NULL);
-    StackBackTraceMsg(trace, count, msg, level);
+    for (i = 0; i < 62; i++)
+        trace64[i] = (DWORD64)trace[i];
+    StackBackTraceMsg(trace64, count, msg, level);
     }
 #if defined(_DEBUG) && defined(COMPILER_MSVC)
     __debugbreak();
