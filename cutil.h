@@ -704,6 +704,7 @@ int set_current_dir(const char *dir) WUR;
 const char* get_home_dir();
 
 /* 获取应用程序数据目录（配置文件，缓存等） */
+/* 成功返回已创建目录的路径，失败返回空字符串 */
 const char* get_app_data_dir();
 
 /************************* 临时目录/文件 *************************/

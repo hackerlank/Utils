@@ -3099,6 +3099,9 @@ const char* get_app_data_dir()
         xstrlcat(path, PATH_SEP_STR, MAX_PATH) >= MAX_PATH)
         goto failed;
 
+    if (!create_directories(path))
+        goto failed;
+
     return path;
 
 failed:
@@ -5654,7 +5657,7 @@ void set_backtrace_handler(backtrace_handler handler)
 #ifdef OS_WIN
 
 /* 获取堆栈调用记录 */
-static void StackBackTraceMsg(const void* const* trace, size_t count, const char* info, int level)
+static void StackBackTraceMsg(const DWORD64* trace, size_t count, const char* info, int level)
 {
     const int kMaxNameLength = 256;
     char msgl[1024], msgs[4096];
@@ -5662,7 +5665,7 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 
     for (i = 0; i < count; ++i)
     {
-        DWORD_PTR frame = (DWORD_PTR)trace[i];
+        DWORD64 frame = trace[i];
         DWORD64 sym_displacement = 0;
         DWORD line_displacement = 0;
         PSYMBOL_INFO symbol;
@@ -5738,7 +5741,7 @@ static inline
 void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
 {
     size_t i, count = 0;
-    void *trace[62];
+    DWORD64 trace[62];
     int machine_type;
 
     STACKFRAME64 stack_frame;
@@ -5759,6 +5762,8 @@ void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
     stack_frame.AddrFrame.Mode = AddrModeFlat;
     stack_frame.AddrStack.Mode = AddrModeFlat;
 
+    memset(trace, 0, sizeof(trace));
+
     while (StackWalk64(machine_type,
         GetCurrentProcess(),
         GetCurrentThread(),
@@ -5769,11 +5774,8 @@ void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
         &SymGetModuleBase64,
         NULL) &&
         count < countof(trace)) {
-            trace[count++] = (void*)stack_frame.AddrPC.Offset;
-    }
-
-    for (i = count; i < countof(trace); ++i)
-        trace[i] = NULL;
+            trace[count++] = stack_frame.AddrPC.Offset;
+    }  
 
     StackBackTraceMsg(trace, count, info, level);
 }
@@ -5941,7 +5943,7 @@ void backtrace_here(int level, const char *fmt, ...)
 #ifdef OS_WIN
     {
     size_t count;
-    void *trace[62];
+    DWORD64 trace[62];
     count = CaptureStackBackTrace(0, countof(trace), trace, NULL);
     StackBackTraceMsg(trace, count, msg, level);
     }
