@@ -279,6 +279,7 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #define xisxdigit(c) ISXDIGIT(c)
 #define xisascii(c) ((unsigned)c < 0x80)
 #define xisdigit(c) ((unsigned)c < 0xFF && isdigit(c))
+#define xisspace(c) ((unsigned)c < 0xFF && isspace(c))
 #define xisalpha(c) ((unsigned)c < 0xFF && isalpha(c))
 #define xisalnum(c) ((unsigned)c < 0xFF && isalnum(c))
 #define xisupper(c) ((unsigned)c < 0xFF && isupper(c))
