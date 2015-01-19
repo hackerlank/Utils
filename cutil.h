@@ -1227,6 +1227,15 @@ int  is_debug_log_set_to_stderr();
 #define log_dprintf(level, fmt, ...) log_printf(DEBUG_LOG, level, fmt, ##__VA_ARGS__)
 #endif
 
+#define log_fatal(fmt, ...) log_dprintf(LOG_FATAL, fmt, ##__VA_ARGS__)
+#define log_alert(fmt, ...) log_dprintf(LOG_ALERT, fmt, ##__VA_ARGS__)
+#define log_critical(fmt, ...) log_dprintf(LOG_CRITICAL, fmt, ##__VA_ARGS__)
+#define log_error(fmt, ...) log_dprintf(LOG_ERROR, fmt, ##__VA_ARGS__)
+#define log_warning(fmt, ...) log_dprintf(LOG_WARNING, fmt, ##__VA_ARGS__)
+#define log_notice(fmt, ...) log_dprintf(LOG_NOTICE, fmt, ##__VA_ARGS__)
+#define log_info(fmt, ...) log_dprintf(LOG_INFO, fmt, ##__VA_ARGS__)
+#define log_debug(fmt, ...) log_dprintf(LOG_DEBUG, fmt, ##__VA_ARGS__)
+
 /************************************************************************/
 /*              Memory Runtime Check 运行时内存检测                      */
 /************************************************************************/

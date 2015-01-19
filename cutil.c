@@ -5693,8 +5693,8 @@ static void StackBackTraceMsg(const DWORD64* trace, size_t count, const char* in
         // Output the backtrace line.
         if (has_symbol)
             snprintf(msgl, sizeof(msgl), "%d. %s [0x%p+%"PRId64"] (%s : %d)",
-                        i+1, symbol->Name, trace[i], sym_displacement,
-                        has_line ? line.FileName : "?", line.LineNumber);
+                        i+1, symbol->Name, (LPVOID)trace[i], sym_displacement,
+                        (has_line ? line.FileName : "?"), line.LineNumber);
         else
             snprintf(msgl, sizeof(msgl), "%d. [0x%p] (No Symbol) ",
                         i+1, trace[i]);
@@ -6058,7 +6058,7 @@ FILE* open_log_helper(const char *path, int append, int binary)
 }
 
 /* 打开用户日志文件 */
-int    log_open(const char *path, int append, int binary)
+int log_open(const char *path, int append, int binary)
 {
     int i;
 
