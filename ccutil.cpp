@@ -848,16 +848,17 @@ int64_t FileSize(const std::string &path)
     return file_size(path.c_str());
 }
 
-bool ReadFile(const std::string& path, std::string* content, size_t max_size /* = 0 */) 
+std::string ReadFile(const std::string& path, size_t max_size /* = 0 */) 
 {
-    ASSERT(content);
-
+    std::string content;
     file_mem* fm = read_file_mem(path.c_str(), max_size);
     if (!fm)
-        return false;
+        return content;
 
-    content->assign(fm->content, fm->length);
-    return true;
+    content.assign(fm->content, fm->length);
+
+    free_file_mem(fm);
+    return content;
 }
 
 bool WriteFile(const std::string& path, const std::string& content)

@@ -197,8 +197,7 @@ bool CopyDirectories(const std::string &srcdir, const std::string &dstdir,
 int64_t FileSize(const std::string &path);                             // 获取文件大小
 std::string FileSizeReadable(int64_t size);                            // 获取可读性强的文件长度值，如3bytes, 10KB, 1.5MB, 3GB
                                                                                    
-bool ReadFile(const std::string& path, std::string* content,           // 将文件读入内存
-              size_t max_size = 0);
+std::string ReadFile(const std::string& path, size_t max_size = 0);    // 将文件读入内存
 bool WriteFile(const std::string& path, const std::string& content);   // 将内存写入文件
 
 std::string GetExecutePath();                                          // 获取进程路径名(即argv[0])
