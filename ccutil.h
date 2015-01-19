@@ -329,8 +329,8 @@ public:
     bool Run();
     int Join();    
 
-    void SetID(int id) {id_ = id;}
-    int GetID() {return id_;}
+    void set_id(int id) {id_ = id;}
+    int id() {return id_;}
 
     void SetOnce(thread_once_t *once, thread_once_func once_func);
 

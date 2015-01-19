@@ -31,6 +31,7 @@ set(SOURCES
   file.cc
   filepath.cc
   filesystem.cc
+  logging.cc
   math.cc
   others.cc
   string.cc
@@ -84,3 +85,8 @@ else()
     target_link_libraries(UtilsTest gcov)
   endif()
 endif() # WIN32
+
+add_custom_command(TARGET UtilsTest POST_BUILD
+  COMMAND cp -r data "$<TARGET_FILE_DIR:UtilsTest>"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+)

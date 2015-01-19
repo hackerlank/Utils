@@ -36,11 +36,11 @@ static int md5_is_same(const char* file1, const char* file2)
 class FileTest : public testing::Test {
 protected:
     virtual void SetUp() OVERRIDE {
-        path_find_directory(__FILE__, gbk_book, sizeof(gbk_book));
+        xstrlcpy(gbk_book, get_execute_dir(), sizeof(gbk_book));
         strlcat(gbk_book, GBK_BOOK, sizeof(gbk_book));
         ASSERT_TRUE(path_is_file(gbk_book));
 
-        path_find_directory(__FILE__, utf8_book, sizeof(utf8_book));
+        xstrlcpy(utf8_book, get_execute_dir(), sizeof(utf8_book));
         strlcat(utf8_book, UTF8_BOOK, sizeof(utf8_book));
         ASSERT_TRUE(path_is_file(utf8_book));
     }

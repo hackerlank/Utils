@@ -1174,15 +1174,11 @@ char*  hexdump(const void *data, size_t len);
  * 2012/03/21 08:15:21 [ERROR] {main.c main 10} foo bar.
  */
 
-#define MAX_LOGS  100        /* 用户最多可打开日志数 */
-#define LOG_INVALID  -1      /* 无效的日志描述符(初始化定义) */
-#define DEBUG_LOG  0         /* 调试日志的ID */
-
 /* 记录等级 */
-enum LogSeverity {
+enum LogLevel {
   LOG_FATAL = 0,             /* 致命 */
   LOG_ALERT,                 /* 危急 */
-  LOG_CRIT,                  /* 紧急 */
+  LOG_CRITICAL,              /* 紧急 */
   LOG_ERROR,                 /* 错误 */
   LOG_WARNING,               /* 警告 */
   LOG_NOTICE,                /* 注意 */
@@ -1194,37 +1190,37 @@ enum LogSeverity {
 void log_init();
 
 /* 设置记录的最低等级 */
-void log_severity(int severity);
-
-/* 打开用户日志文件 */
-int  log_open(const char *path, int append, int binary);
-
-/* 格式化输出到日志 */
-void log_printf0(int id, const char *fmt, ...) PRINTF_FMT(2,3);
-
-/* 同上，但同时附加时间和等级信息 */
-void log_printf(int id, int severity, const char *, ...) PRINTF_FMT(3,4);
-
-/* 将日志缓冲区数据写入磁盘 */
-void log_flush(int log_id);
-
-/* 关闭用户日志文件 */
-void log_close(int log_id);
-
-/* 关闭所有打开的日志文件 */
-void log_close_all();
+void set_log_level(int min_level);
 
 /* 将调试日志信息输出到stderr */
 void set_debug_log_to_stderr();
 int  is_debug_log_set_to_stderr();
 
+/* 打开用户日志文件 */
+int  log_open(const char* name, const char *path, int append, int binary);
+
+/* 格式化输出到日志 */
+void log_printf0(const char* name, const char *fmt, ...) PRINTF_FMT(2, 3);
+
+/* 同上，但同时附加时间和等级信息 */
+void log_printf(const char* name, int level, const char *, ...) PRINTF_FMT(3, 4);
+
+/* 将日志缓冲区数据写入磁盘 */
+void log_flush(const char* name);
+
+/* 关闭用户日志文件 */
+int log_close(const char* name);
+
+/* 关闭所有打开的日志文件 */
+void log_close_all();
+
 /* 记录调试日志（记录文件名、函数名、行号） */
 /* 注：不能对fmt参数使用gettext国际化 */
-#if (defined _DEBUG) && (!defined COMPILER_MSVC || _MSC_VER > MSVC6)
-#define log_dprintf(level, fmt, ...) log_printf(DEBUG_LOG, level, "{%s %s %d} " fmt, \
+#ifdef _DEBUG
+#define log_dprintf(level, fmt, ...) log_printf(NULL, level, "{%s %s %d} " fmt, \
   path_find_file_name(__FILE__), __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
-#define log_dprintf(level, fmt, ...) log_printf(DEBUG_LOG, level, fmt, ##__VA_ARGS__)
+#define log_dprintf(level, fmt, ...) log_printf(NULL, level, fmt, ##__VA_ARGS__)
 #endif
 
 #define log_fatal(fmt, ...) log_dprintf(LOG_FATAL, fmt, ##__VA_ARGS__)

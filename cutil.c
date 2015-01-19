@@ -5723,7 +5723,7 @@ static void StackBackTraceMsg(const DWORD64* trace, size_t count, const char* in
         xfree(buffer);
     }
 
-    log_flush(DEBUG_LOG);
+    log_flush(NULL);
 
     if (g_backtrace_hander)
         g_backtrace_hander(level, info, msgs);
@@ -5937,7 +5937,7 @@ void backtrace_here(int level, const char *fmt, ...)
     // 打印信息
     va_start(args, fmt);
     xvsnprintf(msg, sizeof(msg), fmt, args);
-    log_printf0(DEBUG_LOG, "%s\n", msg);
+    log_printf0(NULL, "%s\n", msg);
     va_end(args);
 
 #ifdef OS_WIN
@@ -5989,10 +5989,8 @@ char* hexdump(const void *data, size_t len)
 
 
 /************************************************************************/
-/*                         Log 日志系统                                    */
+/*                          Logging 日志系统                            */
 /************************************************************************/
-
-#define LOG_VALID(id) ((id) >= DEBUG_LOG && (id) <= MAX_LOGS)
 
 static const char* log_severity_names[] = {
     "Fatal",
@@ -6005,43 +6003,98 @@ static const char* log_severity_names[] = {
     "Debug"
 };
 
-static int log_min_severity = LOG_DEBUG;   /* 设置最低记录等级 */
-static int debug_log_to_stderr = 0;        /* 调试信息发送到标准错误输出 */
+typedef struct {
+    char name[128];
+    FILE* fp;
+    mutex_t lock;
+} LogEntry;
 
-static FILE* log_files[MAX_LOGS+1];
-static mutex_t log_locks[MAX_LOGS+1];
+static LogEntry g_logs[1000];
 
-static inline
-void log_lock(int log_id)
+static int log_min_level = LOG_DEBUG;   /* 设置最低记录等级 */
+static int log_to_stderr = 0;           /* 调试信息发送到标准错误输出 */
+
+void set_log_level(int severity)
 {
-    mutex_lock(&log_locks[log_id]);
-}
-
-static inline
-void log_unlock(int log_id)
-{
-    mutex_unlock(&log_locks[log_id]);
-}
-
-void log_severity(int severity)
-{
-    log_min_severity = severity;
+    log_min_level = severity;
 }
 
 void set_debug_log_to_stderr()
 {
-    debug_log_to_stderr = 1;
+    log_to_stderr = 1;
 }
 
 int is_debug_log_set_to_stderr()
 {
-    return debug_log_to_stderr;
+    return log_to_stderr;
 }
 
-static inline
-FILE* open_log_helper(const char *path, int append, int binary)
+/* 初始化日志模块 */
+void log_init()
+{
+    /* DEBUG消息仅在DEBUG模式下才会记录 */
+#ifdef _DEBUG
+    log_min_level = LOG_DEBUG;
+#else
+    log_min_level = LOG_INFO;
+#endif
+
+    /* 打开软件全局调试日志 */
+#ifdef USE_DEBUG_LOG
+    if (!g_disable_debug_log) {
+        char exe_name[MAX_PATH], log_path[MAX_PATH];
+        xstrlcpy(exe_name, get_execute_name(), MAX_PATH);
+        exe_name[path_find_extension(exe_name) - exe_name] = '\0';
+        IGNORE_RESULT(create_directory("log"));
+
+        /* 如 Product_20140506143512_1432_debug.log */
+        snprintf(log_path, MAX_PATH, "log%c%s_%s_%d.log",
+            PATH_SEP_CHAR, exe_name, timestamp_str(time(NULL)), getpid());
+        log_open(NULL, log_path, 0, 0);
+        log_info(" ==================== Program Started ====================\n\n");
+    }
+#endif /* USE_DEBUG_LOG */
+}
+
+static LogEntry* _find_log_entry(const char* name, int find_exists)
+{
+    LogEntry *entry;
+    int index;
+
+    if (name)
+        index = hash_pjw(name, countof(g_logs));
+    else
+        index = 0;
+
+    entry = &g_logs[index];
+    while (*entry->name) {
+        if (!name || !strcmp(entry->name, name)) {
+            if (find_exists)
+                return entry;
+            else
+                return NULL;
+        }
+
+        ++entry;
+    }
+
+    return find_exists ? NULL : entry;
+}
+
+/* 打开用户日志文件 */
+int log_open(const char* name, const char *path, int append, int binary)
 {
     const char *mode = append ? (binary ? "ab" : "a") : (binary ? "wb" : "w");
+
+    LogEntry* entry = _find_log_entry(name, 0);
+    if (!entry)
+        return 0;
+
+    if (name) {
+        if (xstrlcpy(entry->name, name, sizeof(entry->name)) >= sizeof(entry->name))
+            return 0;
+    } else 
+        strncpy(entry->name, "Default", sizeof(entry->name));
 
     FILE* fp = xfopen(path, mode);
     if (fp) {
@@ -6054,114 +6107,38 @@ FILE* open_log_helper(const char *path, int append, int binary)
         g_opened_files--;
     }
 
-    return fp;
+    entry->fp = fp;
+    mutex_init(&entry->lock);
+
+    return 1;
 }
 
-/* 打开用户日志文件 */
-int log_open(const char *path, int append, int binary)
+void log_printf0(const char* name, const char *fmt, ...)
 {
-    int i;
-
-    CHECK_INIT();
-
-    for (i = 1; i <= MAX_LOGS; i++) {
-        log_lock(i);
-
-        if (!log_files[i]) {
-            log_files[i] = open_log_helper(path, append, binary);
-            log_unlock(i);
-            return log_files[i] ? i : LOG_INVALID;
-        }
-
-        log_unlock(i);
-    }
-
-    return LOG_INVALID;
-}
-
-/* 打开调试日志文件 */
-int log_dopen(const char *path, int append, int binary)
-{
-    CHECK_INIT();
-
-    log_lock(DEBUG_LOG);
-
-    if (log_files[DEBUG_LOG]) {
-        log_unlock(DEBUG_LOG);
-        return DEBUG_LOG;
-    }
-
-    log_files[DEBUG_LOG] = open_log_helper(path, append, binary);
-    log_unlock(DEBUG_LOG);
-
-    return log_files[DEBUG_LOG] ? DEBUG_LOG : LOG_INVALID;
-}
-
-/* 初始化日志模块 */
-void log_init()
-{
-    int i;
-    for (i = 0; i < MAX_LOGS+1; i++)
-    {
-        log_files[i] = NULL;
-        mutex_init(&log_locks[i]);
-    }
-
-    /* 打开软件全局调试日志 */
-#ifdef USE_DEBUG_LOG
-    if (!g_disable_debug_log) {
-        char exe_name[MAX_PATH], log_path[MAX_PATH];
-        xstrlcpy(exe_name, get_execute_name(), MAX_PATH);
-        exe_name[path_find_extension(exe_name) - exe_name] = '\0';
-
-        IGNORE_RESULT(create_directory("log"));
-
-        /* 如 Product_20140506143512_1432_debug.log */
-        snprintf(log_path, MAX_PATH, "log%c%s_%s_%d_debug.log",
-            PATH_SEP_CHAR,exe_name, timestamp_str(time(NULL)), getpid());
-        log_dopen(log_path, 0, 0);
-        log_dprintf(LOG_INFO, " ==================== Program Started ====================\n\n");
-    }
-#endif /* USE_DEBUG_LOG */
-}
-
-void log_printf0(int log_id, const char *fmt, ...)
-{
-    FILE *fp;
     va_list args;
 
-    CHECK_INIT();
-
-    if (!LOG_VALID(log_id) ||
-        (log_id == DEBUG_LOG && g_disable_debug_log))
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
         return;
 
-    log_lock(log_id);
-
-    if (!(fp = log_files[log_id]))
-    {
-        log_unlock(log_id);
-        return;
-    }
+    mutex_lock(&entry->lock);
 
     // 正文信息
     va_start(args, fmt);
-    vfprintf(fp, fmt, args);
+    vfprintf(entry->fp, fmt, args);
     va_end(args);
 
 #ifdef _DEBUG
-    fflush(fp);
+    fflush(entry->fp);
 #endif
 
-    log_unlock(log_id);
+    mutex_unlock(&entry->lock);
 }
 
 /* 写入日志文件 */
-/* DEBUG 消息仅在DEBUG模式下才会记录 */
 /* FATAL 消息在记录之后会记录堆栈并使程序退出 */
-void log_printf(int log_id, int severity, const char *fmt, ...)
+void log_printf(const char* name, int severity, const char *fmt, ...)
 {
-    FILE *fp;
     time_t t;
     char msgbuf[1024];
     const char *p;
@@ -6169,23 +6146,15 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
     size_t len;
     int level;
 
-    CHECK_INIT();
-
-    if (!LOG_VALID(log_id) ||
-        (log_id == DEBUG_LOG && g_disable_debug_log))
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
         return;
 
     level = xmin(xmax((int)LOG_FATAL, severity), (int)LOG_DEBUG);
-    if (level > log_min_severity)
+    if (level > log_min_level)
         return;
 
-    log_lock(log_id);
-
-    if (!(fp = log_files[log_id]))
-    {
-        log_unlock(log_id);
-        return;
-    }
+    mutex_lock(&entry->lock);
 
     // 时间信息
     t = time(NULL);
@@ -6208,16 +6177,18 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
     if (p >= fmt && len < sizeof(msgbuf)-1 && *p != '\n')
         msgbuf[len++] = '\n';
 
-    fwrite(msgbuf, len, 1, log_files[log_id]);
+    if (entry->fp)
+        fwrite(msgbuf, len, 1, entry->fp);
 
-    if (log_id == DEBUG_LOG && debug_log_to_stderr)
+    if (!name && log_to_stderr)
         fwrite(msgbuf, len, 1, stderr);
 
 #ifdef _DEBUG
-    fflush(log_files[log_id]);
+    if (entry->fp)
+        fflush(entry->fp);
 #endif
 
-    log_unlock(log_id);
+    mutex_unlock(&entry->lock);
 
     /* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
     if (level == LOG_FATAL
@@ -6233,45 +6204,60 @@ void log_printf(int log_id, int severity, const char *fmt, ...)
     }
 }
 
-void log_flush(int log_id)
+void log_flush(const char* name)
 {
-    log_lock(log_id);
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
+        return;
 
-    if (log_files[log_id])
-        fflush(log_files[log_id]);
+    mutex_lock(&entry->lock);
 
-    log_unlock(log_id);
+    if (entry->fp)
+        fflush(entry->fp);
+    
+    mutex_unlock(&entry->lock);
+}
+
+static void _log_close(LogEntry* entry) {
+    mutex_lock(&entry->lock);
+
+    if (entry->fp) {
+        xfclose(entry->fp);
+        entry->fp = NULL;
+    }
+
+    if (entry->name)
+        *entry->name = '\0';
+
+    mutex_unlock(&entry->lock);
 }
 
 /* 关闭日志文件 */
-void log_close(int log_id)
+int log_close(const char* name)
 {
-    if (!LOG_VALID(log_id))
-        return;
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
+        return 0;
 
-    log_lock(log_id);
-
-    if (log_files[log_id]) {
-        xfclose(log_files[log_id]);
-        log_files[log_id] = NULL;
-    }
-
-    log_unlock(log_id);
+    _log_close(entry);
+    return 1;
 }
 
 void log_close_all()
 {
-    int i;
-    for (i = 1; i <= MAX_LOGS; i++)
-        log_close(i);
+    LogEntry* entry = &g_logs[0];
 
 #ifdef USE_DEBUG_LOG
-    if (!g_disable_debug_log) {
-        log_printf0(DEBUG_LOG, "\n");
-        log_dprintf(LOG_INFO, " ==================== Program Exit ====================\n\n");
-        log_close(DEBUG_LOG);
-    }
+    if (entry->fp && !g_disable_debug_log)
+        log_info("\n ==================== Program Exit ====================\n\n");
 #endif
+
+    int i;
+    for (i = 0; i < countof(g_logs); i++) {
+        entry = &g_logs[i];
+        if (entry->fp)
+            _log_close(entry);
+    }
 }
 
 /************************************************************************/
@@ -6611,7 +6597,7 @@ int set_env(const char* key, const char* val)
 /* 成功返回指向该环境变量值的字符串，键不存在返回NULL */
 /* 注1：非线程安全，不可重入 */
 /* 注2：外界不可以改变返回的字符串 */
-const char*    get_env(const char* key)
+const char* get_env(const char* key)
 {
 #ifdef OS_WIN
     static char val[VAL_MAX];
