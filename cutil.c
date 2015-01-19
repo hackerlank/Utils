@@ -6097,15 +6097,19 @@ int log_open(const char* name, const char *path, int append, int binary)
         strncpy(entry->name, "Default", sizeof(entry->name));
 
     FILE* fp = xfopen(path, mode);
-    if (fp) {
-        setvbuf(fp, NULL, _IOLBF, 1024);
+    if (!fp)
+        return 0;
+
+    /* 默认日志不增加打开文件计数，因为在关闭其之前就会检查g_opened_files */
+    /* xfopen函数已经增加计数 */
+    if (!name)
+        --g_opened_files;
+
+    setvbuf(fp, NULL, _IOLBF, 1024);
+
 #ifdef USE_UTF8_STR
-        fwrite(UTF8_BOM, strlen(UTF8_BOM), 1, fp);
+    fwrite(UTF8_BOM, strlen(UTF8_BOM), 1, fp);
 #endif
-        /* 不跟踪日志文件的关闭情况 */
-        /* xfopen已对其递增，递减以保持g_opened_files不变 */
-        g_opened_files--;
-    }
 
     entry->fp = fp;
     mutex_init(&entry->lock);
@@ -6249,7 +6253,7 @@ void log_close_all()
 
 #ifdef USE_DEBUG_LOG
     if (entry->fp && !g_disable_debug_log)
-        log_info("\n ==================== Program Exit ====================\n\n");
+        log_info(" ==================== Program Exit ====================\n\n");
 #endif
 
     int i;
