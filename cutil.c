@@ -6032,13 +6032,6 @@ int is_debug_log_set_to_stderr()
 /* 初始化日志模块 */
 void log_init()
 {
-    /* DEBUG消息仅在DEBUG模式下才会记录 */
-#ifdef _DEBUG
-    log_min_level = LOG_DEBUG;
-#else
-    log_min_level = LOG_INFO;
-#endif
-
     /* 打开软件全局调试日志 */
 #ifdef USE_DEBUG_LOG
     if (!g_disable_debug_log) {

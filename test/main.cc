@@ -16,6 +16,5 @@ int main(int argc, char* argv[])
 	IGNORE_RESULT(delete_directories("temp", NULL, NULL));
     cutil_exit();
 
-    getchar();
     return rv;
 }
