@@ -9,18 +9,24 @@ include_directories(
   gtest/include
 )
 
-if(WIN32 AND MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DUNICODE /D_UNICODE /DNOMINMAX /MP4 /EHsc")
+if(WIN32)
+  add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX -DMP4)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} /DNDEBUG /MD /GL")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} /DNDEBUG /MD /GL")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} /D_DEBUG /MDd /ZI /Od")
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF")
-else()
+else() # WIN32
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 if(CMAKE_BUILD_TYPE STREQUAL Debug) 
   add_definitions(-D_DEBUG -g -Wall -fprofile-arcs -ftest-coverage)
 else()
   add_definitions(-DNDEBUG)
 endif()
+endif() # WIN32
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-invalid-source-encoding")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-source-encoding")
 endif()
 
 set(SOURCES
@@ -80,7 +86,7 @@ else() # WIN32
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     #Mac OS X
     target_link_libraries(UtilsTest --coverage) 
-else()
+  else()
     #Linux
     target_link_libraries(UtilsTest gcov)
   endif()

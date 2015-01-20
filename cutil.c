@@ -2297,6 +2297,31 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
     return 1;
 }
 
+/* stat大文件(>2GB) */
+#ifdef OS_WIN
+#define STAT_STRUCT struct _stat64
+#else  /* OS_WIN */
+#define STAT_STRUCT struct stat
+#endif /* OS_WIN */
+
+int _stat_file(const char* path, STAT_STRUCT* stat_buf)
+{
+#ifdef OS_WIN
+#ifdef USE_UTF8_STR
+    wchar_t wpath[MAX_PATH];
+    if (!UTF82UNI(path, wpath, MAX_PATH) ||
+        _wstati64(wpath, stat_buf) != 0)
+        return 0;
+
+    return 1;
+#else 
+    return !_stati64(path, stat_buf);
+#endif
+#else /* OS_WIN */
+    return !stat(path, stat_buf);
+#endif
+}
+
 /* 删除文件 */
 int delete_file(const char *path)
 {
@@ -2884,31 +2909,6 @@ const char* get_execute_path()
     }
 
     return path;
-}
-
-/* stat大文件(>2GB) */
-#ifdef OS_WIN
-#define STAT_STRUCT struct _stat64
-#else  /* OS_WIN */
-#define STAT_STRUCT struct stat
-#endif /* OS_WIN */
-
-int _stat_file(const char* path, STAT_STRUCT* stat_buf)
-{
-#ifdef OS_WIN
-#ifdef USE_UTF8_STR
-    wchar_t wpath[MAX_PATH];
-    if (!UTF82UNI(path, wpath, MAX_PATH) ||
-        _wstati64(wpath, stat_buf) != 0)
-        return 0;
-
-    return 1;
-#else 
-    return !_stati64(path, stat_buf);
-#endif
-#else /* OS_WIN */
-    return !stat(path, stat_buf);
-#endif
 }
 
 /* 获取进程的文件名(包括扩展名) */
@@ -5439,6 +5439,20 @@ void cond_destroy(cond_t *cond)
 /*                         Thread  多线程                               */
 /************************************************************************/
 
+#ifdef OS_POSIX
+struct _thread_create_param {
+  uthread_proc_t proc;
+  void* arg;
+};
+
+void* _thread_create_helper(void* arg) {
+    struct _thread_create_param* param = (struct _thread_create_param*)arg;
+    int ret = param->proc(param->arg);
+    xfree(arg);
+    return (void*)(size_t)ret;
+}
+#endif
+
 /* 创建线程 */
 /* 如果stacksize为0则使用默认的堆栈大小 */
 int uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
@@ -5458,7 +5472,10 @@ int uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
     }else
         pattr = NULL;
 
-    if (pthread_create(t, pattr, proc, arg))
+    struct _thread_create_param* param = XMALLOC(struct _thread_create_param);
+    param->proc = proc;
+    param->arg = arg;
+    if (pthread_create(t, pattr, _thread_create_helper, param))
         return 0;
 
     return 1;
@@ -5488,10 +5505,11 @@ void uthread_exit(size_t exit_code)
 }
 
 /* 等待线程 */
-int uthread_join(uthread_t t, uthread_ret_t *exit_code)
+int uthread_join(uthread_t t, int *exit_code)
 {
 #ifdef OS_POSIX
-    if (pthread_join(t, exit_code))
+    void *ret = exit_code;
+    if (pthread_join(t, &ret))
         return 0;
 #else
     WaitForSingleObject(t, INFINITE);
@@ -6070,7 +6088,7 @@ static int _remove_legency_log(const char* fpath, void *arg)
     return 1;
 }
 
-static uthread_ret_t
+static int
 THREAD_CALLTYPE _remove_legency_logs_thread(void *arg)
 {
     return foreach_file("log", _remove_legency_log, 0, 1, arg);
@@ -6095,7 +6113,7 @@ void log_init()
         log_open(NULL, log_path, 0, 0);
         log_info(" ==================== Program Started ====================\n\n");
 
-        uthread_create(&thread, _remove_legency_logs_thread, NULL, 0);
+        IGNORE_RESULT(uthread_create(&thread, _remove_legency_logs_thread, NULL, 0));
     }
 #endif /* USE_DEBUG_LOG */
 }
@@ -6185,20 +6203,17 @@ void log_printf0(const char* name, const char *fmt, ...)
 
 /* 写入日志文件 */
 /* FATAL 消息在记录之后会记录堆栈并使程序退出 */
-void log_printf(const char* name, int severity, const char *fmt, ...)
+void log_printf(const char* name, int level, const char *fmt, ...)
 {
-    time_t t;
     char tmbuf[128], msgbuf[1024];
-    const char *p;
     va_list args;
-    size_t len;
-    int level;
+    time_t t;
 
     LogEntry* entry = _find_log_entry(name, 1);
     if (!entry)
         return;
 
-    level = xmin(xmax((int)LOG_FATAL, severity), (int)LOG_DEBUG);
+    level = xmin(xmax((int)LOG_FATAL, level), (int)LOG_DEBUG);
     if (level > log_min_level)
         return;
 

@@ -1053,18 +1053,16 @@ void cond_destroy(cond_t *cond);                /* 销毁条件变量 */
 
 #ifdef OS_WIN
 typedef HANDLE uthread_t;
-typedef unsigned uthread_ret_t;
 #define THREAD_CALLTYPE __stdcall
 #define INVALID_THREAD NULL
 #else /* POSIX */
 #include <pthread.h>
 typedef pthread_t uthread_t;
-typedef void* uthread_ret_t;
 #define THREAD_CALLTYPE
 #define INVALID_THREAD 0
 #endif /* OS_WIN */
 
-typedef uthread_ret_t (THREAD_CALLTYPE *uthread_proc_t)(void*);
+typedef int (THREAD_CALLTYPE *uthread_proc_t)(void*);
 
 /* 创建线程 */
 int  uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize) WUR;
@@ -1073,7 +1071,7 @@ int  uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
 void uthread_exit(size_t exit_code);
 
 /* 等待线程 */
-int  uthread_join(uthread_t t, uthread_ret_t *exit_code);
+int  uthread_join(uthread_t t, int *exit_code);
 
 /************************* 线程本地存储 *************************/
 

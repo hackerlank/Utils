@@ -57,7 +57,7 @@ TEST(Logging, Threading) {
     // 检查写入的日志行数
     int lines = 0;
     FILE* fp = xfopen("threading.log", "r");
-    foreach_line(fp, line_counter, &lines);
+    IGNORE_RESULT(foreach_line(fp, line_counter, &lines));
     EXPECT_EQ(kThreads * 2 + kThreads * 1000, lines);
 }
 

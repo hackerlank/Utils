@@ -1084,14 +1084,10 @@ Thread::~Thread()
     Join();
 }
 
-static uthread_ret_t 
+static int 
 THREAD_CALLTYPE thread_helper(void *arg)
 {
-#ifdef OS_WIN
-  return static_cast<uthread_ret_t>(((Thread*)arg)->RunImpl());
-#else
-  return reinterpret_cast<uthread_ret_t>(((Thread*)arg)->RunImpl());
-#endif
+  return ((Thread*)arg)->RunImpl();
 }
 
 bool Thread::Run()

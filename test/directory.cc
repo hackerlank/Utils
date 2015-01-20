@@ -16,7 +16,7 @@ TEST(Directory, Basic)
     EXPECT_FALSE(path_file_exists(single_dir));
 
 	/* create_directory无法创建多级目录，而create_directories可以 */
-    const char* multi_dir = "temp"SEP"foo"SEP"bar"SEP"abc"SEP;
+    const char* multi_dir = "temp" SEP "foo" SEP "bar" SEP "abc" SEP;
 	EXPECT_FALSE(create_directory(multi_dir));
 	EXPECT_TRUE(create_directories(multi_dir));
 	EXPECT_TRUE(path_is_directory(multi_dir));
@@ -36,31 +36,31 @@ TEST(Directory, Basic)
 
 TEST(Directory, DeleteEmpty)
 {
-    const char* multi_dir = "temp"SEP"foo"SEP"bar"SEP"abc"SEP;
+    const char* multi_dir = "temp" SEP "foo" SEP "bar" SEP "abc" SEP;
 
     // 没有任何文件，所有目录将被删除
     ASSERT_TRUE(create_directories(multi_dir));
-    EXPECT_TRUE(delete_empty_directories("temp"SEP"foo"));
-    EXPECT_FALSE(path_file_exists("temp"SEP"foo"));
+    EXPECT_TRUE(delete_empty_directories("temp" SEP "foo"));
+    EXPECT_FALSE(path_file_exists("temp" SEP "foo"));
 
     // 在最底层目录下新建一个文件，一个目录也不会被删除
     char buf[MAX_PATH];
     ASSERT_TRUE(create_directories(multi_dir));
     ASSERT_TRUE(get_temp_file_under(multi_dir, "test", buf, sizeof(buf)));
     printf("%s\n", buf);
-    EXPECT_FALSE(delete_empty_directories("temp"SEP"foo"));
+    EXPECT_FALSE(delete_empty_directories("temp" SEP "foo"));
     EXPECT_TRUE(path_is_file(buf));
-    EXPECT_TRUE(path_is_directory("temp"SEP"foo"));
+    EXPECT_TRUE(path_is_directory("temp" SEP "foo"));
 
     // 在倒数第二层目录下新建一个文件，仅最后一级目录被删除
     ASSERT_TRUE(delete_file(buf));
-    ASSERT_TRUE(get_temp_file_under("temp"SEP"foo"SEP"bar", "test", buf, sizeof(buf)));
-    EXPECT_FALSE(delete_empty_directories("temp"SEP"foo"));
+    ASSERT_TRUE(get_temp_file_under("temp" SEP "foo" SEP "bar", "test", buf, sizeof(buf)));
+    EXPECT_FALSE(delete_empty_directories("temp" SEP "foo"));
     EXPECT_FALSE(path_file_exists(multi_dir));
     EXPECT_TRUE(path_is_file(buf));
-    EXPECT_TRUE(path_is_directory("temp"SEP"foo"SEP"bar"));
+    EXPECT_TRUE(path_is_directory("temp" SEP "foo" SEP "bar"));
 
-    EXPECT_TRUE(delete_directories("temp"SEP"foo", NULL, NULL));
+    EXPECT_TRUE(delete_directories("temp" SEP "foo", NULL, NULL));
 }
 
 static int copy_dir_hander(const char* src, const char *dst,

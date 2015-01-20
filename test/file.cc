@@ -35,7 +35,7 @@ static int md5_is_same(const char* file1, const char* file2)
 
 class FileTest : public testing::Test {
 protected:
-    virtual void SetUp() OVERRIDE {
+    virtual void SetUp() override {
         xstrlcpy(gbk_book, get_execute_dir(), sizeof(gbk_book));
         strlcat(gbk_book, GBK_BOOK, sizeof(gbk_book));
         ASSERT_TRUE(path_is_file(gbk_book));
@@ -45,7 +45,7 @@ protected:
         ASSERT_TRUE(path_is_file(utf8_book));
     }
 
-    virtual void TearDown() OVERRIDE {
+    virtual void TearDown() override {
 
     }
 
@@ -68,7 +68,7 @@ TEST_F(FileTest, CopyMove)
 
     // 移动文件
     char book2[MAX_PATH];
-    path_insert_before_extension(book1, " (1)", book2, sizeof(book2));
+    IGNORE_RESULT(path_insert_before_extension(book1, " (1)", book2, sizeof(book2)));
 
     ASSERT_TRUE(touch(book2));
     EXPECT_FALSE(move_file(book1, book2, 0));
@@ -106,7 +106,7 @@ TEST_F(FileTest, Read)
     char buf[4094];
     char *p = buf;
     size_t n = sizeof(buf);
-    xfread(fp, '*', 0, &p, &n);
+    ASSERT_NE(0, xfread(fp, '*', 0, &p, &n));
     EXPECT_EQ(ASTER_POS, n);
     EXPECT_EQ(p, buf);
 
