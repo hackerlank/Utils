@@ -6556,7 +6556,7 @@ int version_parse(const char* version, struct version_info* parsed)
         memset(parsed->suffix, '\0', sizeof(parsed->suffix));
 
     /* 版本号 */
-    strlcpy(ver, version, p ? p - version + 1: sizeof(ver));
+    xstrlcpy(ver, version, p ? p - version + 1: sizeof(ver));
     q = ver;
 
     while ((p = strsep(&q, "."))) {

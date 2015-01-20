@@ -35,17 +35,17 @@ static int md5_is_same(const char* file1, const char* file2)
 
 class FileTest : public testing::Test {
 protected:
-    virtual void SetUp() override {
+    virtual void SetUp() OVERRIDE {
         xstrlcpy(gbk_book, get_execute_dir(), sizeof(gbk_book));
-        strlcat(gbk_book, GBK_BOOK, sizeof(gbk_book));
+        xstrlcat(gbk_book, GBK_BOOK, sizeof(gbk_book));
         ASSERT_TRUE(path_is_file(gbk_book));
 
         xstrlcpy(utf8_book, get_execute_dir(), sizeof(utf8_book));
-        strlcat(utf8_book, UTF8_BOOK, sizeof(utf8_book));
+        xstrlcat(utf8_book, UTF8_BOOK, sizeof(utf8_book));
         ASSERT_TRUE(path_is_file(utf8_book));
     }
 
-    virtual void TearDown() override {
+    virtual void TearDown() OVERRIDE {
 
     }
 
@@ -57,8 +57,8 @@ protected:
 TEST_F(FileTest, CopyMove)
 {
     char book1[MAX_PATH];
-    strlcpy(book1, "temp" SEP, sizeof(book1));
-    strlcat(book1, path_find_file_name(GBK_BOOK), sizeof(book1));
+    xstrlcpy(book1, "temp" SEP, sizeof(book1));
+    xstrlcat(book1, path_find_file_name(GBK_BOOK), sizeof(book1));
 
     ASSERT_TRUE(touch(book1));
     EXPECT_FALSE(copy_file(gbk_book, book1, 0));
@@ -106,8 +106,8 @@ TEST_F(FileTest, Read)
     char buf[4094];
     char *p = buf;
     size_t n = sizeof(buf);
-    ASSERT_NE(0, xfread(fp, '*', 0, &p, &n));
-    EXPECT_EQ(ASTER_POS, n);
+    ASSERT_NE((size_t)0, xfread(fp, '*', 0, &p, &n));
+    EXPECT_EQ((size_t)ASTER_POS, n);
     EXPECT_EQ(p, buf);
 
     // 如果提供的缓冲区过小，将自动分配内存
@@ -171,7 +171,7 @@ TEST_F(FileTest, ReadWriteMem)
 
     const char content[] = "some thing to write, haha\n";
     EXPECT_TRUE(write_mem_file(tmpf, content, sizeof(content)));
-    EXPECT_EQ(sizeof(content), file_size(tmpf));
+    EXPECT_EQ(sizeof(content), (size_t)file_size(tmpf));
 }
 
 static int g_line_count;

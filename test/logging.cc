@@ -9,7 +9,7 @@ class LoggingThread : public utils::Thread {
 public:
     LoggingThread(int id): utils::Thread(id) {}
 
-    virtual int RunImpl() override {
+    virtual int RunImpl() OVERRIDE {
         log_printf(kThreadLogName, id_, "thread %d begin logging...", id_);
         for (int i = 0; i < 1000; ++i)
             log_printf(kThreadLogName, id_, "This is thread %d", id_);

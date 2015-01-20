@@ -16,7 +16,7 @@ if(WIN32)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} /D_DEBUG /MDd /ZI /Od")
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF")
 else() # WIN32
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 if(CMAKE_BUILD_TYPE STREQUAL Debug) 
   add_definitions(-D_DEBUG -g -Wall -fprofile-arcs -ftest-coverage)
 else()
