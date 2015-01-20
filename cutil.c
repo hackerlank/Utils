@@ -10,6 +10,7 @@
 #include <io.h> /* copy_file */
 #include <direct.h> /* _mkdir */
 #include <sys/utime.h> /* utime */
+#include <sys/types.h> /* sys/stat.h required */
 #include <sys/stat.h> /* _stati64, _wstati64 */
 #include <ShlObj.h> /* SHGetSpecialFolderPath */
 #include <dbghelp.h> /* minidump */
@@ -64,14 +65,6 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException);
 void crash_signal_handler(int n, siginfo_t *siginfo, void *act);
 
 #endif /* OS_WIN */
-
-/* stat大文件(>2GB) */
-#if defined(COMPILER_MSVC)
-#define STAT_STRUCT struct _stati64
-#define stat _stati64
-#else
-#define STAT_STRUCT struct stat
-#endif
 
 /* 软件名称 */
 static char g_product_name[256];
@@ -145,9 +138,9 @@ void cutil_init()
     /* 检查系统默认编码 */
     const char *locale = get_locale();
     if (strcasecmp(locale, "UTF-8"))
-        log_dprintf(LOG_WARNING, "The current system locale is %s, \
-                                 which can cause some function to behave abnormally. \
-                                 UTF-8 is strongly recommended.", locale);
+        log_warning("The current system locale is %s, \
+                    which can cause some function to behave abnormally. \
+                    UTF-8 is strongly recommended.", locale);
 #endif
 #endif /* OS_POSIX */
 }
@@ -160,12 +153,12 @@ void cutil_exit()
 
     /* 检查文件使用情况 */
     if (g_opened_files)
-        log_dprintf(LOG_NOTICE, "%d files still open!", g_opened_files);
+        log_notice("%d files still open!", g_opened_files);
 
     /* 检查内存使用情况 */
 #ifdef DBG_MEM_RT
     if (g_xalloc_count)
-        log_dprintf(LOG_NOTICE, "Detected %d memory leaks!", g_xalloc_count);
+        log_notice("Detected %d memory leaks!", g_xalloc_count);
     memrt_check();
 #endif
 
@@ -194,11 +187,6 @@ int check_cutil_init()
 }
 
 #define CHECK_INIT() ASSERT(check_cutil_init())
-
-void set_disable_debug_log()
-{
-    g_disable_debug_log = 1;
-}
 
 void set_product_name(const char* product_name)
 {
@@ -307,7 +295,7 @@ static void default_interrupt_handler(int type)
 #endif
 
     printf("%s Exit now...\n", msg);
-    log_dprintf(LOG_ALERT, "%s Exit now...\n", msg);
+    log_alert("%s Exit now...\n", msg);
 
     cutil_exit();
     exit(1);
@@ -332,7 +320,7 @@ void set_default_crash_handler()
     /* Release版本如果有pdb文件也可以打印堆栈 */
     SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME | SYMOPT_LOAD_LINES);
     if (!SymInitialize(GetCurrentProcess(), NULL, TRUE))
-        log_dprintf(LOG_WARNING, "Initialize debug symbol failed! %s", get_last_error_win32());
+        log_warning("Initialize debug symbol failed! %s", get_last_error_win32());
 
     //_CrtSetReportMode(_CRT_ASSERT, 0);    /* disable default assert dialog */
 
@@ -745,7 +733,7 @@ char *strndup(const char* s, size_t n)
     len = xmin(slen, n);
     p = (char*)malloc(len+1);    /* 不使用xmalloc以免重复计算内存申请次数 */
     if (!p)
-        log_dprintf(LOG_FATAL, "strndup malloc failed");
+        log_fatal("strndup malloc failed");
 
     strncpy(p, s, len);
     p[len] = '\0';
@@ -2898,6 +2886,31 @@ const char* get_execute_path()
     return path;
 }
 
+/* stat大文件(>2GB) */
+#ifdef OS_WIN
+#define STAT_STRUCT struct _stat64
+#else  /* OS_WIN */
+#define STAT_STRUCT struct stat
+#endif /* OS_WIN */
+
+int _stat_file(const char* path, STAT_STRUCT* stat_buf)
+{
+#ifdef OS_WIN
+#ifdef USE_UTF8_STR
+    wchar_t wpath[MAX_PATH];
+    if (!UTF82UNI(path, wpath, MAX_PATH) ||
+        _wstati64(wpath, stat_buf) != 0)
+        return 0;
+
+    return 1;
+#else 
+    return !_stati64(path, stat_buf);
+#endif
+#else /* OS_WIN */
+    return !stat(path, stat_buf);
+#endif
+}
+
 /* 获取进程的文件名(包括扩展名) */
 /* 失败返回空字符串 */
 const char* get_execute_name()
@@ -4823,7 +4836,7 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
     pid_t pid = fork();
     if (pid < 0)
     {
-        log_dprintf(LOG_ERROR, "Fork failed.");
+        log_error("Fork failed.");
         return INVALID_PROCESS;
     }
     else if (pid == 0)
@@ -4833,13 +4846,13 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 
         null_fd = HANDLE_FAILURE(open("/dev/null", O_RDONLY));
         if (null_fd < 0) {
-            //log_dprintf(LOG_ERROR, "Failed to open /dev/null.");
+            //log_error("Failed to open /dev/null.");
             _exit(127);
         }
 
         new_fd = HANDLE_FAILURE(dup2(null_fd, STDIN_FILENO));
         if (new_fd != STDIN_FILENO) {
-            //log_dprintf(LOG_ERROR, "Failed to dup /dev/null for stdin");
+            //log_error("Failed to dup /dev/null for stdin");
             _exit(127);
         }
         /* FIXME: why? */
@@ -5454,7 +5467,7 @@ int uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
     uintptr_t ret = _beginthreadex(NULL, stacksize, proc, arg, 0, NULL);
     if (!ret)
     {
-        log_dprintf(LOG_ERROR, "thread create failed: %s", get_last_error_std());
+        log_error("thread create failed: %s", get_last_error_std());
         return 0;
     }
 
@@ -5700,7 +5713,7 @@ static void StackBackTraceMsg(const DWORD64* trace, size_t count, const char* in
                         i+1, trace[i]);
 
         /* 记录日志 */
-        log_dprintf(LOG_DEBUG, "%s", msgl);
+        log_debug("%s", msgl);
 
         /* 打印到VC输出窗口 */
 #ifdef _MSC_VER
@@ -5868,7 +5881,7 @@ void stack_backtrace(int level, const char* info)
     int size;
 
     memset(msgs, 0, sizeof(msgs));
-    log_dprintf(LOG_DEBUG, "%s", info);
+    log_debug("%s", info);
 
     if (is_debug_log_set_to_stderr())
         fprintf(stderr, "%s\n", info);
@@ -5884,7 +5897,7 @@ void stack_backtrace(int level, const char* info)
         if (g_backtrace_hander)
             xstrlcat(msgs, msg, sizeof(msgs));
 
-        log_dprintf(LOG_DEBUG, "%s", msg);
+        log_debug("%s", msg);
         if (is_debug_log_set_to_stderr())
             fprintf(stderr, "%s\n", msg);
         else
@@ -5992,7 +6005,7 @@ char* hexdump(const void *data, size_t len)
 /*                          Logging 日志系统                            */
 /************************************************************************/
 
-static const char* log_severity_names[] = {
+static const char* log_level_name[] = {
     "Fatal",
     "Alert",
     "Critical",
@@ -6011,12 +6024,28 @@ typedef struct {
 
 static LogEntry g_logs[1000];
 
-static int log_min_level = LOG_DEBUG;   /* 设置最低记录等级 */
-static int log_to_stderr = 0;           /* 调试信息发送到标准错误输出 */
+/* 外部处理函数 */
+static log_handler g_log_handler;
+
+/* 设置最低记录等级 */
+static int log_min_level = LOG_DEBUG;
+
+/* 调试信息发送到标准错误输出 */
+static int log_to_stderr = 0;
 
 void set_log_level(int severity)
 {
     log_min_level = severity;
+}
+
+void set_log_handler(log_handler handler)
+{
+    g_log_handler = handler;
+}
+
+void set_disable_debug_log()
+{
+    g_disable_debug_log = 1;
 }
 
 void set_debug_log_to_stderr()
@@ -6029,13 +6058,33 @@ int is_debug_log_set_to_stderr()
     return log_to_stderr;
 }
 
+static int _remove_legency_log(const char* fpath, void *arg)
+{
+    STAT_STRUCT st;
+    const char* ext = path_find_extension(fpath);
+    if (STREQ(ext, ".log") && _stat_file(fpath, &st)) {
+        if (time(NULL) - st.st_mtime > 60 * 60 * 24 * 7)    // 7天后自动删除
+            IGNORE_RESULT(delete_file(fpath));
+    }
+
+    return 1;
+}
+
+static uthread_ret_t
+THREAD_CALLTYPE _remove_legency_logs_thread(void *arg)
+{
+    return foreach_file("log", _remove_legency_log, 0, 1, arg);
+}
+
 /* 初始化日志模块 */
 void log_init()
 {
     /* 打开软件全局调试日志 */
 #ifdef USE_DEBUG_LOG
     if (!g_disable_debug_log) {
+        uthread_t thread;
         char exe_name[MAX_PATH], log_path[MAX_PATH];
+
         xstrlcpy(exe_name, get_execute_name(), MAX_PATH);
         exe_name[path_find_extension(exe_name) - exe_name] = '\0';
         IGNORE_RESULT(create_directory("log"));
@@ -6045,6 +6094,8 @@ void log_init()
             PATH_SEP_CHAR, exe_name, timestamp_str(time(NULL)), getpid());
         log_open(NULL, log_path, 0, 0);
         log_info(" ==================== Program Started ====================\n\n");
+
+        uthread_create(&thread, _remove_legency_logs_thread, NULL, 0);
     }
 #endif /* USE_DEBUG_LOG */
 }
@@ -6137,7 +6188,7 @@ void log_printf0(const char* name, const char *fmt, ...)
 void log_printf(const char* name, int severity, const char *fmt, ...)
 {
     time_t t;
-    char msgbuf[1024];
+    char tmbuf[128], msgbuf[1024];
     const char *p;
     va_list args;
     size_t len;
@@ -6151,34 +6202,28 @@ void log_printf(const char* name, int severity, const char *fmt, ...)
     if (level > log_min_level)
         return;
 
-    mutex_lock(&entry->lock);
-
-    // 时间信息
+    // 时间戳
     t = time(NULL);
-    memset(msgbuf, '\0', sizeof(msgbuf));
-    strftime(msgbuf, sizeof(msgbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
+    memset(tmbuf, '\0', sizeof(tmbuf));
+    strftime(tmbuf, sizeof(tmbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
 
-    // 等级信息
-    len = strlen(msgbuf);
-    xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]);
-
-    // 正文信息
-    len = strlen(msgbuf);
+    // 记录内容
     va_start(args, fmt);
-    xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args);
+    xvsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
     va_end(args);
 
-    // 换行符
-    len = strlen(msgbuf);
-    p = fmt + strlen(fmt) - 1;
-    if (p >= fmt && len < sizeof(msgbuf)-1 && *p != '\n')
-        msgbuf[len++] = '\n';
+    /* 调用外部处理函数 */
+    if (g_log_handler && !g_log_handler(name, level, msgbuf))
+        return;
+
+    /* 如果是默认日志且输出到标准错误 */
+    if (!name && log_to_stderr)
+        fprintf(stderr, "%s - %s - %s\n", tmbuf, log_level_name[level], msgbuf);
+
+    mutex_lock(&entry->lock);
 
     if (entry->fp)
-        fwrite(msgbuf, len, 1, entry->fp);
-
-    if (!name && log_to_stderr)
-        fwrite(msgbuf, len, 1, stderr);
+        fprintf(entry->fp, "%s - %s - %s\n", tmbuf, log_level_name[level], msgbuf);
 
 #ifdef _DEBUG
     if (entry->fp)
@@ -6188,17 +6233,13 @@ void log_printf(const char* name, int severity, const char *fmt, ...)
     mutex_unlock(&entry->lock);
 
     /* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
+    /* Debug模式下如果等级为错误或更严重，立即中断以调试 */
     if (level == LOG_FATAL
 #ifdef _DEBUG
         || level <= LOG_ERROR
 #endif
-        ) {
-        char buf[256];
-        va_start(args, fmt);
-        xvsnprintf(buf, sizeof(buf), fmt, args);
-        va_end(args);
-        backtrace_here(level, "%s", buf);
-    }
+        )
+        backtrace_here(level, "%s", msgbuf);
 }
 
 void log_flush(const char* name)
@@ -6460,7 +6501,7 @@ void __memrt_printf(const char *fmt, ...)
 #endif
 
     /* 记录系统日志 */
-    log_dprintf(LOG_NOTICE, "%s", msg);
+    log_notice("%s", msg);
 }
 
 #endif /* DBG_MEM_RT */

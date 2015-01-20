@@ -54,21 +54,6 @@ void cutil_init();
 /* 清理本库，在程序结束前调用 */
 void cutil_exit();
 
-/* 禁用默认的调试日志 */
-void set_disable_debug_log();
-
-/* 设置堆栈处理函数 */
-/* title的格式为"[Tag] " */
-typedef void(*backtrace_handler)(int level, const char* title, const char* content);
-void set_backtrace_handler(backtrace_handler handler);
-
-/* 设置崩溃处理函数 */
-typedef void (*crash_handler)(const char* dump_file);
-void set_crash_handler(crash_handler handler);
-
-/* 设置默认的崩溃处理函数 */
-void set_default_crash_handler();
-
 /* 设置软件名称，用于创建临时文件和目录等 */
 /* 如果是非英文名称，编码应与USE_UTF8_STR一致，最长255个字符 */
 void set_product_name(const char* product_name);
@@ -1143,6 +1128,18 @@ int thread_once(thread_once_t* once, thread_once_func func);
 #define NOT_IMPLEMENTED()
 #endif
 
+/* 设置堆栈处理函数 */
+/* title的格式为"[Tag] " */
+typedef void(*backtrace_handler)(int level, const char* title, const char* content);
+void set_backtrace_handler(backtrace_handler handler);
+
+/* 设置崩溃处理函数 */
+typedef void(*crash_handler)(const char* dump_file);
+void set_crash_handler(crash_handler handler);
+
+/* 设置默认的崩溃处理函数 */
+void set_default_crash_handler();
+
 /*
  * 打印当前执行堆栈并开始调试
  * 如果fatal参数为真，将导致程序退出
@@ -1189,8 +1186,16 @@ enum LogLevel {
 /* 初始化日志模块 */
 void log_init();
 
+/* 设置自定义日志处理函数 */
+/* 自定义处理函数返回1表示继续记录，返回0表示不记录此条日志 */
+typedef int (*log_handler)(const char* name, int level, const char* message);
+void set_log_handler(log_handler handler);
+
 /* 设置记录的最低等级 */
 void set_log_level(int min_level);
+
+/* 禁用默认的调试日志 */
+void set_disable_debug_log();
 
 /* 将调试日志信息输出到stderr */
 void set_debug_log_to_stderr();
