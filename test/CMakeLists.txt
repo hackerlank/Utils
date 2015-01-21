@@ -41,6 +41,7 @@ set(SOURCES
   math.cc
   others.cc
   string.cc
+  thread.cc
   version.cc
   main.cc
   ../cutil.h

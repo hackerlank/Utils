@@ -5458,25 +5458,24 @@ void* _thread_create_helper(void* arg) {
 int uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
 {
 #ifdef OS_POSIX
-    pthread_attr_t attr, *pattr;
-
-    if (stacksize > 0)
-    {
+    pthread_attr_t attr, *pattr = NULL;
+    if (stacksize > 0) {
         if (pthread_attr_init(&attr))
             return 0;
         if (pthread_attr_setstacksize(&attr, stacksize))
             return 0;
-        if (pthread_attr_destroy(&attr))
-            return 0;
         pattr = &attr;
-    }else
-        pattr = NULL;
+    }
 
     struct _thread_create_param* param = XMALLOC(struct _thread_create_param);
     param->proc = proc;
     param->arg = arg;
+    
     if (pthread_create(t, pattr, _thread_create_helper, param))
         return 0;
+
+    if (pattr)
+        pthread_attr_destroy(pattr);
 
     return 1;
 #else
@@ -5508,9 +5507,12 @@ void uthread_exit(size_t exit_code)
 int uthread_join(uthread_t t, int *exit_code)
 {
 #ifdef OS_POSIX
-    void *ret = exit_code;
+    void *ret;
     if (pthread_join(t, &ret))
         return 0;
+
+    if (exit_code)
+        *exit_code = (int)(size_t)ret;
 #else
     WaitForSingleObject(t, INFINITE);
     if (exit_code && !GetExitCodeThread(t, (LPDWORD)exit_code))
@@ -5525,7 +5527,7 @@ int uthread_join(uthread_t t, int *exit_code)
 }
 
 /* 创建一个线程相关存储（TLS）键 */
-int    thread_tls_create(thread_tls_t *tls)
+int thread_tls_create(thread_tls_t *tls)
 {
 #ifdef OS_POSIX
     if (pthread_key_create(tls, NULL))
