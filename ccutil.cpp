@@ -774,27 +774,28 @@ std::string& PathLegalize(std::string& path, int platform, size_t max_length)
     return path;
 }
 
-std::string AbsolutePath(const std::string& relative)
+std::string AbsolutePath(const std::string& base, const std::string& rel)
 {
-    char buf[MAX_PATH];
-    if (!absolute_path(relative.c_str(), buf, MAX_PATH))
-        return 0;
+    if (base.empty() || rel.empty())
+        return "";
 
-    return buf;
+    char abs[MAX_PATH];
+    if (!absolute_path(base.c_str(), rel.c_str(), abs, MAX_PATH))
+        return "";
+
+    return abs;
 }
 
-// 构造相对路径
-std::string RelativePath(const std::string& src, const std::string& dst)
+std::string RelativePath(const std::string& base, const std::string& abs)
 {
-    char link[MAX_PATH+1];
-
-    if (src.empty() || dst.empty())
+    if (base.empty() || abs.empty())
         return "";
 
-    if (!relative_path(src.c_str(), dst.c_str(), link, MAX_PATH+1))
+    char rel[MAX_PATH];
+    if (!relative_path(base.c_str(), abs.c_str(), rel, MAX_PATH))
         return "";
 
-    return link;
+    return rel;
 }
 
 bool CopyFile(const std::string &src, const std::string &dst, bool bOverWrite /* = false */)
@@ -848,16 +849,17 @@ int64_t FileSize(const std::string &path)
     return file_size(path.c_str());
 }
 
-bool ReadFile(const std::string& path, std::string* content, size_t max_size /* = 0 */) 
+std::string ReadFile(const std::string& path, size_t max_size /* = 0 */) 
 {
-    ASSERT(content);
-
+    std::string content;
     file_mem* fm = read_file_mem(path.c_str(), max_size);
     if (!fm)
-        return false;
+        return content;
 
-    content->assign(fm->content, fm->length);
-    return true;
+    content.assign(fm->content, fm->length);
+
+    free_file_mem(fm);
+    return content;
 }
 
 bool WriteFile(const std::string& path, const std::string& content)
@@ -1083,14 +1085,10 @@ Thread::~Thread()
     Join();
 }
 
-static uthread_ret_t 
+static int 
 THREAD_CALLTYPE thread_helper(void *arg)
 {
-#ifdef OS_WIN
-  return static_cast<uthread_ret_t>(((Thread*)arg)->RunImpl());
-#else
-  return reinterpret_cast<uthread_ret_t>(((Thread*)arg)->RunImpl());
-#endif
+  return ((Thread*)arg)->RunImpl();
 }
 
 bool Thread::Run()
@@ -1133,21 +1131,23 @@ bool Thread::Once()
 
 #ifdef DBG_MEM_RT
 
-void memrt_msg_cpp(int error, struct MEMRT_OPERATE *rtp)
+void memrt_msg_cpp(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method)
 {
     switch(error)
     {
     case MEMRTE_NOFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not deleted at %p size %u method %d.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address ,rtp->size, rtp->method);
+            file, func, line, address ,size, method);
         break;
     case MEMRTE_UNALLOCFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory unexceptly deleted at %p.\n", 
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     case MEMRTE_MISRELIEF:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not reliefed properly at %p, use free() instead.\n", 
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     default:
         break;

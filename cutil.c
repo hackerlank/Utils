@@ -10,6 +10,7 @@
 #include <io.h> /* copy_file */
 #include <direct.h> /* _mkdir */
 #include <sys/utime.h> /* utime */
+#include <sys/types.h> /* sys/stat.h required */
 #include <sys/stat.h> /* _stati64, _wstati64 */
 #include <ShlObj.h> /* SHGetSpecialFolderPath */
 #include <crtdbg.h> /* _CrtSetReportMode */
@@ -47,6 +48,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException);
 #include <utime.h>            /* utime */
 #include <signal.h>            /* SIGCHLD.etc */
 #include <stddef.h>         /* ptrdiff_t type */
+#include <syslog.h> 
 
 #ifdef OS_MACOSX
 #include <sys/mount.h>      /* statfs */
@@ -63,13 +65,8 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act);
 
 #endif /* OS_WIN */
 
-/* stat大文件(>2GB) */
-#if defined(COMPILER_MSVC)
-#define STAT_STRUCT struct _stati64
-#define stat _stati64
-#else
-#define STAT_STRUCT struct stat
-#endif
+void log_init();
+void log_exit();
 
 /* 软件名称 */
 static char g_product_name[256];
@@ -79,6 +76,9 @@ static int g_cutil_inited;
 
 /* 已打开的文件数 */
 static int g_opened_files;
+
+/* 是否禁用调试日志 */
+static int g_disable_debug_log;
 
 /* 外部堆栈处理函数 */
 static backtrace_handler g_backtrace_hander;
@@ -100,11 +100,19 @@ int set_default_interrupt_handler();
 void cutil_init()
 {
     int ret ALLOW_UNUSED;
+
+    if (g_cutil_inited)
+        return;
+
     g_cutil_inited = 1;
 
     /* 将当前工作目录为可执行文件所在目录 */
     ret = set_current_dir(get_execute_dir());
     ASSERT(ret);
+
+    /* 初始化软件名称 */
+    if (!g_product_name[0])
+        xstrlcpy(g_product_name, "UtilsApp", sizeof(g_product_name));
 
     /* 初始化日志模块 */
     log_init();
@@ -114,9 +122,6 @@ void cutil_init()
     memrt_init();
 #endif
 
-    /* 初始化软件名称 */
-    xstrlcpy(g_product_name, "UtilsApp", sizeof(g_product_name));
-
     /* 中断处理函数 */
     ret = set_default_interrupt_handler();
     ASSERT(ret);
@@ -125,6 +130,8 @@ void cutil_init()
 #ifdef USE_CRASH_HANDLER
     set_default_crash_handler();
 #endif
+
+
 
 #if defined(OS_POSIX)
     /* 多字节/宽字符串转换 */
@@ -136,7 +143,7 @@ void cutil_init()
     /* 检查系统默认编码 */
     const char *locale = get_locale();
     if (strcasecmp(locale, "UTF-8"))
-        log_dprintf(LOG_WARNING, "The current system locale is %s, \
+        log_printf(NULL, LOG_WARNING, "The current system locale is %s, \
                                  which can cause some function to behave abnormally. \
                                  UTF-8 is strongly recommended.", locale);
 #endif
@@ -151,17 +158,18 @@ void cutil_exit()
 
     /* 检查文件使用情况 */
     if (g_opened_files)
-        log_dprintf(LOG_NOTICE, "%d files still open!", g_opened_files);
+        log_printf(NULL, LOG_NOTICE, "%d files still open!", g_opened_files);
 
     /* 检查内存使用情况 */
 #ifdef DBG_MEM_RT
     if (g_xalloc_count)
-        log_dprintf(LOG_NOTICE, "Detected %d memory leaks!", g_xalloc_count);
+        log_printf(NULL, LOG_NOTICE, "Detected %d memory leaks!", g_xalloc_count);
     memrt_check();
 #endif
 
-    /* 关闭日志模块 */
-    log_close_all();
+
+
+    log_exit();
 }
 
 static inline
@@ -289,7 +297,7 @@ static void default_interrupt_handler(int type)
 #endif
 
     printf("%s Exit now...\n", msg);
-    log_dprintf(LOG_ALERT, "%s Exit now...\n", msg);
+    log_printf(NULL, LOG_ALERT, "%s Exit now...\n", msg);
 
     cutil_exit();
     exit(1);
@@ -304,6 +312,19 @@ int set_default_interrupt_handler()
 
 #ifdef USE_CRASH_HANDLER
 
+#ifdef OS_WIN
+static void _InvalidParameterHandler(const wchar_t* expression,
+    const wchar_t* function, const wchar_t* file, unsigned int line, 
+    uintptr_t pReserved) {
+    backtrace_here(LOG_ERROR, "Invalid parameter calling CRT");
+}
+
+static void _PureVirtualFuncCallHandler(void)
+{
+    backtrace_here(LOG_FATAL, "Pure virtual function called");
+}
+#endif
+
 /* 设置默认的崩溃处理函数 */
 /* Windows下生成minidump文件，且如果存在pdb将堆栈显示在弹出对话框中 */
 /* Linux下生成coredump文件，且如果是debug版打印堆栈到标准错误输出(需使用-rdynamic链接选项) */
@@ -314,10 +335,14 @@ void set_default_crash_handler()
     /* Release版本如果有pdb文件也可以打印堆栈 */
     SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME | SYMOPT_LOAD_LINES);
     if (!SymInitialize(GetCurrentProcess(), NULL, TRUE))
-        log_dprintf(LOG_WARNING, "Initialize debug symbol failed! %s", get_last_error_win32());
+        log_printf(NULL, LOG_WARNING, "Initialize debug symbol failed! %s", get_last_error_win32());
 
-    //_CrtSetReportMode(_CRT_ASSERT, 0);    /* disable default assert dialog */
+    //_CrtSetReportMode(_CRT_ASSERT, 0);
 
+    _set_invalid_parameter_handler(_InvalidParameterHandler);
+    _set_purecall_handler(_PureVirtualFuncCallHandler);
+
+    // Top level handler
     SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)CrashDumpHandler);
 #else /* POSIX */
     struct rlimit lmt;
@@ -351,7 +376,9 @@ void set_default_crash_handler()
 int g_xalloc_count = 0;
 
 #ifdef DBG_MEM_RT
-static void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp);
+static void memrt_msg_c(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method);
 #endif
 
 /* 释放内存 */
@@ -360,11 +387,11 @@ void free_d(void *ptr, const char* file, const char* func, int line)
     if (!ptr)
     {
         /* FATAL日志消息会记录调用堆栈并exit */
-        log_dprintf(LOG_FATAL, "{%s %s %d} Free NULL at %p.\n", file, func, line, ptr);
+        log_printf(NULL, LOG_FATAL, "{%s %s %d} Free NULL at %p.\n", file, func, line, ptr);
     }
 
 #ifdef DBG_MEM_LOG
-    log_dprintf(LOG_DEBUG, "{%s %s %d} Free at %p.\n", file, func, line, ptr);
+    log_printf(NULL, LOG_DEBUG, "{%s %s %d} Free at %p.\n", file, func, line, ptr);
 #endif
 
 #ifdef DBG_MEM_RT
@@ -381,11 +408,11 @@ void *malloc_d(size_t size, const char* file, const char* func, int line)
     register void *memptr = NULL;
 
     if (size > 0 && ((memptr = malloc(size)) == NULL))
-        log_dprintf(LOG_FATAL, "{%s %s %d} Malloc memory exhausted.\n", file, func, line);
+        log_printf(NULL, LOG_FATAL, "{%s %s %d} Malloc memory exhausted.\n", file, func, line);
     else
     {
 #ifdef DBG_MEM_LOG
-        log_dprintf(LOG_DEBUG, "{%s %s %d} Malloc at %p size %"PRIuS".\n", file, func, line, memptr, size);
+        log_printf(NULL, LOG_DEBUG, "{%s %s %d} Malloc at %p size %"PRIuS".\n", file, func, line, memptr, size);
 #endif
 #ifdef DBG_MEM_RT
         __memrt_alloc(MEMRT_MALLOC, memptr, size, file, func, line, NULL, memrt_msg_c);
@@ -414,11 +441,11 @@ void *realloc_d(void *ptr, size_t size, const char* file, const char* func, int 
     }
 
     if (size > 0 && ((memptr = realloc(ptr, size)) == NULL))
-        log_dprintf(LOG_FATAL, "{%s %s %d} Realloc memory exhausted.\n", file, func, line);
+        log_printf(NULL, LOG_FATAL, "{%s %s %d} Realloc memory exhausted.\n", file, func, line);
     else
     {
 #ifdef DBG_MEM_LOG
-        log_dprintf(LOG_DEBUG, "{%s %s %d} Realloc from %p to %p size %"PRIuS".\n", file, func, line, ptr, memptr, size);
+        log_printf(NULL, LOG_DEBUG, "{%s %s %d} Realloc from %p to %p size %"PRIuS".\n", file, func, line, ptr, memptr, size);
 #endif
 #ifdef DBG_MEM_RT
         __memrt_release(MEMRT_FREE, ptr, 0, file, func, line, NULL, memrt_msg_c);
@@ -434,11 +461,11 @@ void *calloc_d(size_t count, size_t size, const char* file, const char* func, in
     register void *memptr = NULL;
 
     if (size > 0 && ((memptr = calloc(count, size)) == NULL))
-        log_dprintf(LOG_FATAL, "{%s %s %d} Calloc memory exhausted.\n", file, func, line);
+        log_printf(NULL, LOG_FATAL, "{%s %s %d} Calloc memory exhausted.\n", file, func, line);
     else
     {
 #ifdef DBG_MEM_LOG
-        log_dprintf(LOG_DEBUG, "{%s %s %d} Calloc at %p count %"PRIuS" size %"PRIuS".\n", file, func, line, memptr, count, size);
+        log_printf(NULL, LOG_DEBUG, "{%s %s %d} Calloc at %p count %"PRIuS" size %"PRIuS".\n", file, func, line, memptr, count, size);
 #endif
 #ifdef DBG_MEM_RT
         __memrt_alloc(MEMRT_CALLOC, memptr, count * size, file, func, line, NULL, memrt_msg_c);
@@ -460,11 +487,11 @@ char *strdup_d(const char* s, size_t n,  const char* file, const char* func, int
         p = strdup(s);
 
     if (!p)
-        log_dprintf(LOG_FATAL, "{%s %s %d} Strdup memory failed.\n", file, func, line);
+        log_printf(NULL, LOG_FATAL, "{%s %s %d} Strdup memory failed.\n", file, func, line);
     else
     {
 #ifdef DBG_MEM_LOG
-        log_dprintf(LOG_DEBUG, "{%s %s %d} Strdup at %p size %"PRIuS".\n", file, func, line, p, strlen(p));
+        log_printf(NULL, LOG_DEBUG, "{%s %s %d} Strdup at %p size %"PRIuS".\n", file, func, line, p, strlen(p));
 #endif
 #ifdef DBG_MEM_RT
         __memrt_alloc(MEMRT_STRDUP, p, strlen(s), file, func, line, NULL, memrt_msg_c);
@@ -551,39 +578,40 @@ substrdup(const char *beg, const char *end)
 }
 
 /* 安全的vsnprintf */
-/* 具体用法见asnprintf */
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args)
 {
-#ifdef OS_WIN
-#if _MSC_VER <= MSVC6
-    /* 该函数在缓冲区不够大的情况下也会返回-1
-     * 在VC6中，不会设置errno的值，
-     * 在高版本VC中，会将errno置为ERANGE，调用失败则置为EINVAL */
+#if defined(OS_WIN)
+#if defined(__MINGW32__) || _MSC_VER <= MSVC6
+    // MingW的实现当缓冲区过小时总是返回-1
+    // 低版本的VC不支持_vsprintf_p等函数
+    // 因此使用功能最相近的_vsnprintf函数
     int i = _vsnprintf(buffer, size, format, args);
     if (size > 0)
-        buffer[size-1] = '\0';
+        buffer[size - 1] = '\0';
     return i;
 #else
-    /* 高版本VC支持模拟C99标准行为 */
+    /* 模拟snprintf的标准行为 */
     int length = _vsprintf_p(buffer, size, format, args);
     if (length < 0) {
         if (size > 0)
-            buffer[0] = 0;
+            buffer[size - 1] = '\0';
         return _vscprintf_p(format, args);
     }
     return length;
 #endif
 #else
-    /* 注：有的POSIX实现在缓冲区不够大时也会返回-1，但会将errno置为EOVERFLOW */
     return vsnprintf(buffer, size, format, args);
 #endif
 }
 
-/* 可移植的snprintf */
+/* 安全的snprintf */
 int xsnprintf(char* buffer, size_t size, const char* format, ...)
 {
     int result;
     va_list arguments;
+
+    if (!size)
+        return -1;
 
     va_start(arguments, format);
     result = xvsnprintf(buffer, size, format, arguments);
@@ -592,7 +620,7 @@ int xsnprintf(char* buffer, size_t size, const char* format, ...)
     return result;
 }
 
-/* 可移植的asprintf */
+/* 安全可移植的 asprintf */
 int xasprintf(char** out, const char *fmt, ...)
 {
     int size = 128;
@@ -608,7 +636,7 @@ int xasprintf(char** out, const char *fmt, ...)
         errno = 0;
 
         va_start (args, fmt);
-        n = vsnprintf (str, size, fmt, args);
+        n = xvsnprintf (str, size, fmt, args);
         va_end (args);
 
         /* Upon successful return, these functions return the number of characters printed
@@ -643,9 +671,8 @@ int xasprintf(char** out, const char *fmt, ...)
         else
             size = n + 1;
 
-        if (size > 32 * 1024 * 1024)
-        {
-            ASSERT(!"Unable to asprintf the requested string due to size.");
+        if (size > 32 * 1024 * 1024) {
+            xfree(str);
             return 0;
         }
 
@@ -725,7 +752,7 @@ char *strndup(const char* s, size_t n)
     len = xmin(slen, n);
     p = (char*)malloc(len+1);    /* 不使用xmalloc以免重复计算内存申请次数 */
     if (!p)
-        log_dprintf(LOG_FATAL, "strndup malloc failed");
+        log_printf(NULL, LOG_FATAL, "strndup malloc failed");
 
     strncpy(p, s, len);
     p[len] = '\0';
@@ -881,31 +908,6 @@ char *strnstr(const char *s, const char *find, size_t slen)
     return ((char *)s);
 }
 
-/*
- * 不区分大小写查找字符串是否包含指定字串
- */
-char *strcasestr(const char *s, const char *find)
-{
-    char c, sc;
-    size_t len;
-
-    if (!s || !find)
-        return NULL;
-
-    if ((c = *find++) != 0) {
-        c = tolower((unsigned char)c);
-        len = strlen(find);
-        do {
-            do {
-                if ((sc = *s++) == 0)
-                    return NULL;
-            } while ((char)tolower((unsigned char)sc) != c);
-        } while (strncasecmp(s, find, len) != 0);
-        s--;
-    }
-    return ((char *)s);
-}
-
 void* memrchr(const void* s, int c, size_t n)
 {
     const unsigned char* p = (const unsigned char*)s;
@@ -928,6 +930,33 @@ void* memfrob(void *mem, size_t length)
 }
 
 #endif /* !__GLIBC__ */
+
+#if !defined(__GLIBC__) || !defined(_GNU_SOURCE)
+/*
+* 不区分大小写查找字符串是否包含指定字串
+*/
+char *strcasestr(const char *s, const char *find)
+{
+    char c, sc;
+    size_t len;
+
+    if (!s || !find)
+        return NULL;
+
+    if ((c = *find++) != 0) {
+        c = tolower((unsigned char)c);
+        len = strlen(find);
+        do {
+            do {
+                if ((sc = *s++) == 0)
+                    return NULL;
+            } while ((char)tolower((unsigned char)sc) != c);
+        } while (strncasecmp(s, find, len) != 0);
+        s--;
+    }
+    return ((char *)s);
+}
+#endif
 
 /*
  * 不区分大小写查找字符串的前多少个字节是否包含指定字串
@@ -1031,10 +1060,19 @@ size_t _end_with_slash(const char* path, char* outbuf, size_t outlen)
 }
 
 /* 判断path所指的路径是否是绝对路径 */
-int    is_absolute_path(const char* path)
+int is_absolute_path(const char* path)
 {
     return _path_valid(path, 1) != 0;
 }
+
+/* 判断path是否是Windows的 UNC (Universal Naming Convention) 路径 */
+#ifdef OS_WIN
+int is_unc_path(const char* path)
+{
+    return path && path[0] && path[1] && path[2] &&
+        IS_PATH_SEP(path[0]) && IS_PATH_SEP(path[1]) && !IS_PATH_SEP(path[2]);
+}
+#endif
 
 /* 判断路径是否是根路径 */
 int is_root_path(const char* path)
@@ -1074,7 +1112,7 @@ const char* path_find_file_name(const char* path)
     while (!IS_PATH_SEP(*p) && p != path)
         --p;
 
-    if (p == path)                /* 相对路径 */
+    if (p == path && !IS_PATH_SEP(*p))  /* 相对路径 */
         return p;
     else
         return p+1;
@@ -1190,14 +1228,14 @@ int path_find_directory(const char *path, char* outbuf, size_t outlen)
 
 /* 将后缀名添加到文件名后扩展名前 */
 /* 如果没有扩展名直接附加到路径最后 */
-int path_insert_before_extension(const char* path, 
+int path_insert_before_extension(const char* path,
     const char*suffix, char* buf, size_t outlen)
 {
     const char* ext;
     size_t plen, elen, slen;
-  
+
     plen = _path_valid(path, 0);
-    if (!plen)
+    if (!plen || !suffix)
         return 0;
 
     /* 获取文件扩展名 */
@@ -1299,47 +1337,6 @@ int path_is_file(const char* path)
 }
 
 /*
- * 获取文件/目录相对于当前工作目录的绝对路径
- */
-int absolute_path(const char* relpath, char* buf, size_t len)
-{
-#ifdef OS_WIN
-#ifdef USE_UTF8_STR
-    {
-        wchar_t wrpath[MAX_PATH], wapath[MAX_PATH];
-        if (!UTF82UNI(relpath, wrpath, MAX_PATH))
-            return 0;
-
-        if (!GetFullPathNameW(wrpath, MAX_PATH, wapath, NULL))
-            return 0;
-
-        if (!UNI2UTF8(wapath, buf, len))
-            return 0;
-
-        return 1;
-    }
-#else
-    if (!GetFullPathNameA(relpath, len, buf, NULL))
-        return 0;
-
-    return 1;
-#endif
-#else
-    char abuf[PATH_MAX];
-    size_t alen;
-    if (!realpath(relpath, abuf))
-        return 0;
-
-    alen = strlen(buf);
-    if (alen >= len)
-        return 0;
-
-    memcpy(buf, abuf, alen + 1);
-    return 1;
-#endif
-}
-
-/*
 * 获取src指向dst的相对路径
 * eg. src="/root/a/b/1.txt", dst="/2.txt", ret="../../../2.txt"
 * eg. src="2.txt", dst="root/a/b/1.txt", ret="root/a/b/1.txt"
@@ -1351,54 +1348,115 @@ int absolute_path(const char* relpath, char* buf, size_t len)
  */
 int relative_path(const char* src, const char* dst, char* outbuf, size_t slen)
 {
-  char sepbuf[3];
-  char separator = '/';
-  const char *b, *l;
-  int i, basedirs;
-  ptrdiff_t start;
+    char sepbuf[3];
+    char separator = '/';
+    const char *b, *l;
+    int i, basedirs;
+    ptrdiff_t start;
 
-  /* check param */
-  if (!src || !dst || !outbuf || !slen)
-      return 0;
+    /* check param */
+    if (!src || !dst || !outbuf || !slen)
+        return 0;
 
-  /* First, skip the initial directory components common to both
-     files.  */
-  start = 0;
-  for (b = src, l = dst; *b == *l && *b != '\0'; ++b, ++l)
-    {
-      if (IS_PATH_SEP(*b)) {
-          start = (b - src) + 1;
-          separator = *b;
-      }
+    /* First, skip the initial directory components common to both */
+    start = 0;
+    for (b = src, l = dst; *b == *l && *b != '\0'; ++b, ++l) {
+        if (IS_PATH_SEP(*b)) {
+            start = (b - src) + 1;
+            separator = *b;
+        }
     }
-  src += start;
-  dst += start;
+    src += start;
+    dst += start;
 
-  /* Count the directory components in B. */
-  basedirs = 0;
-  for (b = src; *b; b++)
-    {
-      if (IS_PATH_SEP(*b)) {
-          ++basedirs;
-          separator = *b;
-      }
+    /* Count the directory components in B. */
+    basedirs = 0;
+    for (b = src; *b; b++) {
+        if (IS_PATH_SEP(*b)) {
+            ++basedirs;
+            separator = *b;
+        }
     }
 
-  sepbuf[0] = '.';
-  sepbuf[1] = '.';
-  sepbuf[2] = separator;
+    sepbuf[0] = '.';
+    sepbuf[1] = '.';
+    sepbuf[2] = separator;
 
-  if (slen < 3 * basedirs + strlen (dst) + 1)
-      return 0;
-  memset(outbuf, 0, slen);
+    if (slen < 3 * basedirs + strlen(dst) + 1)
+        return 0;
+    memset(outbuf, 0, slen);
 
-  /* Construct LINK as explained above. */
-  for (i = 0; i < basedirs; i++)
-    memcpy (outbuf + 3 * i, sepbuf, 3);
+    /* Construct LINK as explained above. */
+    for (i = 0; i < basedirs; i++)
+        memcpy(outbuf + 3 * i, sepbuf, 3);
 
-  strcpy (outbuf + 3 * i, dst);
+    strcpy(outbuf + 3 * i, dst);
 
-  return 1;
+    return 1;
+}
+
+/* 
+ * 获取rel_path相对于base_path的绝对路径
+ * e.g. base="/root", rel="1.txt", abs="/1.txt"
+ * e.g. base="/root/", rel="1.txt", abs="/root/1.txt"
+ * e.g. base="/root/", rel="./1.txt", abs="/root/1.txt"
+ * e.g. base="/root/", rel="../1.txt", abs="/1.txt"
+ */
+int absolute_path(const char* base_path, const char* rel_path,
+    char* abs_path, size_t len) {
+    const char *p, *q;
+    char base_dir[MAX_PATH];
+    int i, parent_dirs = 0;
+
+    if (!rel_path || !abs_path || !len)
+        return 0;
+
+    if (is_absolute_path(rel_path))
+        return xstrlcpy(abs_path, rel_path, len) < len;
+
+    if (!base_path)
+        base_path = get_current_dir();
+
+    for (p = rel_path; *p; p++) {
+        if (p[0] && p[1]) {
+            if (p[0] == '.' && IS_PATH_SEP(p[1])) {
+                p += 1;
+                continue;
+            } else if (p[0] == '.' && p[1] == '.' && IS_PATH_SEP(p[2])) {
+                ++parent_dirs;
+                p += 2;
+                continue;
+            }
+        }
+
+        break;
+    }
+
+    q = strrpsep(base_path);
+    if (!q)
+        q = base_path;
+
+    // Ascend to parent directory
+    for (i = 0; i < parent_dirs; i++) {  
+        if(q >= base_path && IS_PATH_SEP(*q)) 
+            --q;
+
+        while (q >= base_path && !IS_PATH_SEP(*q))
+            --q;
+
+        if (q < base_path)
+            return 0;
+    }
+
+    // The new base directory
+    strncpy(base_dir, base_path, q - base_path + 1);
+    base_dir[q - base_path + 1] = '\0';
+
+    if (xstrlcpy(abs_path, base_dir, len) >= len ||
+        xstrlcat(abs_path, p, len) >= len)
+        return 0;
+
+    return 1;
 }
 
 /* 获取可用的文件路径 */
@@ -1408,8 +1466,8 @@ int unique_file(const char* path, char *buf, size_t len, int create_now)
     size_t plen, elen;
     int i;
 
-    plen = _path_valid(path, 1);
-    if (!plen)
+    plen = _path_valid(path, 0);
+    if (!plen || !buf)
         return 0;
 
     // 如果初始路径不存在，直接返回
@@ -1454,8 +1512,8 @@ int unique_dir(const char* path, char *buf, size_t len, int create_now)
 {
     int has_slash, i;
 
-    size_t plen = _path_valid(path, 1);
-    if (!plen)
+    size_t plen = _path_valid(path, 0);
+    if (!plen || !buf)
         return 0;
 
     /* 如果初始目录不存在，直接返回 */
@@ -1559,6 +1617,14 @@ char* strrpsep(const char* path) {
     return p >= path ? (char*)p : NULL;
 }
 
+static inline
+int _is_path_sep(int platform, char c) {
+    if (platform == PATH_WINDOWS)
+        return c == '/' || c == '\\';
+    else
+        return c == '/';
+}
+
 /* 将路径中的非法字符替换为空格符 */
 /* 如果被替换为多个连续的空格将被合并为一个 */
 /* reserved所指定的字符将被保留(通常为路径分隔符) */
@@ -1567,7 +1633,7 @@ void path_illegal_blankspace(char *path, int platform, int reserve_separator)
     char *p, *q;
     for (p = q = path; *p; p++) {
         if (PATH_CHAR_ILLEGAL(*p, platform) &&
-            (!reserve_separator || !IS_PATH_SEP(*p))) {
+            (!reserve_separator || !_is_path_sep(platform, *p))) {
             *q = ' ';
             if (q == path || *(q-1) != ' ')
                 q++;
@@ -1593,7 +1659,7 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 
     for (p = path; p < pe; p++)
         if (PATH_CHAR_ILLEGAL(*p, platform) &&
-            (!reserve_separator || !IS_PATH_SEP(*p)))
+            (!reserve_separator || !_is_path_sep(platform, *p)))
             ++quoted;
 
     if (!quoted)
@@ -1605,7 +1671,7 @@ char* path_escape(const char* path, int platform, int reserve_separator)
 
     for (p = path; p < pe; p++) {
         if (PATH_CHAR_ILLEGAL(*p, platform) &&
-            (!reserve_separator || !IS_PATH_SEP(*p))) {
+            (!reserve_separator || !_is_path_sep(platform, *p))) {
             unsigned char ch = *p;
             *q++ = '%';
             *q++ = XNUM_TO_DIGIT (ch >> 4);
@@ -1874,7 +1940,7 @@ int create_directories(const char* dir)
     char wbuf[MAX_PATH];
 #endif
 
-    len = _path_valid(dir, 1);
+    len = _path_valid(dir, 0);
     if (!len)
         return 0;
 
@@ -1900,15 +1966,21 @@ int create_directories(const char* dir)
     /* 定位到路径的第一个有效文件[夹] */
 #ifdef OS_WIN
     /* UNC路径要忽略主机名 */
-    if (IS_PATH_SEP(*pb)) {          /* \\192.168.1.6\shared\  */
+    /* 如 \\192.168.1.6\shared\  */
+    if (is_unc_path(pb)) {
         p = strpsep(pb + 2);
         if (!p)
             return 0;
         ++p;
+    } else if (is_absolute_path(pb)) {
+        p = pb + MIN_PATH;
     } else
-        p = pb + MIN_PATH;                /* "a\b\c\d.txt */
+        p = pb;
 #else
-    p = pb + MIN_PATH;                    /* "a/b/c/d.txt */
+    if (is_absolute_path(pb))
+        p = pb + MIN_PATH;
+    else
+        p = pb;
 #endif
 
     /* 逐级创建文件夹 */
@@ -2022,7 +2094,10 @@ int is_empty_dir(const char* dir)
     return 1;
 }
 
-static int _delete_empty_directories(const char* dir)
+/*
+* 递归删除目录下的所有空目录
+*/
+int delete_empty_directories(const char* dir)
 {
     struct walk_dir_context* ctx;
     char buf[MAX_PATH];
@@ -2035,7 +2110,7 @@ static int _delete_empty_directories(const char* dir)
                 continue;
             else if (likely(walk_entry_path(ctx, buf, MAX_PATH))) {
                 if (walk_entry_is_dir(ctx)) {        //目录
-                    if (!_delete_empty_directories(buf))
+                    if (!delete_empty_directories(buf))
                         empty = 0;
                 } else                                //文件
                     empty = 0;
@@ -2050,26 +2125,6 @@ static int _delete_empty_directories(const char* dir)
     return empty && delete_directory(dir);
 }
 
-/*
- * 删除目录下的所有空目录
- * 不删除文件、及参数目录本身
- * 返回值：仅当目录下没有任何文件时返回1，否则都返回0
- */
-int delete_empty_directories(const char* dir)
-{
-    if (!_path_valid(dir, 0))
-        return 0;
-
-    /* 仅当所有子目录均不包含文件时返回1 */
-    /* 此时_delete_empty_directories也会删除参数目录 */
-    if (_delete_empty_directories(dir))
-    {
-        IGNORE_RESULT(create_directory(dir)); //FIXME: handle failure
-        return 1;
-    }
-
-    return 0;
-}
 
 /*
  * 递归拷贝目录
@@ -2199,7 +2254,7 @@ int copy_directories(const char *src, const char *dst,
             xsnprintf(dirname, MAX_PATH, "%c_DRIVE", fn[0]);
 #endif
         memcpy(target_dir, ddir, dlen + 1);
-        if (!dirname || xstrlcat(target_dir, dirname, MAX_PATH) >= MAX_PATH)
+        if (xstrlcat(target_dir, dirname, MAX_PATH) >= MAX_PATH)
             return 0;
     }
 
@@ -2261,7 +2316,7 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
     char buf[MAX_PATH];
 
     ctx = walk_dir_begin(dir);
-    if (ctx)
+    if (!ctx)
         return 0;
 
     do {
@@ -2279,6 +2334,33 @@ int foreach_dir(const char* dir, foreach_dir_func_t func, void *arg)
     walk_dir_end(ctx);
 
     return 1;
+}
+
+/* stat大文件(>2GB) */
+#if _MSC_VER <= MSVC6
+#define STAT_STRUCT struct _stati64
+#elif defined(OS_WIN)
+#define STAT_STRUCT struct _stat64
+#else  /* OS_WIN */
+#define STAT_STRUCT struct stat
+#endif /* OS_WIN */
+
+int _stat_file(const char* path, STAT_STRUCT* stat_buf)
+{
+#ifdef OS_WIN
+#ifdef USE_UTF8_STR
+    wchar_t wpath[MAX_PATH];
+    if (!UTF82UNI(path, wpath, MAX_PATH) ||
+        _wstati64(wpath, stat_buf) != 0)
+        return 0;
+
+    return 1;
+#else 
+    return !_stati64(path, stat_buf);
+#endif
+#else /* OS_WIN */
+    return !stat(path, stat_buf);
+#endif
 }
 
 /* 删除文件 */
@@ -2464,11 +2546,14 @@ int get_file_block_size(const char *path)
         DWORD TotalNumberOfClusters;
         char drive[4];
 
-        /* 检查是否是绝对路径 */
-        if (!_path_valid(path, 1))
-            return 0;
+        if (!is_absolute_path(path)) {
+            char abspath[MAX_PATH];
+            if (!absolute_path(NULL, path, abspath, sizeof(abspath)))
+                return 0;
+            strncpy(drive, abspath, 3);
+        } else
+            strncpy(drive, path, 3);
 
-        strncpy(drive, path, 3);
         drive[3] = '\0';
 
         /* 获取磁盘分区簇/块大小 */
@@ -2652,7 +2737,7 @@ size_t get_line(FILE *fp, char **lineptr, size_t *n)
 }
 
 /* 从文件中读取每个分隔符块进行操作 */
-int    foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
+int foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
 {
     char buf[1024], *block;
     size_t len, nblock;
@@ -2681,7 +2766,7 @@ int    foreach_block(FILE* fp, foreach_block_cb func, int delim, void *arg)
 }
 
 /* 从文件流中读入每一行并进行操作 */
-int    foreach_line(FILE* fp, foreach_line_cb func, void *arg)
+int foreach_line(FILE* fp, foreach_line_cb func, void *arg)
 {
     return foreach_block(fp, func, '\n', arg);
 }
@@ -3068,6 +3153,9 @@ const char* get_app_data_dir()
         xstrlcat(path, PATH_SEP_STR, MAX_PATH) >= MAX_PATH)
         goto failed;
 
+    if (!create_directories(path))
+        goto failed;
+
     return path;
 
 failed:
@@ -3076,8 +3164,8 @@ failed:
 }
 
 /* 获取应用程序临时目录 */
-/* 在Windows下返回如 C:\Windows\Temp\SafeSite\ */
-/* 在Linux下返回如 /tmp/SafeSite/ */
+/* 在Windows下返回如 C:\Windows\Temp\Product\ */
+/* 在Linux下返回如 /tmp/Product/ */
 const char *get_temp_dir()
 {
     static char path[MAX_PATH];
@@ -3174,7 +3262,7 @@ int get_temp_file_under(const char* tmpdir, const char *prefix,
         xstrlcat(outbuf, ".XXXXXXXX", outlen) >= outlen)
         return 0;
 
-    if (!mktemp(outbuf))
+    if (!mktemp(outbuf) || !touch(outbuf))
         return 0;
 
     return 1;
@@ -3255,15 +3343,17 @@ time_t parse_datetime(const char* datetime_str) {
                 return 0;
         }
     } else {
-        char s_month[5];
+        char s_month[5], *p;
         rv = sscanf(datetime_str, "%s %d %d %d:%d:%d",
             s_month, &day, &year, &hour, &minute, &second);
         if (rv != 6)
             return 0;
 
-        month = (int)(strcasestr(month_names, s_month) - month_names) / 3;
-        if (!month)
+        p = strcasestr(month_names, s_month);
+        if (!p)
             return 0;
+
+        month = (int)(p - month_names) / 3;
     }
 
     memset(&t, 0, sizeof(t));
@@ -4559,13 +4649,17 @@ size_t utf32_len(const UTF32* u32)
 /* 获取系统默认字符集(多字节编码所用字符集) */
 const char *get_locale()
 {
-#ifdef OS_POSIX
-    CHECK_INIT();
-    return nl_langinfo(CODESET);
-#else
+#ifdef OS_WIN
     static char lcs[20];
     snprintf(lcs, sizeof(lcs), "CP%u", GetACP());
     return lcs;
+#elif defined(OS_MACOSX)
+    /* Mac 下 nl_langinfo 返回的是US-ASCII */
+    static const char utf8[] = "UTF-8";
+    return utf8;
+#else
+    CHECK_INIT();
+    return nl_langinfo(CODESET);
 #endif
 }
 #endif
@@ -4730,8 +4824,6 @@ retry_convert:
 /************************************************************************/
 
 /* 创建新的进程 */
-/* 参数executable：将要执行的可执行文件路径 */
-/* 参数param：传递给可执行文件的参数指针数组，最后一个元素必须为NULL */
 /* 返回值：创建成功返回进程标识符(process_t)，失败返回INVALID_PROCESS */
 process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 {
@@ -4783,7 +4875,7 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
     pid_t pid = fork();
     if (pid < 0)
     {
-        log_dprintf(LOG_ERROR, "Fork failed.");
+        log_printf(NULL, LOG_ERROR, "Fork failed.");
         return INVALID_PROCESS;
     }
     else if (pid == 0)
@@ -4793,13 +4885,13 @@ process_t process_create(const char* cmd_with_param, int show ALLOW_UNUSED)
 
         null_fd = HANDLE_FAILURE(open("/dev/null", O_RDONLY));
         if (null_fd < 0) {
-            //log_dprintf(LOG_ERROR, "Failed to open /dev/null.");
+            //log_printf(NULL, LOG_ERROR, "Failed to open /dev/null.");
             _exit(127);
         }
 
         new_fd = HANDLE_FAILURE(dup2(null_fd, STDIN_FILENO));
         if (new_fd != STDIN_FILENO) {
-            //log_dprintf(LOG_ERROR, "Failed to dup /dev/null for stdin");
+            //log_printf(NULL, LOG_ERROR, "Failed to dup /dev/null for stdin");
             _exit(127);
         }
         /* FIXME: why? */
@@ -4960,7 +5052,7 @@ char* popen_readall(const char* command)
     return buf;
 }
 
-#ifdef OS_WIN
+#if defined(OS_WIN) && !defined(__MINGW32__)
 /*
  * 创建子进程以及与之连接的管道
  * 可以通过管道读取子进程输出(r)或写入管道作为子进程标准输入(w)
@@ -5031,7 +5123,7 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
     sei.lpFile = wcmd;
     sei.lpParameters = wparam;
 
-    if (!ShellExecuteEx(&sei)) {
+    if (!ShellExecuteExW(&sei)) {
         xfree(wcmd);
         if (wparam)
             xfree(wparam);
@@ -5386,35 +5478,51 @@ void cond_destroy(cond_t *cond)
 /*                         Thread  多线程                               */
 /************************************************************************/
 
+#ifdef OS_POSIX
+struct _thread_create_param {
+  uthread_proc_t proc;
+  void* arg;
+};
+
+void* _thread_create_helper(void* arg) {
+    struct _thread_create_param* param = (struct _thread_create_param*)arg;
+    int ret = param->proc(param->arg);
+    xfree(arg);
+    return (void*)(size_t)ret;
+}
+#endif
+
 /* 创建线程 */
 /* 如果stacksize为0则使用默认的堆栈大小 */
 int uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
 {
 #ifdef OS_POSIX
-    pthread_attr_t attr, *pattr;
-
-    if (stacksize > 0)
-    {
+    pthread_attr_t attr, *pattr = NULL;
+    if (stacksize > 0) {
         if (pthread_attr_init(&attr))
             return 0;
         if (pthread_attr_setstacksize(&attr, stacksize))
             return 0;
-        if (pthread_attr_destroy(&attr))
-            return 0;
         pattr = &attr;
-    }else
-        pattr = NULL;
+    }
 
-    if (pthread_create(t, pattr, proc, arg))
+    struct _thread_create_param* param = XMALLOC(struct _thread_create_param);
+    param->proc = proc;
+    param->arg = arg;
+    
+    if (pthread_create(t, pattr, _thread_create_helper, param))
         return 0;
+
+    if (pattr)
+        pthread_attr_destroy(pattr);
 
     return 1;
 #else
     /* 不要使用CreateThread，否则很可能会造成内存泄露 */
-    uint ret = _beginthreadex(NULL, stacksize, proc, arg, 0, NULL);
+    unsigned int ret = _beginthreadex(NULL, stacksize, proc, arg, 0, NULL);
     if (!ret)
     {
-        log_dprintf(LOG_ERROR, "thread create failed: %s", get_last_error_std());
+        log_printf(NULL, LOG_ERROR, "thread create failed: %s", get_last_error_std());
         return 0;
     }
 
@@ -5435,14 +5543,18 @@ void uthread_exit(size_t exit_code)
 }
 
 /* 等待线程 */
-int uthread_join(uthread_t t, uthread_ret_t *exit_code)
+int uthread_join(uthread_t t, int *exit_code)
 {
 #ifdef OS_POSIX
-    if (pthread_join(t, exit_code))
+    void *ret;
+    if (pthread_join(t, &ret))
         return 0;
+
+    if (exit_code)
+        *exit_code = (int)(size_t)ret;
 #else
     WaitForSingleObject(t, INFINITE);
-    if (exit_code && !GetExitCodeThread(t, exit_code))
+    if (exit_code && !GetExitCodeThread(t, (LPDWORD)exit_code))
     {
         CloseHandle(t);
         return 0;
@@ -5454,7 +5566,7 @@ int uthread_join(uthread_t t, uthread_ret_t *exit_code)
 }
 
 /* 创建一个线程相关存储（TLS）键 */
-int    thread_tls_create(thread_tls_t *tls)
+int thread_tls_create(thread_tls_t *tls)
 {
 #ifdef OS_POSIX
     if (pthread_key_create(tls, NULL))
@@ -5603,6 +5715,9 @@ const char* get_last_error()
 
 #ifdef USE_CRASH_HANDLER
 
+/* Forward declare,  send to crash handler */
+static const char* _debug_log_path();
+
 void set_crash_handler(crash_handler handler)
 {
     g_crash_handler = handler;
@@ -5617,7 +5732,7 @@ void set_backtrace_handler(backtrace_handler handler)
 #ifdef OS_WIN
 
 /* 获取堆栈调用记录 */
-static void StackBackTraceMsg(const void* const* trace, size_t count, const char* info, int level)
+static void StackBackTraceMsg(const DWORD64* trace, size_t count, const char* info, int level)
 {
     const int kMaxNameLength = 256;
     char msgl[1024], msgs[4096];
@@ -5625,7 +5740,7 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 
     for (i = 0; i < count; ++i)
     {
-        DWORD_PTR frame = (DWORD_PTR)trace[i];
+        DWORD64 frame = trace[i];
         DWORD64 sym_displacement = 0;
         DWORD line_displacement = 0;
         PSYMBOL_INFO symbol;
@@ -5653,25 +5768,24 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
         // Output the backtrace line.
         if (has_symbol)
             snprintf(msgl, sizeof(msgl), "%d. %s [0x%p+%"PRId64"] (%s : %d)",
-                        i+1, symbol->Name, trace[i], sym_displacement,
-                        has_line ? line.FileName : "?", line.LineNumber);
+                        i+1, symbol->Name, (LPVOID)trace[i], sym_displacement,
+                        (has_line ? line.FileName : "?"), line.LineNumber);
         else
             snprintf(msgl, sizeof(msgl), "%d. [0x%p] (No Symbol) ",
                         i+1, trace[i]);
 
         /* 记录日志 */
-        log_dprintf(LOG_DEBUG, "%s", msgl);
+        log_printf(NULL, LOG_DEBUG, "%s", msgl);
+        
+        if (!is_log_to_console())
+            fprintf(stderr, "%s\n", msgl);
 
         /* 打印到VC输出窗口 */
-#ifdef _MSC_VER
+#ifdef _DEBUG
         OutputDebugStringA(msgl);
         OutputDebugStringA("\r\n");
-#else
-        if (is_debug_log_set_to_stderr())
-            fprintf(stderr, "%s\n", msgl);
-        else
-            fprintf(stdout, "%s\n", msgl);
-#endif            
+#endif
+
         /* 完整堆栈 */
         if (i == 0) {
             snprintf(msgs, sizeof(msgs), "%s\r\n", msgl);
@@ -5683,7 +5797,7 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
         xfree(buffer);
     }
 
-    log_flush(DEBUG_LOG);
+    log_flush(NULL);
 
     if (g_backtrace_hander)
         g_backtrace_hander(level, info, msgs);
@@ -5692,14 +5806,16 @@ static void StackBackTraceMsg(const void* const* trace, size_t count, const char
 #ifdef NDEBUG
     if (level == LOG_FATAL)
 #endif
+    {
         MessageBoxA(NULL, msgs, info, MB_OK);
+    }
 }
 
 static inline
 void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
 {
-    size_t i, count = 0;
-    void *trace[62];
+    size_t count = 0;
+    DWORD64 trace[62];
     int machine_type;
 
     STACKFRAME64 stack_frame;
@@ -5720,6 +5836,8 @@ void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
     stack_frame.AddrFrame.Mode = AddrModeFlat;
     stack_frame.AddrStack.Mode = AddrModeFlat;
 
+    memset(trace, 0, sizeof(trace));
+
     while (StackWalk64(machine_type,
         GetCurrentProcess(),
         GetCurrentThread(),
@@ -5730,11 +5848,8 @@ void CrashBackTrace(EXCEPTION_POINTERS *pException, const char* info, int level)
         &SymGetModuleBase64,
         NULL) &&
         count < countof(trace)) {
-            trace[count++] = (void*)stack_frame.AddrPC.Offset;
-    }
-
-    for (i = count; i < countof(trace); ++i)
-        trace[i] = NULL;
+            trace[count++] = stack_frame.AddrPC.Offset;
+    }  
 
     StackBackTraceMsg(trace, count, info, level);
 }
@@ -5745,8 +5860,7 @@ static const char* CreateDumpFile(EXCEPTION_POINTERS *pException) {
     MINIDUMP_EXCEPTION_INFORMATION dumpInfo;
     HANDLE hDumpFile;
 
-    snprintf(dump_file, MAX_PATH, "%s%s-%s.dmp", get_temp_dir(),
-        g_product_name, timestamp_str(time(NULL)));
+    snprintf(dump_file, MAX_PATH, "%s-%s.dmp", g_product_name, timestamp_str(time(NULL)));
 
 #ifdef USE_UTF8_STR
     {
@@ -5800,7 +5914,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
     // 提示用户上传转储文件
     // 在服务器上结合PDB文件生成堆栈信息
     if (g_crash_handler)
-        g_crash_handler(dump_file);
+        g_crash_handler(dump_file, _debug_log_path());
 
     // 如果有PDB文件，直接打印堆栈信息
     // 只有内部人员才有Release版本的PDB
@@ -5812,7 +5926,7 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
     }
 
     // 关闭所有打开的日志
-    log_close_all();
+    log_exit();
 
     return EXCEPTION_EXECUTE_HANDLER;
 }
@@ -5821,35 +5935,33 @@ static LONG WINAPI CrashDumpHandler(EXCEPTION_POINTERS *pException)
 
 void stack_backtrace(int level, const char* info)
 {
-    void* array[20];
     char msg[1024], msgs[4096];
+    char **symbols;
+    void* array[20];
     size_t i;
     int size;
 
-    memset(msgs, 0, sizeof(msgs));
-    log_dprintf(LOG_DEBUG, "%s", info);
+    log_debug("%s", info);
 
-    if (is_debug_log_set_to_stderr())
+    if (!is_log_to_console())
         fprintf(stderr, "%s\n", info);
-    else
-        fprintf(stdout, "%s\n", info);
 
     size = backtrace(array, countof(array));
-    char **strings = backtrace_symbols(array, size);
+    symbols = backtrace_symbols(array, size);
+
+    memset(msgs, 0, sizeof(msgs));
 
     for (i = 0; i < size; i++) {
-        xsnprintf(msg, sizeof(msg), "%" PRIuS ". %s", i, strings[i]);
+        xsnprintf(msg, sizeof(msg), "%" PRIuS ". %s", i, symbols[i]);
 
         if (g_backtrace_hander)
             xstrlcat(msgs, msg, sizeof(msgs));
 
-        log_dprintf(LOG_DEBUG, "%s", msg);
-        if (is_debug_log_set_to_stderr())
+        log_printf(NULL, LOG_DEBUG, "%s", msg);
+        if (!is_log_to_console())
             fprintf(stderr, "%s\n", msg);
-        else
-            fprintf(stdout, "%s\n", msg);
     }
-    free (strings);
+    free (symbols);
 
     if (g_backtrace_hander)
         g_backtrace_hander(level, info, msgs);
@@ -5873,14 +5985,14 @@ void crash_signal_handler(int n, siginfo_t *siginfo, void *act)
 
     //FIXME: coredump文件的路径？
     if (g_crash_handler)
-        g_crash_handler("");
+        g_crash_handler("", _debug_log_path());
 
     memset(title, 0, sizeof(title));
     xsnprintf(title, sizeof(title), "[Crash] killed by signal %s\n", signam);
 
     stack_backtrace(LOG_FATAL, title);
 
-    log_close_all();
+    log_exit();
     exit(3);
 }
 
@@ -5896,36 +6008,32 @@ void backtrace_here(int level, const char *fmt, ...)
     // 打印信息
     va_start(args, fmt);
     xvsnprintf(msg, sizeof(msg), fmt, args);
-    log_printf0(DEBUG_LOG, "%s\n", msg);
+    log_printf0(NULL, "%s\n", msg);
     va_end(args);
 
 // #ifdef OS_WIN
 //     {
-//     size_t count;
-//     void *trace[62];
+//     size_t i, count;
+//     PVOID trace[62];
+//     DWORD64 trace64[62];
 //     count = CaptureStackBackTrace(0, countof(trace), trace, NULL);
-//     StackBackTraceMsg(trace, count, msg, level);
+//     for (i = 0; i < 62; i++)
+//         trace64[i] = (DWORD64)trace[i];
+//     StackBackTraceMsg(trace64, count, msg, level);
 //     }
 // #if defined(_DEBUG) && defined(COMPILER_MSVC)
+//     /* 如果不在调试模式下运行会使程序崩溃 */
 //     __debugbreak();
 // #endif
 // #else /* OS_WIN */
 //     stack_backtrace(level, msg);
 // #endif /* OS_WIN */
+}
 
-    if (level == LOG_FATAL) {
-        log_close_all();
-#ifdef _DEBUG
-        // 前面已经显示过堆栈，正常退出即可
-        exit(2);
-#else
-        // 否则使软件崩溃以产生core dump文件
-        {
-            int *p = NULL;
-            *p = 0;
-        }
-#endif
-    }
+void crash_here()
+{
+    int *p = NULL;
+    *p = 0;
 }
 
 /* 以十六进制的形式打印出一个缓冲区的内容 */
@@ -5945,361 +6053,334 @@ char* hexdump(const void *data, size_t len)
 
 
 /************************************************************************/
-/*                         Log 日志系统                                    */
+/*                          Logging 日志系统                            */
 /************************************************************************/
 
-#define LOG_VALID(id) ((id) >= DEBUG_LOG && (id) <= MAX_LOGS)
-
-static const char* log_severity_names[] = {
-    "Debug",
-    "Info",
-    "Notice",
-    "Warning",
-    "Error",
-    "Critical",
+static const char* log_level_name[] = {
+    "Fatal",
     "Alert",
-    "Fatal"};
+    "Critical",
+    "Error",
+    "Warning",
+    "Notice",
+    "Info",
+    "Debug"
+};
 
-static int log_min_severity = 0;        /* 设置最低记录等级 */
-static int debug_log_to_stderr = 0;        /* 调试信息发送到标准错误输出 */
+typedef struct {
+    char name[128];
+    char path[MAX_PATH];
+    FILE* fp;
+    mutex_t lock;
+} LogEntry;
 
-static FILE* log_files[MAX_LOGS+1];
-static mutex_t log_locks[MAX_LOGS+1];
+static LogEntry g_logs[1000];
 
-static inline
-void log_lock(int log_id)
+/* 外部处理函数 */
+static log_handler g_log_handler;
+
+/* 设置最低记录等级 */
+static int log_min_level = LOG_DEBUG;
+
+/* 调试信息发送到标准错误输出 */
+static int g_log_to_console = 0;
+
+void set_log_level(int severity)
 {
-    mutex_lock(&log_locks[log_id]);
+    log_min_level = severity;
 }
 
-static inline
-void log_unlock(int log_id)
+void set_log_handler(log_handler handler)
 {
-    mutex_unlock(&log_locks[log_id]);
+    g_log_handler = handler;
 }
 
-void log_severity(int severity)
+void set_disable_debug_log()
 {
-    CHECK_INIT();
-    log_min_severity = severity;
+    g_disable_debug_log = 1;
 }
 
-void set_debug_log_to_stderr(int enable)
+void set_log_to_console()
 {
-    CHECK_INIT();
-    debug_log_to_stderr = enable;
+    g_log_to_console = 1;
 }
 
-int is_debug_log_set_to_stderr()
+int is_log_to_console()
 {
-    return debug_log_to_stderr;
+    return g_log_to_console;
 }
 
-static inline
-FILE* open_log_helper(const char *path, int append, int binary)
+static int _remove_legency_log(const char* fpath, void *arg)
 {
-    const char *mode = append ? (binary ? "ab" : "a") : (binary ? "wb" : "w");
-
-    FILE* fp = xfopen(path, mode);
-    if (fp) {
-        setvbuf(fp, NULL, _IOLBF, 1024);
-#ifdef USE_UTF8_STR
-        fwrite(UTF8_BOM, strlen(UTF8_BOM), 1, fp);
-#endif
-        /* 不跟踪日志文件的关闭情况 */
-        /* xfopen已对其递增，递减以保持g_opened_files不变 */
-        g_opened_files--;
+    STAT_STRUCT st;
+    const char* ext = path_find_extension(fpath);
+    if (STREQ(ext, ".log") && _stat_file(fpath, &st)) {
+        if (time(NULL) - st.st_mtime > 60 * 60 * 24 * 7)    // 7天后自动删除
+            IGNORE_RESULT(delete_file(fpath));
     }
 
-    return fp;
+    return 1;
 }
 
-/* 打开用户日志文件 */
-int    log_open(const char *path, int append, int binary)
+static int
+THREAD_CALLTYPE _remove_legency_logs_thread(void *arg)
 {
-    int i;
-
-    CHECK_INIT();
-
-    for (i = 1; i <= MAX_LOGS; i++) {
-        log_lock(i);
-
-        if (!log_files[i]) {
-            log_files[i] = open_log_helper(path, append, binary);
-            log_unlock(i);
-            return log_files[i] ? i : LOG_INVALID;
-        }
-
-        log_unlock(i);
-    }
-
-    return LOG_INVALID;
-}
-
-/* 打开调试日志文件 */
-int log_dopen(const char *path, int append, int binary)
-{
-    CHECK_INIT();
-
-    log_lock(DEBUG_LOG);
-
-    if (log_files[DEBUG_LOG]) {
-        log_unlock(DEBUG_LOG);
-        return DEBUG_LOG;
-    }
-
-    log_files[DEBUG_LOG] = open_log_helper(path, append, binary);
-    log_unlock(DEBUG_LOG);
-
-    return log_files[DEBUG_LOG] ? DEBUG_LOG : LOG_INVALID;
+    return foreach_file("log", _remove_legency_log, 0, 1, arg);
 }
 
 /* 初始化日志模块 */
 void log_init()
 {
-    int i;
-    for (i = 0; i < MAX_LOGS+1; i++)
-    {
-        log_files[i] = NULL;
-        mutex_init(&log_locks[i]);
-    }
-
     /* 打开软件全局调试日志 */
 #ifdef USE_DEBUG_LOG
-    {
-        char exe_name[MAX_PATH], log_path[MAX_PATH];
+    if (!g_disable_debug_log) {
+        uthread_t thread;
+        char exe_name[MAX_PATH], log_path[MAX_PATH]; 
         xstrlcpy(exe_name, get_execute_name(), MAX_PATH);
         exe_name[path_find_extension(exe_name) - exe_name] = '\0';
-
         IGNORE_RESULT(create_directory("log"));
 
         /* 如 Product_20140506143512_1432_debug.log */
-        snprintf(log_path, MAX_PATH, "log%c%s_%s_%d_debug.log",
-            PATH_SEP_CHAR,exe_name, timestamp_str(time(NULL)), getpid());
-        log_dopen(log_path, 0, 0);
-        log_dprintf(LOG_INFO, " ==================== Program Started ====================\n\n");
+        snprintf(log_path, MAX_PATH, "log%c%s_%s_%d.log",
+            PATH_SEP_CHAR, exe_name, timestamp_str(time(NULL)), getpid());
+        log_open(NULL, log_path, 0, 0);
+        log_printf(NULL, LOG_INFO, " ==================== Program Started ====================\n\n");
+
+#if defined(OS_LINUX) || defined(OS_MACOSX)
+        openlog(g_product_name, LOG_CONS | LOG_PID, LOG_USER);
+#endif
+        IGNORE_RESULT(uthread_create(&thread, _remove_legency_logs_thread, NULL, 0));
     }
 #endif /* USE_DEBUG_LOG */
 }
 
-void log_printf0(int log_id, const char *fmt, ...)
+void _log_close_all();
+
+/* 关闭日志模块  */
+void log_exit()
 {
-    FILE *fp;
+#ifdef USE_DEBUG_LOG
+    if (!g_disable_debug_log) {
+#if defined(OS_LINUX) || defined(OS_MACOSX)
+        closelog();
+#endif
+    }
+#endif
+
+    /* 关闭所有打开的日志 */
+    _log_close_all();
+}
+
+static LogEntry* _find_log_entry(const char* name, int find_exists)
+{
+    LogEntry *entry;
+    size_t index;
+
+    if (name)
+        index = hash_pjw(name, countof(g_logs));
+    else
+        index = 0;
+
+    entry = &g_logs[index];
+    while (*entry->name) {
+        if (!name || !strcmp(entry->name, name)) {
+            if (find_exists)
+                return entry;
+            else
+                return NULL;
+        }
+
+        ++entry;
+    }
+
+    return find_exists ? NULL : entry;
+}
+
+/* 打开用户日志文件 */
+int log_open(const char* name, const char *path, int append, int binary)
+{
+    const char *mode = append ? (binary ? "ab" : "a") : (binary ? "wb" : "w");
+    FILE* fp;
+
+    LogEntry* entry = _find_log_entry(name, 0);
+    if (!entry)
+        return 0;
+
+    fp = xfopen(path, mode);
+    if (!fp)
+        return 0;
+
+    entry->fp = fp;
+    mutex_init(&entry->lock);
+    strlcpy(entry->path, path, sizeof(path));
+
+    if (xstrlcpy(entry->name, (name ? name : "Default"), sizeof(entry->name)) >= sizeof(entry->name))
+        return 0;
+
+    /* 默认日志不增加打开文件计数，因为在关闭其之前就会检查g_opened_files */
+    /* xfopen函数已经增加计数 */
+    if (!name)
+        --g_opened_files;
+
+#ifdef _DEBUG
+    setvbuf(fp, NULL, _IOLBF, 1024);
+#endif
+
+#ifdef USE_UTF8_STR
+    fwrite(UTF8_BOM, strlen(UTF8_BOM), 1, fp);
+#endif
+
+    return 1;
+}
+
+void log_printf0(const char* name, const char *fmt, ...)
+{
     va_list args;
 
-    CHECK_INIT();
-
-    if (!LOG_VALID(log_id))
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
         return;
 
-    log_lock(log_id);
-
-    if (!(fp = log_files[log_id]))
-    {
-        log_unlock(log_id);
-        return;
-    }
+    mutex_lock(&entry->lock);
 
     // 正文信息
     va_start(args, fmt);
-    vfprintf(fp, fmt, args);
+    vfprintf(entry->fp, fmt, args);
     va_end(args);
 
 #ifdef _DEBUG
-    fflush(fp);
+    fflush(entry->fp);
 #endif
 
-    log_unlock(log_id);
+    mutex_unlock(&entry->lock);
 }
 
 /* 写入日志文件 */
-/* DEBUG 消息仅在DEBUG模式下才会记录 */
 /* FATAL 消息在记录之后会记录堆栈并使程序退出 */
-void log_printf(int log_id, int severity, const char *fmt, ...)
+void log_printf(const char* name, int level, const char *fmt, ...)
 {
-    FILE *fp;
-    time_t t;
-    char msgbuf[1024];
-    const char *p;
+    char tmbuf[128], msgbuf[1024];
     va_list args;
-    size_t len;
-    int level;
+    time_t t;
 
-    CHECK_INIT();
-
-    if (!LOG_VALID(log_id))
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
         return;
 
-    level = xmin(xmax((int)LOG_FATAL, severity), (int)LOG_DEBUG);
-    if (level > log_min_severity)
+    level = xmin(xmax((int)LOG_FATAL, level), (int)LOG_DEBUG);
+    if (level > log_min_level)
         return;
 
-    log_lock(log_id);
-
-    if (!(fp = log_files[log_id]))
-    {
-        log_unlock(log_id);
-        return;
-    }
-
-    // 时间信息
+    // 时间戳
     t = time(NULL);
-    memset(msgbuf, '\0', sizeof(msgbuf));
-    strftime(msgbuf, sizeof(msgbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
+    memset(tmbuf, '\0', sizeof(tmbuf));
+    strftime(tmbuf, sizeof(tmbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
 
-    // 等级信息
-    len = strlen(msgbuf);
-    xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]);
-
-    // 正文信息
-    len = strlen(msgbuf);
+    // 记录内容
     va_start(args, fmt);
-    xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args);
+    xvsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
     va_end(args);
 
-    // 换行符
-    len = strlen(msgbuf);
-    p = fmt + strlen(fmt) - 1;
-    if (p >= fmt && len < sizeof(msgbuf)-1 && *p != '\n')
-        msgbuf[len++] = '\n';
+    /* 调用外部处理函数 */
+    if (g_log_handler && !g_log_handler(name, level, msgbuf))
+        return;
 
-    fwrite(msgbuf, len, 1, log_files[log_id]);
+    /* 如果是默认日志且输出到标准错误 */
+    if (!name && is_log_to_console())
+        fprintf(stderr, "%s - %s - %s\n", tmbuf, log_level_name[level], msgbuf);
 
-    if (log_id == DEBUG_LOG && debug_log_to_stderr)
-        fwrite(msgbuf, len, 1, stderr);
-
-#ifdef _DEBUG
-    fflush(log_files[log_id]);
+#if defined(OS_LINUX) || defined(OS_MACOSX)
+        syslog(level, "%s", msgbuf);
 #endif
 
-    log_unlock(log_id);
+    mutex_lock(&entry->lock);
+
+    if (entry->fp)
+        fprintf(entry->fp, "%s - %s - %s\n", tmbuf, log_level_name[level], msgbuf);
+
+#ifdef _DEBUG
+    if (entry->fp)
+        fflush(entry->fp);
+#endif
+
+    mutex_unlock(&entry->lock);
 
     /* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
-    if (level == LOG_FATAL
-#ifdef _DEBUG
-        || level <= LOG_ERROR
-#endif
-        ) {
-        char buf[256];
-        va_start(args, fmt);
-        xvsnprintf(buf, sizeof(buf), fmt, args);
-        va_end(args);
-        backtrace_here(level, "%s", buf);
+    /* Debug模式下如果等级为错误或更严重，立即中断以调试 */
+    if (level == LOG_FATAL) {
+        crash_here();
+        return;
     }
+
+#ifdef _DEBUG
+    if (level <= LOG_ERROR)
+        backtrace_here(level, "%s", msgbuf);
+#endif
 }
 
-/* VC6不支持可变参数宏，只能再复制一遍... */
-void log_dprintf(int severity, const char *fmt, ...)
+void log_flush(const char* name)
 {
-    FILE *fp;
-    time_t t;
-    char msgbuf[1024];
-    const char *p;
-    va_list args;
-    size_t len;
-    int level;
-	int log_id = DEBUG_LOG;
-	
-    CHECK_INIT();
-	
-    if (!LOG_VALID(log_id))
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
         return;
-	
-    level = xmin(xmax((int)LOG_FATAL, severity), (int)LOG_DEBUG);
-    if (level > log_min_severity)
-        return;
-	
-    log_lock(log_id);
-	
-    if (!(fp = log_files[log_id]))
-    {
-        log_unlock(log_id);
-        return;
-    }
-	
-    // 时间信息
-    t = time(NULL);
-    memset(msgbuf, '\0', sizeof(msgbuf));
-    strftime(msgbuf, sizeof(msgbuf), "%d/%b/%Y %H:%M:%S", localtime(&t));
-	
-    // 等级信息
-    len = strlen(msgbuf);
-    xsnprintf(msgbuf + len, sizeof(msgbuf) - len, " - %s - ", log_severity_names[level]);
-	
-    // 正文信息
-    len = strlen(msgbuf);
-    va_start(args, fmt);
-    xvsnprintf(msgbuf + len, sizeof(msgbuf) - len, fmt, args);
-    va_end(args);
-	
-    // 换行符
-    len = strlen(msgbuf);
-    p = fmt + strlen(fmt) - 1;
-    if (p >= fmt && len < sizeof(msgbuf)-1 && *p != '\n')
-        msgbuf[len++] = '\n';
-	
-    fwrite(msgbuf, len, 1, log_files[log_id]);
-	
-    if (log_id == DEBUG_LOG && debug_log_to_stderr)
-        fwrite(msgbuf, len, 1, stderr);
-	
-#ifdef _DEBUG
-    fflush(log_files[log_id]);
-#endif
-	
-    log_unlock(log_id);
-	
-    /* 如果消息等级为FATAL，则立即记录调用堆栈，并异常退出 */
-    if (level == LOG_FATAL
-#ifdef _DEBUG
-        || level <= LOG_ERROR
-#endif
-        ) {
-        char buf[256];
-        va_start(args, fmt);
-        xvsnprintf(buf, sizeof(buf), fmt, args);
-        va_end(args);
-        backtrace_here(level, "%s", buf);
-    }
+
+    mutex_lock(&entry->lock);
+
+    if (entry->fp)
+        fflush(entry->fp);
+    
+    mutex_unlock(&entry->lock);
 }
 
-void log_flush(int log_id)
-{
-    log_lock(log_id);
+static void _log_close(LogEntry* entry) {
+    mutex_lock(&entry->lock);
 
-    if (log_files[log_id])
-        fflush(log_files[log_id]);
+    if (entry->fp) {
+        xfclose(entry->fp);
+        entry->fp = NULL;
+    }
 
-    log_unlock(log_id);
+    *entry->name = '\0';
+    *entry->path = '\0';
+
+    mutex_unlock(&entry->lock);
 }
 
 /* 关闭日志文件 */
-void log_close(int log_id)
+int log_close(const char* name)
 {
-    if (!LOG_VALID(log_id))
-        return;
+    LogEntry* entry = _find_log_entry(name, 1);
+    if (!entry)
+        return 0;
 
-    log_lock(log_id);
-
-    if (log_files[log_id]) {
-        xfclose(log_files[log_id]);
-        log_files[log_id] = NULL;
-    }
-
-    log_unlock(log_id);
+    _log_close(entry);
+    return 1;
 }
 
-void log_close_all()
+void _log_close_all()
 {
-    int i;
-    for (i = 1; i <= MAX_LOGS; i++)
-        log_close(i);
+    LogEntry* entry = &g_logs[0];
+	int i;
 
 #ifdef USE_DEBUG_LOG
-    log_printf0(DEBUG_LOG, "\n");
-    log_dprintf(LOG_INFO, " ==================== Program Exit ====================\n\n");
-    log_close(DEBUG_LOG);
+    if (entry->fp && !g_disable_debug_log)
+        log_printf(NULL, LOG_INFO, " ==================== Program Exit ====================\n\n");
 #endif
+
+    for (i = 0; i < countof(g_logs); i++) {
+        entry = &g_logs[i];
+        if (entry->fp)
+            _log_close(entry);
+    }
+}
+
+static const char* _debug_log_path()
+{
+    LogEntry* entry = _find_log_entry(NULL, 1);
+    if (!entry)
+        return NULL;
+
+    return entry->path;
 }
 
 /************************************************************************/
@@ -6308,10 +6389,10 @@ void log_close_all()
 
 #ifdef DBG_MEM_RT
 
-#define MEMRT_HASH_SIZE        16384                                    /* 哈希数组的大小 */
+#define MEMRT_HASH_SIZE        16384                                /* 哈希数组的大小 */
 #define MEMRT_HASH(p) (((size_t)(p) >> 8) % MEMRT_HASH_SIZE)        /* 哈希算法 */
 
-static struct MEMRT_OPERATE* memrt_hash_table[MEMRT_HASH_SIZE];        /* 哈希数组链表 */
+static struct MEMRT_OPERATE* memrt_hash_table[MEMRT_HASH_SIZE];     /* 哈希数组链表 */
 
 static mutex_t memrt_lock;
 static mutex_t memrt_print_lock;
@@ -6323,11 +6404,28 @@ void memrt_init()
     memset(memrt_hash_table, 0, sizeof(memrt_hash_table));
 }
 
+/* 代表一次内存操作 */
+struct MEMRT_OPERATE{
+    int  method;                /* 操作类型 */
+    void* address;              /* 操作地址 */
+    size_t size;                /* 内存大小 */
+
+    char file[32];              /* 文件名 */
+    char func[32];              /* 函数名 */
+    int  line;                  /* 行  号 */
+
+    char desc[64];              /* 如保存类名 */
+
+    memrt_msg_callback msgfunc;
+
+    struct MEMRT_OPERATE *next;
+};
+
 static inline
 struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *file,
         const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
-    /* 不要使用xmalloc，debug_backtrace等，否则会造成死循环 */
+    /* 不能使用xmalloc，debug_backtrace等，否则会造成死循环 */
     struct MEMRT_OPERATE *rtp = (struct MEMRT_OPERATE*)malloc(sizeof(struct MEMRT_OPERATE));
     if (!rtp)
         abort();
@@ -6335,10 +6433,10 @@ struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *fil
     rtp->method = mtd;
     rtp->address = addr;
     rtp->size = sz;
-    rtp->file = file ? strdup(path_find_file_name(file)) : NULL;
-    rtp->func = func ? strdup(func) : NULL;
+    xstrlcpy(rtp->file, file ? path_find_file_name(file) : "", sizeof(rtp->file));
+    xstrlcpy(rtp->func, func ? func : "", sizeof(rtp->func));
+    xstrlcpy(rtp->desc, desc ? desc : "", sizeof(rtp->desc));
     rtp->line = line;
-    rtp->desc = desc ? strdup(desc) : NULL;
     rtp->msgfunc = pmsgfun;
     rtp->next = NULL;
 
@@ -6348,33 +6446,28 @@ struct MEMRT_OPERATE* memrt_ctor(int mtd, void *addr, size_t sz, const char *fil
 static inline
 void memrt_dtor(struct MEMRT_OPERATE *rtp)
 {
-    /* 不要使用xfree，否则会造成死循环 */
-    if (rtp->file)
-        free(rtp->file);
-    if (rtp->func)
-        free(rtp->func);
-    if (rtp->desc)
-        free(rtp->desc);
+    /* 不能使用xfree，否则会造成死循环 */
     free(rtp);
 }
 
 /* 根据错误类型输出相应字符串 */
 static
-void memrt_msg_c(int error, struct MEMRT_OPERATE *rtp)
+void memrt_msg_c(int error,
+   const char* file, const char* func, int line,
+    void* address, size_t size, int method)
 {
-    switch(error)
-    {
+    switch(error) {
     case MEMRTE_NOFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not freed at %p size %u method %d.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address ,rtp->size, rtp->method);
+            file, func, line, address, size, method);
         break;
     case MEMRTE_UNALLOCFREE:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not malloced but freed at %p.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     case MEMRTE_MISRELIEF:
         __memrt_printf("[MEMORY] {%s %s %d} Memory not reliefed properly at %p, use delete or delete[] instead.\n",
-            rtp->file, rtp->func, rtp->line, rtp->address);
+            file, func, line, address);
         break;
     default:
         NOT_REACHED();
@@ -6402,11 +6495,9 @@ int __memrt_alloc(int mtd, void* addr, size_t sz, const char* file,
 int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
     const char* func, int line, const char* desc, memrt_msg_callback pmsgfun)
 {
-    struct MEMRT_OPERATE *rtp, *ptr, *ptr_last = NULL;
+    struct MEMRT_OPERATE *ptr, *ptr_last = NULL;
     size_t index = MEMRT_HASH(addr);
-    int ret = MEMRTE_UNALLOCFREE;
-
-    rtp = memrt_ctor(mtd, addr, sz, file, func, line, desc, pmsgfun);
+    int error = MEMRTE_UNALLOCFREE;
 
     mutex_lock(&memrt_lock);
 
@@ -6420,11 +6511,11 @@ int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
             else
                 ptr_last->next = ptr->next;
 
-            if ((ptr->method >= MEMRT_MALLOC && ptr->method <= MEMRT_STRDUP && rtp->method != MEMRT_FREE) ||
-                (ptr->method >= MEMRT_C_END && rtp->method == MEMRT_FREE))
-                ret = MEMRTE_MISRELIEF;
+            if ((ptr->method >= MEMRT_MALLOC && ptr->method <= MEMRT_STRDUP && mtd != MEMRT_FREE) ||
+                (ptr->method >= MEMRT_C_END && mtd == MEMRT_FREE))
+                error = MEMRTE_MISRELIEF;
             else
-                ret = MEMRTE_OK;
+                error = MEMRTE_OK;
 
             memrt_dtor(ptr);
             break;
@@ -6437,11 +6528,10 @@ int __memrt_release(int mtd, void* addr, size_t sz, const char* file,
     mutex_unlock(&memrt_lock);
 
     /* 打印错误信息 */
-    if (ret != MEMRTE_OK && rtp->msgfunc)
-        rtp->msgfunc(ret, rtp);
+    if (error != MEMRTE_OK && pmsgfun)
+        pmsgfun(error, file, func, line, addr, sz, mtd);
 
-    memrt_dtor(rtp);
-    return ret;
+    return error;
 }
 
 int memrt_check()
@@ -6462,7 +6552,9 @@ int memrt_check()
         {
             /* 打印未释放信息 */
             if (ptr->msgfunc)
-                ptr->msgfunc(MEMRTE_NOFREE, ptr);
+                ptr->msgfunc(MEMRTE_NOFREE,
+                  ptr->file, ptr->func, ptr->line,
+                  ptr->address, ptr->size, ptr->method);
 
             ptr_tmp = ptr;
             ptr = ptr->next;
@@ -6494,7 +6586,7 @@ void __memrt_printf(const char *fmt, ...)
 #endif
 
     /* 记录系统日志 */
-    log_dprintf(LOG_NOTICE, "%s", msg);
+    log_notice("%s", msg);
 }
 
 #endif /* DBG_MEM_RT */
@@ -6508,48 +6600,54 @@ void __memrt_printf(const char *fmt, ...)
 /* 参数major, minor, revision, build, suffix 均可为NULL；如果suffix不为NULL，则slen必须大于0 */
 /* 注：常见的后缀描述有alpha1, beta2, Pro, Free, Ultimate, Stable.etc */
 /* 示例: 1.5.8.296 beta1 */
-int version_parse(const char* version, int *major, int *minor,
-    int *revision, int *build, char *suffix, size_t suffix_outbuf_len)
+int version_parse(const char* version, struct version_info* parsed)
 {
-    char *ver, *p, *q;
+    char ver[128], *p, *q;
     int id = 0;
 
-    if (!version)
+    if (!version || !strlen(version) || !parsed)
         return 0;
 
     /* 初始化 */
-    if (major) *major = 0;
-    if (minor) *minor = 0;
-    if (revision) *revision = 0;
-    if (build) *build = 0;
-    if (suffix) *suffix = '\0';
+    parsed->major = 0;
+    parsed->minor = 0;
+    parsed->revision = 0;
+    parsed->build = 0;
 
     /* 后缀描述 */
     p = strchr((char*)version, ' ');
-    if (p && suffix)
-        xstrlcpy(suffix, p+1, suffix_outbuf_len);
+    if (p) {
+        q = p;
+        while (*q == ' ') 
+            q++;
+        xstrlcpy(parsed->suffix, q, sizeof(parsed->suffix));
+    }
+    else
+        memset(parsed->suffix, '\0', sizeof(parsed->suffix));
 
     /* 版本号 */
-    ver = p ? xstrndup(version, p - version) : xstrdup(version);
+    xstrlcpy(ver, version, p ? p - version + 1: sizeof(ver));
     q = ver;
 
-    while ((p = strsep(&q, ".")))
-    {
-        if (id == 0 && major)
-            *major = atoi(p);
-        else if (id == 1 && minor)
-            *minor = atoi(p);
-        else if (id == 2 && revision)
-            *revision = atoi(p);
-        else if (id == 3 && build)
-            *build = atoi(p);
-        else
+    while ((p = strsep(&q, "."))) {
+        switch (id++) {
+        case 0:
+            parsed->major = atoi(p);
             break;
-
-        id++;
+        case 1:
+            parsed->minor = atoi(p);
+            break;
+        case 2:
+            parsed->revision = atoi(p);
+            break;
+        case 3:
+            parsed->build = atoi(p);
+            break;
+        default:
+            break;
+        }
     }
 
-    xfree(ver);
     return 1;
 }
 
@@ -6558,38 +6656,35 @@ int version_parse(const char* version, int *major, int *minor,
 /* 注：不会比较版本后缀信息 */
 int version_compare(const char* v1, const char* v2)
 {
-    int major1, minor1, revision1, build1;
-    int major2, minor2, revision2, build2;
-
-    if (!version_parse(v1, &major1, &minor1, &revision1, &build1, NULL, 0)
-        || !version_parse(v2, &major2, &minor2, &revision2, &build2, NULL, 0))
+    struct version_info vi1, vi2;
+    if (!version_parse(v1, &vi1) || !version_parse(v2, &vi2))
         return -2;
 
     /* 比较主版本号 */
-    if (major1 > major2)
+    if (vi1.major > vi2.major)
         return 1;
-    else if (major1 < major2)
+    else if (vi1.major < vi2.major)
         return -1;
 
     /* 主版本号相同，比较次版本号 */
-    if (minor1 > minor2)
+    if (vi1.minor > vi2.minor)
         return 1;
-    else if (minor1 < minor2)
+    else if (vi1.minor < vi2.minor)
         return -1;
 
     /* 次版本号也相同，比较修定版本号 */
-    if (revision1 > revision2)
+    if (vi1.revision > vi2.revision)
         return 1;
-    else if (revision1 < revision2)
+    else if (vi1.revision < vi2.revision)
         return -1;
 
     /* 修定版本号还相同，比较编译版本号 */
-    if (build1 > build2)
+    if (vi1.build > vi2.build)
         return 1;
-    else if (build1 < build2)
+    else if (vi1.build < vi2.build)
         return -1;
 
-    /* 所有版本号均相同 */
+    /* 版本号相同 */
     return 0;
 }
 
@@ -6625,7 +6720,7 @@ int set_env(const char* key, const char* val)
 /* 成功返回指向该环境变量值的字符串，键不存在返回NULL */
 /* 注1：非线程安全，不可重入 */
 /* 注2：外界不可以改变返回的字符串 */
-const char*    get_env(const char* key)
+const char* get_env(const char* key)
 {
 #ifdef OS_WIN
     static char val[VAL_MAX];

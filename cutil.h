@@ -54,18 +54,6 @@ void cutil_init();
 /* 清理本库，在程序结束前调用 */
 void cutil_exit();
 
-/* 设置堆栈处理函数 */
-/* title的格式为"[Tag] " */
-typedef void(*backtrace_handler)(int level, const char* title, const char* content);
-void set_backtrace_handler(backtrace_handler handler);
-
-/* 设置崩溃处理函数 */
-typedef void (*crash_handler)(const char* dump_file);
-void set_crash_handler(crash_handler handler);
-
-/* 设置默认的崩溃处理函数 */
-void set_default_crash_handler();
-
 /* 设置软件名称，用于创建临时文件和目录等 */
 /* 如果是非英文名称，编码应与USE_UTF8_STR一致，最长255个字符 */
 void set_product_name(const char* product_name);
@@ -159,7 +147,7 @@ typedef int ssize_t;
 /* 带符号类型最大值(gnulib) */
 #define TYPE_MAXIMUM(t) ((t) (~ (~ (t) 0 << (sizeof (t) * CHAR_BIT - 1))))
 
-/* 
+/*
  * 格式化输入输出
  * 用法如 printf ("value=%" PRId64 "\n", i64);
  */
@@ -171,17 +159,17 @@ typedef int ssize_t;
 #endif
 #include <inttypes.h>         /* PRId64, PRIu64... */
 #define PRIlf  "Lf"           /* long double */
-#elif defined (OS_WIN)     
+#elif defined (OS_WIN)
 #define PRIu64  "I64u"        /* uint64_t */
 #define PRId64  "I64d"        /* int64_t */
 #define PRIlf  "llf"          /* long double */
-#endif      
+#endif
 
-#ifndef PRIuS      
-#ifdef OS_WIN      
-#if __WORDSIZE == 64      
+#ifndef PRIuS
+#ifdef OS_WIN
+#if __WORDSIZE == 64
 #define PRIuS  PRIu64         /* size_t is 64bit */
-#else 
+#else
 #define PRIuS  "u"            /* size_t is 32bit */
 #endif
 #else /* POSIX */
@@ -206,8 +194,7 @@ typedef int ssize_t;
 #define UPPER_32_BITS(n) ((uint32_t)(((n) >> 16) >> 16))
 #define LOWER_32_BITS(n) ((uint32_t)(n))
 
-/* 特殊字符 */
-#define ISDIGIT(c) (c >= '0' && c <= '9')
+/* 是否是十六进制字符 */
 #define ISXDIGIT(c) (((c >= '0' && c <= '9') || ((c & ~0x20) >= 'A' && (c & ~0x20) <= 'F')) ? 1 : 0)
 
 /* 转换一个十六进制字符(0~9,A~F)到相应数值(0~15) */
@@ -278,9 +265,10 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #include <Shlwapi.h> /* StrDuaA */
 #endif
 
-#define xisdigit(c) ISDIGIT(c)
 #define xisxdigit(c) ISXDIGIT(c)
 #define xisascii(c) ((unsigned)c < 0x80)
+#define xisdigit(c) ((unsigned)c < 0xFF && isdigit(c))
+#define xisspace(c) ((unsigned)c < 0xFF && isspace(c))
 #define xisalpha(c) ((unsigned)c < 0xFF && isalpha(c))
 #define xisalnum(c) ((unsigned)c < 0xFF && isalnum(c))
 #define xisupper(c) ((unsigned)c < 0xFF && isupper(c))
@@ -294,6 +282,11 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #define asprintf xasprintf
 #endif
 
+#ifdef OS_WIN
+#define strlcat xstrlcat
+#define strlcpy xstrlcpy
+#endif
+
 /* 字符串比较宏 */
 /* 区分大小写比较两个字符串 */
 #define STREQ(a, b) (*(a) == *(b) && strcmp((a), (b)) == 0)
@@ -302,11 +295,13 @@ char *strdup_d(const char*, size_t, const char*, const char*, int);
 #define STRIEQ(a, b) \
  (toupper(*(a)) == toupper(*(b)) && strcasecmp((a), (b)) == 0)
 
-/* 
+/*
  * 安全的字符串格式化输出
- * 在任何情况下，都会保证缓冲区以'\0'结尾
- * 在大多数UNIX/Linux及高版本VC下，该函数返回欲写入的字符串长度，出错返回负值
- * 对于某些实现（如VC6），在缓冲区不够大的情况下也会返回-1，详见 xasprintf 
+ * 返回格式化后完整的字符串的长度，出错返回负值，保证缓冲区以'\0'结尾
+ * 只有返回值的长度大于0且小于输入缓冲区的长度，才是真正的成功完成
+ * 注：某些实现在缓冲区不够大的情况下也会返回-1，同时：
+ * VC高版本将errno置为ERANGE，但VC6不这么做；某些posix实现将errno置为EOVERFLOW
+ * 具体处理方式可参见 xasprintf 函数的实现
  */
 int xvsnprintf(char* buffer, size_t size, const char* format, va_list args) PRINTF_FMT(3, 0);
 int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 4);
@@ -315,9 +310,13 @@ int xsnprintf(char* buffer, size_t size, const char* format, ...) PRINTF_FMT(3, 
 /* GLIBC在_GNU_SOURCE宏被定义的情况下已导出此函数 */
 int xasprintf (char** out, const char* format, ...) PRINTF_FMT(2, 3) WUR;
 
-/* BSD风格的字符串拷贝和附加函数 */
-/* 比 str[n]cpy 和 str[n]cat 更快更安全，比较见以下链接 */
-/* http://www.gratisoft.us/todd/papers/strlcpy.html */
+/* 
+ * BSD风格的字符串拷贝和附加函数
+ * 它们总是保证缓冲区以'\0'结尾(只要 dst_size > 0) 
+ * 返回值总是为最终要构造的字符串的长度(不包括结尾的'\0')
+ * 比 str[n]cpy 和 str[n]cat 更快更安全，比较见以下链接
+ * http://www.gratisoft.us/todd/papers/strlcpy.html 
+ */
 size_t xstrlcpy(char* dst, const char* src, size_t dst_size);
 size_t xstrlcat(char* dst, const char *src, size_t dst_size);
 
@@ -327,11 +326,11 @@ int uppercase_str (char *str);
 int lowercase_str (char *str);
 
 /* 获取一个字符串的大/小写版拷贝 */
-char *strdup_upper (const char *s); 
+char *strdup_upper (const char *s);
 char *strdup_lower (const char *s);
 
 /* 返回字符串的一个字串，以'\0'结尾，需外部释放 */
-char *substrdup (const char *beg, const char *end); 
+char *substrdup (const char *beg, const char *end);
 
 /* 字符串比较、查找操作 */
 /* GLIBC实现的但其他库未实现的一些函数 */
@@ -360,16 +359,19 @@ int strncasecmp (const char *s1, const char *s2, size_t n);
 /* 在字符串s的前slen个字节中查找find */
 char* strnstr(const char *s, const char *find, size_t slen);
 
-/* 不区分大小写在字符串s中查找字符串find */
-char* strcasestr(const char *s, const char *find);
-
 /* 逆向查找内存缓冲区 */
 void* memrchr(const void* s, int c, size_t n);
-    
+
 /* 简单可逆地加密一块内存 */
 void* memfrob(void *mem, size_t length);
 
 #endif /* !__GLIBC__ */
+
+#if !defined(__GLIBC__) || !defined(_GNU_SOURCE)
+/* 不区分大小写在字符串s中查找字符串find */
+/* Linux下只有定义了_GNU_SOURCE宏才会导出此函数 */
+char* strcasestr(const char *s, const char *find);
+#endif
 
 /* 不区分大小写在字符串s的前slen个字节中中查找字符串 */
 char *strncasestr(const char *s, const char *find, size_t slen);
@@ -394,7 +396,6 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WCHAR  L'\\'
 #define PATH_SEP_STR    "\\"
 #define PATH_SEP_WSTR   L"\\"
-#define LINE_END_STR    "\r\n"
 #define MIN_PATH        3          /* "C:\" */
 #define IS_PATH_SEP(c) ((c) == '\\' || (c) == '/')
 #else
@@ -402,14 +403,13 @@ size_t hash_pjw (const char *s, size_t tablesize);
 #define PATH_SEP_WCHAR  L'/'
 #define PATH_SEP_STR    "/"
 #define PATH_SEP_WSTR   L"/"
-#define LINE_END_STR    "\r"
 #define MIN_PATH        1         /* "/" */
 #define IS_PATH_SEP(c) ((c) == '/')
 #endif
 
 /* fopen读写大文件(>2GB) */
 /* 32位Linux需在包含头文件之前定义_FILE_OFFSET_BIT=64 */
-#ifdef OS_POSIX
+#if defined(OS_POSIX) || defined(__MINGW32__)
 #define fseek fseeko
 #define ftell ftello
 #define seek_off_t int64_t
@@ -430,12 +430,23 @@ int is_root_path(const char* path);
 /* 判断path所指的路径是否是绝对路径 */
 int is_absolute_path(const char* path);
 
-/* 获取文件/目录相对于当前工作目录的绝对路径 */
-int absolute_path(const char* relpath, char* buf, size_t len) WUR;
+#ifdef OS_WIN
+/* 是否是Windows网络共享路径
+ * 如 \\servername\sharename\directory\filename */
+int is_unc_path(const char* path);
+#endif
 
 /* 获取full_path相对于base_path的相对路径 */
-int relative_path(const char* base_path, const char* full_path, 
+int relative_path(const char* base_path, const char* full_path,
     char* buf, size_t len) WUR;
+
+/* 
+ * 获取rel_path相对于base_path的绝对路径 
+ * 如果rel_path本身就是绝对路径则直接返回rel_path
+ * 如果base_path为空，使用当前工作目录; base_path可以是相对路径
+ */
+int absolute_path(const char* base_path, const char* rel_path,
+    char* abs_path, size_t len) WUR;
 
 /* 返回路径的文件名或最底层目录名，例见函数定义，下同 */
 const char* path_find_file_name(const char* path);
@@ -447,16 +458,16 @@ const char* path_find_extension(const char* path);
 /* 返回路径所指目录/文件的上级目录路径(路径名需为UTF-8编码) */
 int path_find_directory(const char* path, char* buf, size_t len) WUR;
 
-/* 将后缀名添加到文件名后扩展名前 */
-/* 如果文件没有扩展名或者以路径分隔符结尾，直接附加到路径最后 */
-int path_insert_before_extension(const char* path, const char*suffix, char* buf, size_t len) WUR;
-
 /* 路径所指文件/目录是否存在 */
 int path_file_exists(const char* path);
 
 /* 路径是否是有效目录/文件 */
 int path_is_directory(const char* path);
 int path_is_file(const char* path);
+
+/* 将后缀名添加到文件名后扩展名前 */
+/* 如果文件没有扩展名或者以路径分隔符结尾，直接附加到路径最后 */
+int path_insert_before_extension(const char* path, const char*suffix, char* buf, size_t len) WUR;
 
 /* 获取当前可用的文件/目录路径 */
 /* 如果create_now参数为真，将立即创建一个空的文件/目录 */
@@ -513,7 +524,6 @@ int create_directory(const char *dir) WUR;
 
 /*
  * 创建多级目录
- * 路径名必须是绝对路径名
  * 如果路径名以"\"结尾，那最后的部分创建为目录
  * 注：linux下dir必须为UTF-8编码
  */
@@ -531,12 +541,16 @@ int  delete_directories(const char* dir, delete_dir_cb func, void *arg) WUR;
 /* 判断目录是否是空目录 */
 int  is_empty_dir(const char* dir);
 
-/* 删除一个目录下的所有不包含文件的目录（不删除参数目录本身） */
+/* 
+ * 递归删除目录下的所有空目录
+ * 如果没有任何文件，指定目录本也会被删除
+ * 仅当目录下没有任何文件且目录本身也成功删除时返回1，否则返回0
+ */
 int  delete_empty_directories(const char* dir) WUR;
 
 /* 拷贝整个目录回调函数*/
 /* action参数0、1、2分别表示拷贝文件、拷贝目录和创建目录  */
-typedef int (*copy_dir_cb)(const char* src, const char *dst, 
+typedef int (*copy_dir_cb)(const char* src, const char *dst,
     int action, int succ, void *arg);
 
 /* 将src目录拷贝到dst目录下（用法及注意见copy_directories） */
@@ -581,7 +595,7 @@ int  get_file_block_size(const char *absolute_path);
 
 /* 根据文件实际大小和分区块大小计算实际占用的磁盘空间 */
 #define CALC_DISK_USAGE(real_size, block_size) \
-  (((real_size) + (block_size)) & (~((block_size) - 1))) 
+  (((real_size) + (block_size)) & (~((block_size) - 1)))
 
 /* 打开文件，递增已打开的文件计数 */
 FILE* xfopen(const char* file, const char* mode);
@@ -589,18 +603,17 @@ FILE* xfopen(const char* file, const char* mode);
 /* 关闭文件，递减文件计数 */
 void xfclose(FILE *fp);
 
-/* 
+/*
  * 从文件中读取数据
  * 如果读取过程中：遇到指定分隔符、达到指定最多读取字节数或读到文件末尾则结束
  * 【参数】：如果separator为-1，则不比较分隔符；
  * 如果max_bytes设置为0或-1，也表示不限制读取的字节数
  * 如果*lineptr不为NULL,且读入数据的长度小于*n,则入读行存放于原缓冲区中；
  * 否则将动态申请一块内存用于存放读入内容；如果*lineptr为NULL，则总是动态分配内存；
- * 【注意】：传入的缓冲区如果不够大将不会被释放(不同于GLIBC的getline)，这就意味着
- * *lineptr必须是数组或者alloca的内存。这样可以减少动态申请/释放内存的次数。
+ * 【注意】：传入的缓冲区如果不够大将不会被释放(不同于GLIBC的getline),
  * 返回值：返回成功读入的字节数，包括分隔符，但不包括结尾的'\0'。文件为空或过大返回0
  */
-size_t xfread(FILE *fp, int separator, size_t max_bytes, 
+size_t xfread(FILE *fp, int separator, size_t max_bytes,
  char **lineptr, size_t *n) WUR;
 
 /*
@@ -625,7 +638,7 @@ int  foreach_line (FILE* fp, foreach_line_cb func, void *arg) WUR;
 /* 文件内容信息 */
 struct file_mem {
  char* content;               /* 文件内容 */
- size_t length;                /* 文件长度 */
+ size_t length;               /* 文件长度 */
 };
 
 /* 将文件读入内存 */
@@ -684,6 +697,7 @@ int set_current_dir(const char *dir) WUR;
 const char* get_home_dir();
 
 /* 获取应用程序数据目录（配置文件，缓存等） */
+/* 成功返回已创建目录的路径，失败返回空字符串 */
 const char* get_app_data_dir();
 
 /************************* 临时目录/文件 *************************/
@@ -691,11 +705,15 @@ const char* get_app_data_dir();
 /* 获取应用程序的临时目录 */
 const char* get_temp_dir();
 
-/* 在指定目录下获取可用的临时文件 */
+/* 
+ * 在指定目录下获取可用的临时文件 
+ * 成功返回1, 且已创建空的临时文件
+ */
 int get_temp_file_under(const char* dir, const char *prefix,
                         char *outbuf, size_t outlen) WUR;
- 
+
 /* 获取默认临时目录下可用的临时文件（非线程安全） */
+/* 成功返回临时文件的路径，且临时文件已创建为空文件 */
 const char* get_temp_file(const char* prefix);
 
 /************************************************************************/
@@ -717,11 +735,11 @@ const char* datetime_str (time_t);
 /* 返回 YYMMDDHHMMSS 样式的时间戳字符串，非线程安全 */
 const char* timestamp_str(time_t);
 
-/* 
+/*
  * 解析时间日期字符串
  * 支持 ISO 标准格式，如 2014-09-24 12:59:30，2014/09/24 12:59:30
  * 以及 __DATE__ __TIME__ 宏, 如 Sep 24 2014 12:59:30
- * 成功返回自 1970/1/1 以来的秒数，失败返回0 
+ * 成功返回自 1970/1/1 以来的秒数，失败返回0
  */
 time_t parse_datetime(const char* datetime_str);
 
@@ -746,7 +764,7 @@ void msleep(int milliseconds);
 
 /************************* 计时器 *************************/
 
-/* 
+/*
  * 可用于时长计算及代码性能分析
  * 最高精确到微秒级别
  */
@@ -789,7 +807,7 @@ int is_gb2312(const void* str, size_t size);         /* 字符串是否是GB2312编码 *
 int is_gbk(const void* str, size_t size);            /* 字符串是否是GBK编码 */
 
 /* 获取字符串的字符集(ASCII,UTF-8,GB2312,GBK,GB18030) */
-int get_charset(const void* str, size_t size, 
+int get_charset(const void* str, size_t size,
     char *outbuf, size_t outlen, int can_ascii) WUR;
 
 /* 探测文件的字符集 */
@@ -823,7 +841,7 @@ UTF32* utf8_to_utf32(const UTF8* in,  int strict);
 UTF8*  utf32_to_utf8(const UTF32* in,  int strict);
 
 /* UTF-16LE字符串 <=> UTF-32LE字符串转换，需外部释放 */
-UTF32* utf16_to_utf32(const UTF16* in, int strict);      
+UTF32* utf16_to_utf32(const UTF16* in, int strict);
 UTF16* utf32_to_utf16(const UTF32* in, int strict);
 
 /* UTF-8字符串 <=> UTF-7字符串转换，需要外部释放 */
@@ -861,7 +879,7 @@ size_t utf8_len(const char* u8);
 /* outbuf长度必须大于max_byte, 成功返回新字符串的长度, 失败返回0 */
 size_t utf8_trim(const char* u8, char* outbuf, size_t max_byte);
 
-/* 
+/*
  * 简写UTF-8字符串到指定最大长度，保留最前和最后的字符，中间用...表示省略
  *
  * 比如 "c is a wonderful language" 简写为20个字节，且最后保留3个字符
@@ -922,7 +940,7 @@ int shell_execute(const char* cmd, const char* param, int show, int wait_timeout
 char* popen_readall(const char* command);
 
 /* 创建子进程和连接管道 */
-#ifdef OS_WIN
+#if defined(OS_WIN) && !defined(__MINGW32__)
 FILE* popen(const char *command, const char *mode);
 #define pclose _pclose
 #endif
@@ -1042,18 +1060,16 @@ void cond_destroy(cond_t *cond);                /* 销毁条件变量 */
 
 #ifdef OS_WIN
 typedef HANDLE uthread_t;
-typedef unsigned uthread_ret_t;
 #define THREAD_CALLTYPE __stdcall
 #define INVALID_THREAD NULL
 #else /* POSIX */
 #include <pthread.h>
 typedef pthread_t uthread_t;
-typedef void* uthread_ret_t;
 #define THREAD_CALLTYPE
 #define INVALID_THREAD 0
 #endif /* OS_WIN */
 
-typedef uthread_ret_t (THREAD_CALLTYPE *uthread_proc_t)(void*);
+typedef int (THREAD_CALLTYPE *uthread_proc_t)(void*);
 
 /* 创建线程 */
 int  uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize) WUR;
@@ -1062,7 +1078,7 @@ int  uthread_create(uthread_t* t, uthread_proc_t proc, void *arg, int stacksize)
 void uthread_exit(size_t exit_code);
 
 /* 等待线程 */
-int  uthread_join(uthread_t t, uthread_ret_t *exit_code);
+int  uthread_join(uthread_t t, int *exit_code);
 
 /************************* 线程本地存储 *************************/
 
@@ -1073,7 +1089,7 @@ typedef pthread_key_t thread_tls_t;
 #endif
 
 int  thread_tls_create(thread_tls_t *tls) WUR;          /* 创建TLS键 */
-int  thread_tls_set(thread_tls_t tls, void *data) WUR;  /* 设置TLS值 */        
+int  thread_tls_set(thread_tls_t tls, void *data) WUR;  /* 设置TLS值 */
 int  thread_tls_get(thread_tls_t tls, void **data) WUR; /* 获取TLS值 */
 int  thread_tls_free(thread_tls_t tls) WUR;             /* 释放TLS */
 
@@ -1109,19 +1125,36 @@ int thread_once(thread_once_t* once, thread_once_func func);
 
 #ifdef _DEBUG
 #define ASSERT(expr) ASSERTION(expr, "[Assert]")
-#define NOT_REACHED()   ASSERTION(NULL, "[Not Reached]")
-#define NOT_IMPLEMENTED() ASSERTION(NULL, "[Not Implemented]")
+#define NOT_REACHED()   ASSERTION(0, "[Not Reached]")
+#define NOT_IMPLEMENTED() ASSERTION(0, "[Not Implemented]")
 #else
 #define ASSERT(expr)
 #define NOT_REACHED()
 #define NOT_IMPLEMENTED()
 #endif
 
-/* 
- * 打印当前执行堆栈并开始调试 
+/* 设置堆栈处理函数 */
+/* title的格式为"[Tag] " */
+typedef void(*backtrace_handler)(int level, const char* title, const char* content);
+void set_backtrace_handler(backtrace_handler handler);
+
+/* 设置崩溃处理函数 */
+typedef void(*crash_handler)(const char* dump_file, const char* log_file);
+void set_crash_handler(crash_handler handler);
+
+/* 设置默认的崩溃处理函数 */
+void set_default_crash_handler();
+
+/*
+ * 打印当前执行堆栈并开始调试
  * 如果fatal参数为真，将导致程序退出
  */
 void backtrace_here(int level, const char *fmt, ...) PRINTF_FMT(2, 3);
+
+/*
+ * 故意使程序崩溃以获取调用堆栈和dump文件
+ */
+void crash_here();
 
 /* 错误信息 */
 /* 获取用WIN32 API失败后的错误信息(GetLastError()) */
@@ -1142,21 +1175,17 @@ char*  hexdump(const void *data, size_t len);
 /*                          Logging 日志系统                            */
 /************************************************************************/
 
-/* 
+/*
  * Linux风格的日志记录
  * 可同时打开多个日志文件，多线程安全
  * 2012/03/21 08:15:21 [ERROR] {main.c main 10} foo bar.
  */
 
-#define MAX_LOGS  100        /* 用户最多可打开日志数 */
-#define LOG_INVALID  -1      /* 无效的日志描述符(初始化定义) */
-#define DEBUG_LOG  0         /* 调试日志的ID */
-
 /* 记录等级 */
-enum LogSeverity {
+enum LogLevel {
   LOG_FATAL = 0,             /* 致命 */
   LOG_ALERT,                 /* 危急 */
-  LOG_CRIT,                  /* 紧急 */
+  LOG_CRITICAL,              /* 紧急 */
   LOG_ERROR,                 /* 错误 */
   LOG_WARNING,               /* 警告 */
   LOG_NOTICE,                /* 注意 */
@@ -1164,33 +1193,35 @@ enum LogSeverity {
   LOG_DEBUG,                 /* 调试 */
 };
 
-/* 初始化日志模块 */
-void log_init();
+/* 设置自定义日志处理函数 */
+/* 自定义处理函数返回1表示继续记录，返回0表示不记录此条日志 */
+typedef int (*log_handler)(const char* name, int level, const char* message);
+void set_log_handler(log_handler handler);
 
 /* 设置记录的最低等级 */
-void log_severity(int severity);
+void set_log_level(int min_level);
 
-/* 打开用户日志文件 */
-int  log_open(const char *path, int append, int binary);
-
-/* 格式化输出到日志 */
-void log_printf0(int id, const char *fmt, ...) PRINTF_FMT(2,3);
-
-/* 同上，但同时附加时间和等级信息 */
-void log_printf(int id, int severity, const char *, ...) PRINTF_FMT(3,4);
-
-/* 将日志缓冲区数据写入磁盘 */
-void log_flush(int log_id);
-
-/* 关闭用户日志文件 */
-void log_close(int log_id);
-
-/* 关闭所有打开的日志文件 */
-void log_close_all();
+/* 禁用默认的调试日志 */
+void set_disable_debug_log();
 
 /* 将调试日志信息输出到stderr */
-void set_debug_log_to_stderr(int enable);
-int  is_debug_log_set_to_stderr();
+void set_log_to_console();
+int  is_log_to_console();
+
+/* 打开用户日志文件 */
+int  log_open(const char* name, const char *path, int append, int binary);
+
+/* 格式化输出到日志 */
+void log_printf0(const char* name, const char *fmt, ...) PRINTF_FMT(2, 3);
+
+/* 同上，但同时附加时间和等级信息 */
+void log_printf(const char* name, int level, const char *, ...) PRINTF_FMT(3, 4);
+
+/* 将日志缓冲区数据写入磁盘 */
+void log_flush(const char* name);
+
+/* 关闭用户日志文件 */
+int log_close(const char* name);
 
 /* 记录调试日志（记录文件名、函数名、行号） */
 /* 注：不能对fmt参数使用gettext国际化 */
@@ -1203,12 +1234,12 @@ void log_dprintf(int severity, const char *, ...);
 #ifdef DBG_MEM_RT
 
 /* 内存操作类型 */
-enum MEMRT_MTD_C{ 
+enum MEMRT_MTD_C {
  MEMRT_MALLOC = 0, MEMRT_CALLOC, MEMRT_REALLOC, MEMRT_STRDUP, MEMRT_FREE, MEMRT_C_END,
 };
 
 /* 返回错误值 */
-enum MEMRT_ERR_C{
+enum MEMRT_ERR_C {
   MEMRTE_OK,
   MEMRTE_NOFREE,              /* 内存未被释放(泄露) */
   MEMRTE_UNALLOCFREE,         /* 内存未分配却被释放 */
@@ -1216,32 +1247,18 @@ enum MEMRT_ERR_C{
   MEMRTE_C_END,
 };
 
-/* 代表一次内存操作 */
-struct MEMRT_OPERATE{
-  int  method;                /* 操作类型 */
-  void* address;              /* 操作地址 */
-  size_t size;                /* 内存大小 */
-
-  char* file;                 /* 文件名 */
-  char* func;                 /* 函数名 */
-  int  line;                  /* 行  号 */
-
-  char* desc;                 /* 如保存类名 */
-  void (*msgfunc)(int error, struct MEMRT_OPERATE *rtp);
-
-  struct MEMRT_OPERATE *next;
-};
-
-typedef void (*memrt_msg_callback)(int error, struct MEMRT_OPERATE *rtp);
+typedef void(*memrt_msg_callback)(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method);
 
 /* 外部接口 */
 extern void memrt_init();
 extern int  memrt_check();
 
 /* 仅库使用 */
-extern int  __memrt_alloc(int mtd, void* addr, size_t sz, const char* file, 
+extern int  __memrt_alloc(int mtd, void* addr, size_t sz, const char* file,
  const char* func, int line, const char* desc, memrt_msg_callback pmsgfun);
-extern int  __memrt_release(int mtd, void* addr, size_t sz, const char* file, 
+extern int  __memrt_release(int mtd, void* addr, size_t sz, const char* file,
  const char* func, int line, const char*desc, memrt_msg_callback pmsgfun);
 extern void __memrt_printf(const char *fmt, ...);
 extern int g_xalloc_count;
@@ -1251,9 +1268,16 @@ extern int g_xalloc_count;
 /*                           Version 版本管理                           */
 /************************************************************************/
 
+struct version_info {
+    int major;         /* 主版本号 */
+    int minor;         /* 次版本号 */
+    int revision;      /* 修正版本号 */
+    int build;         /* 编译/提交次数号 */
+    char suffix[32];   /* 版本后缀名（如Alpha/Beta） */
+};
+
  /* 分析一个以点分隔的版本字符串，字符串格式见实现 */
-int version_parse(const char* version, int *major, int *minor,
-    int *revision, int *build, char *suffix, size_t plen) WUR;
+int version_parse(const char* version, struct version_info* parsed) WUR;
 
 /* 比较v1和v2两个版本号，v1比v2新返回1，相等返回0 */
 int version_compare(const char* v1, const char* v2) WUR;

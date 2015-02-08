@@ -171,8 +171,11 @@ std::string& PathLegalize(std::string& path,                          // Â·¾¶ºÏ·
                           int platform = PATH_PLATFORM,
                           size_t max_length = MAX_PATH);
 
-std::string AbsolutePath(const std::string& relative);                    // »ñÈ¡Ïà¶ÔÓÚµ±Ç°¹¤×÷Ä¿Â¼µÄ¾ø¶ÔÂ·¾¶
-std::string RelativePath(const std::string& src, const std::string& dst); // »ñÈ¡srcÖ¸¶¨dstµÄÏà¶ÔÁ´½Ó
+// »ñÈ¡rel_pathÏà¶ÔÓÚbase_pathµÄ¾ø¶ÔÂ·¾¶
+std::string AbsolutePath(const std::string& base_path, const std::string& rel_path);
+
+// »ñÈ¡abs_pathÏà¶ÔÓÚbase_pathµÄÏà¶ÔÂ·¾¶
+std::string RelativePath(const std::string& base_path, const std::string& abs_path);
 
 // ÎÄ¼ş                                                                             
 bool CopyFile(const std::string &src, const std::string &dst,         // ¸´ÖÆÎÄ¼ş
@@ -197,8 +200,7 @@ bool CopyDirectories(const std::string &srcdir, const std::string &dstdir,
 int64_t FileSize(const std::string &path);                             // »ñÈ¡ÎÄ¼ş´óĞ¡
 std::string FileSizeReadable(int64_t size);                            // »ñÈ¡¿É¶ÁĞÔÇ¿µÄÎÄ¼ş³¤¶ÈÖµ£¬Èç3bytes, 10KB, 1.5MB, 3GB
                                                                                    
-bool ReadFile(const std::string& path, std::string* content,           // ½«ÎÄ¼ş¶ÁÈëÄÚ´æ
-              size_t max_size = 0);
+std::string ReadFile(const std::string& path, size_t max_size = 0);    // ½«ÎÄ¼ş¶ÁÈëÄÚ´æ
 bool WriteFile(const std::string& path, const std::string& content);   // ½«ÄÚ´æĞ´ÈëÎÄ¼ş
 
 std::string GetExecutePath();                                          // »ñÈ¡½ø³ÌÂ·¾¶Ãû(¼´argv[0])
@@ -330,8 +332,8 @@ public:
     bool Run();
     int Join();    
 
-    void SetID(int id) {id_ = id;}
-    int GetID() {return id_;}
+    void set_id(int id) {id_ = id;}
+    int id() {return id_;}
 
     void SetOnce(thread_once_t *once, thread_once_func once_func);
 
@@ -612,7 +614,9 @@ enum MEMRT_ERR_CPP{
     MEMRTE_CPP_END
 };
 
-void memrt_msg_cpp(int error, struct MEMRT_OPERATE *rtp);
+void memrt_msg_cpp(int error,
+    const char* file, const char* func, int line,
+    void* address, size_t size, int method);
 
 #define DBG_DELETE_MEMRT(p) __memrt_release(MEMRT_DELETE, p, 0, path_find_file_name(__FILE__),__FUNCTION__,__LINE__, NULL, memrt_msg_cpp),
 #define DBG_DELETE_ARRAY_MEMRT(p) __memrt_release(MEMRT_DELETE_ARRAY, p, 0, path_find_file_name(__FILE__),__FUNCTION__,__LINE__, NULL, memrt_msg_cpp),
